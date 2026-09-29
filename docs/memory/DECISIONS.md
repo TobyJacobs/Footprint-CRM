@@ -61,6 +61,19 @@ Every important decision, dated, with the reason. Never delete entries — if a 
 
 Owner agreed on 29 September 2026.
 
+## 29 September 2026 — Roadmap reordered: Zoho first, Quote to Invoice priority
+**Decision:** The waves are:
+- 0 Foundations
+- 1 Customers (lean)
+- 2 Quote to Invoice
+- 3 Projects, Time and Dashboards (Zoho One switched off)
+- 4 Design Workload
+- then Magazines, Portal, Reporting and Marketing as before
+
+This replaces Claude's draft proposal of Design Workload as Wave 1.
+
+**Why:** The owner wants the Zoho features — mainly quote to invoice — first. Customers must come before quotes because every quote belongs to a customer.
+
 ## 29 September 2026 — Order of replacement
 **Decision:** Replace Zoho first, then monday.com, then Mag Manager, then GoHighLevel (internal use) last.
 **Why:** The owner's priority. The main driver is a bespoke, branded in-house platform, not a failing tool.

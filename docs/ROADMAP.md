@@ -1,6 +1,6 @@
 # Footprint Platform — Roadmap
 
-_Draft 1 · 29 September 2026 · Based on `docs/PROJECT-BRIEF.md`. Technical choices are in `docs/memory/DECISIONS.md`._
+_Draft 2 · 29 September 2026 · Reordered: Zoho first, Quote to Invoice as priority · Based on `docs/PROJECT-BRIEF.md`. Technical choices are in `docs/memory/DECISIONS.md`._
 
 We build in **waves**. Each wave delivers something staff can actually use, and — where possible — lets us switch off or reduce an old tool. We finish and test one wave before starting the next.
 
@@ -20,10 +20,10 @@ These are rough guides for building steadily with Claude. They depend on how muc
 |---|---|---|---|
 | 0 | Foundations: login, users, teams, roles, security, layout, deployment | — | L |
 | 0+ | _Side track (no building):_ password manager and Teams chat | Zoho Vault, Zoho Cliq | S |
-| 1 | Design Workload | monday.com | S–M |
-| 2 | Customers | Zoho CRM (records) | L |
-| 3 | Quote to Invoice | Zoho Books | L |
-| 4 | Projects, Time and Dashboards | Zoho Projects, Zoho CRM analytics → **Zoho One switched off** | M–L |
+| 1 | Customers (the base for quoting) | Zoho CRM (records) | L |
+| 2 | **Quote to Invoice** | Zoho Books | L |
+| 3 | Projects, Time and Dashboards | Zoho Projects, Zoho CRM analytics → **Zoho One switched off** | M–L |
+| 4 | Design Workload | monday.com | S–M |
 | 5 | Magazines | Mag Manager → **switched off** | XL |
 | 6 | Customer Portal and Online Booking | New | M–L |
 | 7 | Reporting and Intranet | Custom HTML sites | M |
@@ -36,21 +36,21 @@ These are rough guides for building steadily with Claude. They depend on how muc
 
 1. **Foundations first (Wave 0).** Login, permissions, the audit log and backups must be solid before any real customer data goes in. Getting security right later is much harder than building it in from day one.
 
-2. **A quick win before the big Zoho work (Wave 1: Design Workload).** You asked for Zoho first. But **Zoho One is a bundle** — you can't cancel it until *all* of Books, CRM, Projects, Vault and Cliq are replaced. That takes several waves whatever we do. Design Workload is small, self-contained, and lets monday.com be cancelled in weeks. It also tests the foundations with real staff on low-risk data before we move 15,000 customers. **This is a change from your stated order — please confirm you're happy with it.** If not, we simply start at Wave 2.
-
-3. **Zoho in the order the data depends on it (Waves 2 → 3 → 4).**
-   - Quotes and invoices need customers, so Customers comes first.
+2. **Zoho first, with Quote to Invoice as the priority (Waves 1 → 2 → 3).** The owner's choice (confirmed 29 September 2026).
+   - Every quote and invoice belongs to a customer, so a lean Customers wave comes first.
    - Projects link to customers and orders, so it comes after Quote to Invoice.
-   - After Wave 4, Zoho One is switched off. That's the biggest single saving.
+   - **Zoho One is a bundle**: it can only be cancelled once Books, CRM, Projects, Vault and Cliq are *all* replaced. That happens at the end of Wave 3 — the biggest single saving.
 
-4. **Mag Manager next (Wave 5).** It's specialised and business-critical, so it goes after we've proven the billing and Xero connection in Wave 3. Switch-over happens **between issues**, never mid-issue.
+3. **Design Workload after Zoho (Wave 4).** It's small, and by then work items can link straight to customers, orders and projects.
+
+4. **Mag Manager next (Wave 5).** It's specialised and business-critical, so it goes after we've proven the billing and Xero connection in Wave 2. Switch-over happens **between issues**, never mid-issue.
 
 5. **Customer Portal after the things it shows (Wave 6).** The portal displays quotes, invoices and bookings, so those must exist first. Online booking builds on Magazines.
 
 6. **Reporting, intranet and marketing last (Waves 7–8).** These are lower risk, and GoHighLevel stays in use for Your Lead Kit anyway.
 
 ### Where the password vault goes
-**It's not built at all.** In the side track alongside Wave 0, Footprint moves to a proven password manager (1Password or Bitwarden). Passwords are the most sensitive data in the business. Proven products are independently security-audited, cost about £3–£7 per person a month, and are safer than anything we could build. This must be done before Zoho One is switched off (end of Wave 4).
+**It's not built at all.** In the side track alongside Wave 0, Footprint moves to a proven password manager (1Password or Bitwarden). Passwords are the most sensitive data in the business. Proven products are independently security-audited, cost about £3–£7 per person a month, and are safer than anything we could build. This must be done before Zoho One is switched off (end of Wave 3).
 
 ---
 
@@ -94,34 +94,12 @@ These are rough guides for building steadily with Claude. They depend on how muc
 
 **Done when:** all passwords are in the new manager and Cliq is no longer used.
 
-**Replaces:** Zoho Vault, Zoho Cliq (their use; the Zoho One bill continues until Wave 4). **Size:** S. **Depends on:** nothing — can start any time.
+**Replaces:** Zoho Vault, Zoho Cliq (their use; the Zoho One bill continues until Wave 3). **Size:** S. **Depends on:** nothing — can start any time.
 
 ---
 
-## Wave 1 — Design Workload
-**Goal:** the design team manages its workload in the platform instead of monday.com.
-
-**Included:**
-- A list of design work items, each with:
-  - **status**
-  - **high-priority marker**
-  - who it's assigned to and the due date
-  - **attached drafts**
-  - **notes**
-- Filters and views (e.g. by designer, status or priority).
-- Ideas taken from the earlier replacement tool, if its code can be found.
-- **Migration:** move open work items from monday.com.
-
-**Done when:** the design team has worked only in the platform for 2 weeks, and monday.com can be cancelled.
-
-**Replaces:** **monday.com** (switched off). **Size:** S–M. **Depends on:** Wave 0.
-
-_Wave 3 will link work items to customers and orders; for now they carry a customer name._
-
----
-
-## Wave 2 — Customers
-**Goal:** one place for every customer, contact and relationship.
+## Wave 1 — Customers
+**Goal:** one place for every customer, contact and relationship — the base that quotes and invoices are built on.
 
 **Included:**
 - Customer (company) records with **multiple contacts**.
@@ -131,15 +109,17 @@ _Wave 3 will link work items to customers and orders; for now they carry a custo
 - **Migration:** all **~15,000 customers and their contacts** from Zoho CRM/Books.
   - Rehearsed on the test database first.
   - Record counts checked, and staff spot-check a sample.
-- **Until Wave 3 goes live**, Zoho Books still needs customers. We run a **one-way nightly copy from Zoho → platform**, so staff can look customers up in the platform while still quoting in Zoho.
+- **Until Wave 2 goes live**, Zoho Books still needs customers. We run a **one-way nightly copy from Zoho → platform**, so staff can look customers up in the platform while still quoting in Zoho.
 
 **Done when:** all customers and contacts are in the platform, counts match, staff have checked a sample, and staff use the platform to look up customer details.
 
-**Replaces:** Zoho CRM customer records (Zoho stays until Wave 4). **Size:** L. **Depends on:** Wave 0.
+**Replaces:** Zoho CRM customer records (Zoho stays until Wave 3). **Size:** L. **Depends on:** Wave 0.
+
+_Kept lean on purpose: only what quoting and invoicing need, so we reach Quote to Invoice as quickly as possible._
 
 ---
 
-## Wave 3 — Quote to Invoice
+## Wave 2 — Quote to Invoice
 **Goal:** the whole quote-to-invoice process runs in the platform.
 
 **Included:**
@@ -159,17 +139,16 @@ _Wave 3 will link work items to customers and orders; for now they carry a custo
 - Subscriptions billed correctly.
 - The finance team signs it off.
 
-**Replaces:** **Zoho Books** (use stops; Zoho One bill continues until Wave 4). **Size:** L. **Depends on:** Wave 2; Xero, Stripe, GoCardless and Postmark accounts.
+**Replaces:** **Zoho Books** (use stops; Zoho One bill continues until Wave 3). **Size:** L. **Depends on:** Wave 1; Xero, Stripe, GoCardless and Postmark accounts.
 
 ---
 
-## Wave 4 — Projects, Time and Dashboards
+## Wave 3 — Projects, Time and Dashboards
 **Goal:** finish replacing Zoho so it can be switched off.
 
 **Included:**
 - **Projects** linked to customers and orders, with **tasks**, **assigned users** and deadlines.
 - **Time tracking** against tasks, plus timesheets.
-- Design work items (Wave 1) linked to projects and orders.
 - **Dashboards and analytics** replacing Zoho CRM's: sales, pipeline, revenue, renewals, and time by project or person. Role-based, so people only see figures they're allowed to.
 - **Migration:** projects, tasks and time logs from Zoho Projects.
 - **Zoho switch-off checklist:**
@@ -179,7 +158,28 @@ _Wave 3 will link work items to customers and orders; for now they carry a custo
 
 **Done when:** staff have used projects and time tracking for a month, the dashboards are signed off, and **Zoho One is cancelled**.
 
-**Replaces:** **Zoho Projects and Zoho CRM → whole of Zoho One switched off.** **Size:** M–L. **Depends on:** Waves 2 and 3, and Wave 0+ complete.
+**Replaces:** **Zoho Projects and Zoho CRM → whole of Zoho One switched off.** **Size:** M–L. **Depends on:** Waves 1 and 2, and Wave 0+ complete.
+
+---
+
+## Wave 4 — Design Workload
+**Goal:** the design team manages its workload in the platform instead of monday.com.
+
+**Included:**
+- A list of design work items, each with:
+  - **status**
+  - **high-priority marker**
+  - who it's assigned to and the due date
+  - **attached drafts**
+  - **notes**
+- Work items linked to customers, orders and projects.
+- Filters and views (e.g. by designer, status or priority).
+- Ideas taken from the earlier replacement tool, if its code can be found.
+- **Migration:** move open work items from monday.com.
+
+**Done when:** the design team has worked only in the platform for 2 weeks, and monday.com can be cancelled.
+
+**Replaces:** **monday.com** (switched off). **Size:** S–M. **Depends on:** Waves 1–3.
 
 ---
 
@@ -191,14 +191,14 @@ _Wave 3 will link work items to customers and orders; for now they carry a custo
 - **Ad sales and bookings:** sizes, positions, rates, series bookings.
 - **Flatplans:** a visual page-by-page plan per edition and issue.
 - **Artwork tracking:** received, in design (linked to Design Workload), approved.
-- **Advertiser billing:** invoices through the Wave 3 billing engine, sent to Xero.
+- **Advertiser billing:** invoices through the Wave 2 billing engine, sent to Xero.
 - Reports: revenue per edition and issue, space sold, bookings pipeline.
 - **Migration:** advertisers (merged with existing customers), bookings and billing history from Mag Manager.
 - **Switch-over between issues**, with the next issue run in both systems if needed.
 
 **Done when:** a full issue cycle (booking → flatplan → artwork → billing → Xero) has run in the platform, and **Mag Manager is cancelled**.
 
-**Replaces:** **Mag Manager** (switched off). **Size:** XL — likely split into 5a (editions, bookings, flatplans) and 5b (billing and switch-over). **Depends on:** Waves 2, 3 and (for artwork) 1.
+**Replaces:** **Mag Manager** (switched off). **Size:** XL — likely split into 5a (editions, bookings, flatplans) and 5b (billing and switch-over). **Depends on:** Waves 1, 2 and (for artwork) 4.
 
 ---
 
@@ -212,7 +212,7 @@ _Wave 3 will link work items to customers and orders; for now they carry a custo
 
 **Done when:** real customers use the portal to view and pay invoices, and advertisers book space online end to end.
 
-**Replaces:** new capability (the Mag Manager wish list). **Size:** M–L. **Depends on:** Waves 3 and 5.
+**Replaces:** new capability (the Mag Manager wish list). **Size:** M–L. **Depends on:** Waves 2 and 5.
 
 ---
 
@@ -223,7 +223,7 @@ _Wave 3 will link work items to customers and orders; for now they carry a custo
 
 **Done when:** the old HTML sites are retired.
 
-**Replaces:** **custom HTML sites.** **Size:** M. **Depends on:** Wave 4 (dashboards) and Wave 0.
+**Replaces:** **custom HTML sites.** **Size:** M. **Depends on:** Wave 3 (dashboards) and Wave 0.
 
 ---
 
@@ -234,7 +234,7 @@ _Wave 3 will link work items to customers and orders; for now they carry a custo
 
 **Done when:** Footprint's own campaigns run from the platform.
 
-**Replaces:** **GoHighLevel for internal use only.** Your Lead Kit stays on GoHighLevel. **Size:** L. **Depends on:** Waves 2 and 3.
+**Replaces:** **GoHighLevel for internal use only.** Your Lead Kit stays on GoHighLevel. **Size:** L. **Depends on:** Waves 1 and 2.
 
 ---
 
