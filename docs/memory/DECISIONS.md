@@ -74,6 +74,13 @@ This replaces Claude's draft proposal of Design Workload as Wave 1.
 
 **Why:** The owner wants the Zoho features — mainly quote to invoice — first. Customers must come before quotes because every quote belongs to a customer.
 
+## 29 September 2026 — Separate "Footprint Group" organisation in Supabase
+**Decision:** The platform's Supabase projects (test and live, London) live in a separate **Footprint Group** organisation inside the owner's existing Supabase account.
+- Start on the **Free** plan.
+- Upgrade to **Pro** (about £20 a month) before any real customer data goes in, with the owner's approval.
+
+**Why:** It keeps the business's data, billing and access separate from the owner's other projects, and makes it easy to hand over or add colleagues.
+
 ## 29 September 2026 — Order of replacement
 **Decision:** Replace Zoho first, then monday.com, then Mag Manager, then GoHighLevel (internal use) last.
 **Why:** The owner's priority. The main driver is a bespoke, branded in-house platform, not a failing tool.
