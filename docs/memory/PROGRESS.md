@@ -25,9 +25,9 @@ _Last updated: 29 September 2026_
 - Agree to a separate "Footprint Group" organisation in the existing Supabase account (see `OPEN-QUESTIONS.md`).
 - The "Before we start Wave 0" list in `ROADMAP.md`:
   - Netlify
-  - Supabase
   - a Microsoft 365 admin
   - branding files
+  - _(GitHub push access is done. The Supabase organisation is being created by the owner.)_
 - Merge the `setup/claude-brief-and-memory` branch into `main` (Claude to walk the owner through it).
 
 ## Next
@@ -36,4 +36,4 @@ _Last updated: 29 September 2026_
 3. Side track: owner starts moving passwords to 1Password/Bitwarden and chat to Teams.
 
 ## How backups work on this computer
-Claude commits; the owner clicks **Push origin** in GitHub Desktop (Claude can't push from here).
+Since 29 September 2026, Git Credential Manager holds the owner's GitHub sign-in, so **Claude pushes automatically after every commit**. No GitHub Desktop step is needed.
