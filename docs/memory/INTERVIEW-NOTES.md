@@ -49,5 +49,16 @@ Working notes from the kickoff interview. These feed into `docs/PROJECT-BRIEF.md
 4. **monday.com (design team):** a list of work items, each with a status, a **high-priority marker**, attached drafts and notes. Claude built a replacement tool recently (not yet adopted). Its code isn't in this repo or in `Documents\claude` — ask the owner where it lives so we can reuse its ideas.
 5. **Mag Manager:** the **full feature set** is used, including billing. It generates advertiser invoices, which are sent across to **Xero** for reconciliation and credit control. Wish list: **online bookings** (advertisers booking and paying for space themselves; the Forget Me Not site already has a "request a space" form and a cost calculator).
 
+### Batch 4 answers
+1. **Customer portal wanted:** customers (clients and advertisers) get their own login. Details to be shaped later, e.g. quotes, invoices, bookings.
+2. **Email:** quotes, invoices and other emails are sent **from the platform** and **recorded against the customer**. _(Microsoft 365 not confirmed — see OPEN-QUESTIONS.)_
+3. **Payments:** customers pay by a mix of **bank transfer, card and Direct Debit**, using **Stripe** (card) and **GoCardless** (Direct Debit).
+4. **Data migration:** about **15,000 customer records**, each with possibly several contacts. **All history** is to be transferred.
+5. **Security and GDPR:**
+   - There is a **DPO or GDPR policy** in place.
+   - **Two-step login for everyone** is wanted.
+   - **An audit log** of who viewed or changed what is wanted.
+   - **UK or EU data storage** is acceptable.
+
 ### Technical context noticed
 - The owner's other projects in `Documents\claude\netlify` already use **Netlify Functions + Supabase** (a hosted database with logins built in) and a Microsoft Outlook connection. They're familiar tools, so they're a strong candidate for the foundations.
