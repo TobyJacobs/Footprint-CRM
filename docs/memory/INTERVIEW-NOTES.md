@@ -34,3 +34,20 @@ Working notes from the kickoff interview. These feed into `docs/PROJECT-BRIEF.md
 3. **Why we're doing this:** the current tools all work. The driver is a fully bespoke, branded, in-house platform that can be tailored completely — not fixing a broken tool.
 4. **Zoho Books is used for:** quoting, sales orders, purchase orders, invoicing and **subscription billing** (likely including YLK subscriptions). Invoices are **sent across to Xero**, which does the actual accounts. So bank feeds, VAT/HMRC and payroll are **not** in scope — Xero stays.
 5. **Budget:** current tools cost about **£2,500 a month**. The goal is to bring as much in-house as possible.
+
+### Batch 3 answers
+1. **Users, teams and roles:** build the *framework* (users, teams, roles, permissions) in Wave 0. Actual people and teams are added manually later through an admin screen — nothing hard-coded.
+2. **Zoho CRM** is mainly used for:
+   - feeding Zoho Books (customer records)
+   - recording **subscriptions** and **web hosting plans** per client
+   - **dashboards and analytics**
+
+   All of this needs replacing. The core day-to-day **quote → invoice** work happens in **Zoho Books**.
+
+   **Zoho Projects** is task-based: projects with tasks, users assigned to each, and **time tracked** against them.
+3. **Zoho Cliq:** fine to use **Microsoft Teams** instead if a built-in messenger would be a lot of work. → Chat is out of scope (see DECISIONS).
+4. **monday.com (design team):** a list of work items, each with a status, a **high-priority marker**, attached drafts and notes. Claude built a replacement tool recently (not yet adopted). Its code isn't in this repo or in `Documents\claude` — ask the owner where it lives so we can reuse its ideas.
+5. **Mag Manager:** the **full feature set** is used, including billing. It generates advertiser invoices, which are sent across to **Xero** for reconciliation and credit control. Wish list: **online bookings** (advertisers booking and paying for space themselves; the Forget Me Not site already has a "request a space" form and a cost calculator).
+
+### Technical context noticed
+- The owner's other projects in `Documents\claude\netlify` already use **Netlify Functions + Supabase** (a hosted database with logins built in) and a Microsoft Outlook connection. They're familiar tools, so they're a strong candidate for the foundations.
