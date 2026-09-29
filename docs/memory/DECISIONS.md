@@ -24,6 +24,22 @@ Every important decision, dated, with the reason. Never delete entries — if a 
 **Decision:** Wave 0 builds the framework for users, teams, roles and permissions. Admins add real people and teams later through an admin screen.
 **Why:** The owner's request. It lets the organisation change without code changes.
 
+## 29 September 2026 — Use a proven password manager instead of building a vault
+**Decision:** Zoho Vault is replaced by an off-the-shelf password manager (e.g. 1Password or Bitwarden), not built into the platform.
+**Why:** A bespoke password vault is very high risk. Proven products are audited, cheap (about £3–£7 per person a month) and reliable. Owner agreed.
+
+## 29 September 2026 — Staff sign in with Microsoft 365
+**Decision:** Staff log in using their existing Microsoft 365 work accounts.
+**Why:** Footprint already uses Microsoft 365. One login for everything, and leavers lose access automatically when their Microsoft account is closed.
+
+## 29 September 2026 — Distributor management is a later stage
+**Decision:** Forget Me Not distributor management (details, routes, pay, GPS) is a possible later stage. Round Control is being rolled out for it now.
+**Why:** It's already covered by a tool being adopted. The owner likes the idea of absorbing it later.
+
+## 29 September 2026 — One navigation section per feature
+**Decision:** Each distinct feature (e.g. Customers, Quotes & Invoices, Projects, Design Workload, Magazines) has its own place in the main navigation. The design workload tool lives inside the platform. Users only see the sections their role allows.
+**Why:** The owner's request. It keeps the platform easy to find your way around.
+
 ## 29 September 2026 — Order of replacement
 **Decision:** Replace Zoho first, then monday.com, then Mag Manager, then GoHighLevel (internal use) last.
 **Why:** The owner's priority. The main driver is a bespoke, branded in-house platform, not a failing tool.

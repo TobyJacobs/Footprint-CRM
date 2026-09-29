@@ -1,6 +1,6 @@
 # Footprint Platform — Project Brief
 
-_Draft 1 · 29 September 2026 · Built from the kickoff interview with the project owner. Raw answers are in `docs/memory/INTERVIEW-NOTES.md`._
+_Draft 2 (owner-reviewed) · 29 September 2026 · Built from the kickoff interview with the project owner. Raw answers are in `docs/memory/INTERVIEW-NOTES.md`._
 
 ---
 
@@ -34,6 +34,10 @@ The current tools work. The reason for this project is to have a platform that F
 - **Customers** — through a **customer portal** (a later wave).
 - **Admins** — manage users, teams, roles and permissions through an admin screen.
 
+**Staff log in with their existing Microsoft 365 work account** (the same one they use for Outlook and Teams). Customers log in to the portal separately.
+
+**Each distinct feature has its own place in the navigation menu** (e.g. Customers, Quotes & Invoices, Projects, Design Workload, Magazines). Users only see the sections their role allows.
+
 **Roles are configurable, not built in.** Wave 0 builds the framework: users belong to teams and have roles, and roles grant permissions such as "can see invoices" or "can edit bookings". Admins set up the real teams and people afterwards. Every page and every piece of data checks the user's permissions.
 
 ---
@@ -49,6 +53,7 @@ The current tools work. The reason for this project is to have a platform that F
 ### B. Sales and billing — quote to invoice (replaces Zoho Books)
 - **Quotes → sales orders → invoices**, with **purchase orders** to suppliers.
 - **Subscription billing** (recurring invoices).
+- **Quotes sent digitally and approved digitally**: the customer opens a link, reviews the quote and accepts it online. The acceptance is recorded (who, when) and can turn straight into a sales order.
 - **Emailed from the platform** and recorded against the customer.
 - **Payments:** card (Stripe), Direct Debit (GoCardless) and bank transfer.
 - **Invoices sent to Xero** automatically, as Zoho does today.
@@ -69,7 +74,7 @@ The current tools work. The reason for this project is to have a platform that F
   - artwork tracking
   - **advertiser billing**, with invoices sent to Xero
 - **New: online booking** — advertisers book (and pay for) space themselves, linked to the Forget Me Not website's calculator and "request a space" form.
-- Possibly distributor records and routes (to confirm).
+- **Later stage: distributor management** (details, routes, pay and GPS tracking). Round Control is being rolled out for this now; the platform may absorb it later.
 
 ### F. Marketing (replaces Footprint's *own* use of GoHighLevel)
 - Footprint's internal campaigns, email/SMS and pipelines. **Scoped later — this is the last wave.**
@@ -108,7 +113,8 @@ The current tools work. The reason for this project is to have a platform that F
 - **Your Lead Kit** — stays on GoHighLevel.
 - **Accounting** — stays in Xero (bank feeds, VAT/HMRC, payroll, credit control).
 - **Team chat** — Microsoft Teams replaces Zoho Cliq.
-- **Password vault** — recommended: use a proven password manager (e.g. 1Password or Bitwarden, about £3–£7 per person a month) rather than build one. _(Awaiting owner sign-off.)_
+- **Password vault** — **agreed:** use a proven password manager (e.g. 1Password or Bitwarden, about £3–£7 per person a month) rather than build one.
+- **Distributor management** — Round Control for now; a possible later stage.
 
 ---
 
@@ -136,7 +142,4 @@ The owner's order: **Zoho → monday.com → Mag Manager → GoHighLevel (intern
 
 See `docs/memory/OPEN-QUESTIONS.md`. The key ones:
 - renewal dates of the current tools
-- where the design workload tool lives
-- whether Footprint uses Microsoft 365
-- whether distributors are managed in the platform
 - which subscriptions are billed today
