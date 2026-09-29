@@ -18,6 +18,16 @@ Working notes from the kickoff interview. These feed into `docs/PROJECT-BRIEF.md
 5. **Owner:** the CEO's son, who is leading this project.
 6. **Data migration** from the old systems is required once the new platform is ready.
 
+### Forget Me Not (from forgetmenotonline.org)
+- Hampshire community magazine, **11 area editions**, about 5,000 homes each, about **55,000 homes a month** in total. _(The Footprint About page says "over 100,000 homes" — to check which is current.)_
+- **Hand-delivered by distributors on GPS-tracked routes.** Distributors are recruited through the website. This means distributor records, routes and pay may need to be managed too.
+- Adverts from £18 a month. The site has a cost calculator and a "request a space" form. Footprint's design team can create the adverts.
+- Reader features: Pets Corner photos, competitions, and a local business directory.
+- Based at the Swanwick office.
+
+### Leadership (from footprintgroup.uk/about-us)
+- A board of 3 directors plus a Marketing Director. The website doesn't list the wider staff.
+
 ### Batch 2 answers
 1. **Your Lead Kit stays on GoHighLevel** for clients. We only replace Footprint's own internal use of GoHighLevel. (See DECISIONS.)
 2. **Priority order for replacement:** Zoho first, then monday.com, then Mag Manager, then GoHighLevel last.
