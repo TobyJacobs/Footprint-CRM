@@ -17,5 +17,6 @@ One short entry per session. Newest at the top.
   - Tech stack is Next.js + Supabase + Netlify.
 - Wrote `docs/ROADMAP.md` (Waves 0–8). Proposed Design Workload as Wave 1 — awaiting the owner's confirmation.
 - The owner asked for Zoho first → roadmap reordered (Customers, then Quote to Invoice, then Projects; Design Workload moved to Wave 4).
-- Agreed a separate "Footprint Group" organisation in the owner's Supabase account (the owner is creating it).
+- The owner created the "Footprint Group" Supabase organisation (authorised with GitHub), connected Netlify to GitHub, and confirmed they have a Microsoft 365 admin account.
+- Wrote `docs/BRAND.md` from the Footprint website: Montserrat, black/white, pink `#de2277`, orange `#e58207`, teal `#7bcbd1`, gradient. Logo files to follow.
 - The owner signed in to GitHub through Git Credential Manager, so Claude now pushes automatically after each commit.

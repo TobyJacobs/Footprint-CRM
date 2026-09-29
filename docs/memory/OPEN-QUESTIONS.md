@@ -2,7 +2,7 @@
 
 Things we still need answers to from the owner or the business. Move each one to `DECISIONS.md` or the brief once answered, then remove it here.
 
-- **Supabase organisation.** Agreed (see DECISIONS). The owner is creating the "Footprint Group" organisation — confirm it exists before Wave 0. _(Raised 29 September 2026.)_
+- **Logo files.** The owner will send the official logo files (SVG/PNG: full colour, white, square icon). _(Raised 29 September 2026.)_
 - **Renewal dates.** Exact renewal dates and contract terms for Zoho One, monday.com, Mag Manager and GoHighLevel. _(Raised 29 September 2026.)_
 - **Subscription billing.** Which subscriptions are billed through Zoho today (Your Lead Kit? hosting plans? retainers?). _(Raised 29 September 2026.)_
 - **Design workload tool code.** The earlier monday.com replacement Claude built — is its code anywhere we can reuse ideas from? _(Raised 29 September 2026.)_

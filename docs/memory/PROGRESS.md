@@ -23,11 +23,12 @@ _Last updated: 29 September 2026_
 
 ## Waiting on the owner
 - Agree to a separate "Footprint Group" organisation in the existing Supabase account (see `OPEN-QUESTIONS.md`).
-- The "Before we start Wave 0" list in `ROADMAP.md`:
-  - Netlify
-  - a Microsoft 365 admin
-  - branding files
-  - _(GitHub push access is done. The Supabase organisation is being created by the owner.)_
+- "Before we start Wave 0" list:
+  - ✅ GitHub push access
+  - ✅ Supabase "Footprint Group" organisation created and authorised with GitHub
+  - ✅ Netlify connected to GitHub
+  - ✅ The owner has a Microsoft 365 admin account
+  - ⏳ Logo files. The brand guide from the website is in `docs/BRAND.md`.
 - Merge the `setup/claude-brief-and-memory` branch into `main` (Claude to walk the owner through it).
 
 ## Next
