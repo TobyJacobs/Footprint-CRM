@@ -40,6 +40,27 @@ Every important decision, dated, with the reason. Never delete entries — if a 
 **Decision:** Each distinct feature (e.g. Customers, Quotes & Invoices, Projects, Design Workload, Magazines) has its own place in the main navigation. The design workload tool lives inside the platform. Users only see the sections their role allows.
 **Why:** The owner's request. It keeps the platform easy to find your way around.
 
+## 29 September 2026 — Technical foundations
+**Decision:**
+- **App:** Next.js (TypeScript), hosted on **Netlify** with automatic deploys from GitHub and preview links for every change.
+- **Database, file storage and login:** **Supabase**, London region.
+  - Staff sign in with **Microsoft 365**.
+  - Customer portal users sign in by email with two-step codes.
+  - Permissions are enforced inside the database (row-level security).
+  - The audit log is recorded by the database.
+  - Daily and point-in-time backups.
+- **Email:** **Postmark** (or Resend) for quotes, invoices and notifications, logged against the customer.
+- **Payments:** **Stripe** (card) and **GoCardless** (Direct Debit). Card details are never stored by us.
+- **Accounts:** send invoices to **Xero** through its official connection.
+
+**Why:** Well-known, well-supported tools that will be maintainable for years. The owner already uses Supabase and Netlify. Data stays in the UK. Estimated running cost is about £150–£350 a month, against about £2,500 today.
+
+**Alternatives rejected:**
+- **Plain HTML + Supabase:** too hard to keep consistent at this size.
+- **Low-code builders:** per-user cost, less control, not truly owned.
+
+Owner agreed on 29 September 2026.
+
 ## 29 September 2026 — Order of replacement
 **Decision:** Replace Zoho first, then monday.com, then Mag Manager, then GoHighLevel (internal use) last.
 **Why:** The owner's priority. The main driver is a bespoke, branded in-house platform, not a failing tool.

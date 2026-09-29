@@ -5,6 +5,15 @@ One short entry per session. Newest at the top.
 ---
 
 ## 29 September 2026 — Session 1: Kickoff
-- Read `CLAUDE.md` and the kickoff prompt.
 - Created the memory files in `docs/memory/`.
-- Started the owner interview for the project brief.
+- Read footprintgroup.uk and forgetmenotonline.org for context.
+- Interviewed the owner in 4 batches and recorded the answers in `INTERVIEW-NOTES.md`.
+- Wrote `docs/PROJECT-BRIEF.md`. The owner reviewed it and added digital quote approval, Microsoft 365 login, one navigation section per feature, and distributors as a later stage.
+- Key decisions:
+  - Your Lead Kit stays on GoHighLevel.
+  - Xero stays.
+  - Teams replaces Cliq.
+  - A proven password manager replaces Zoho Vault.
+  - Tech stack is Next.js + Supabase + Netlify.
+- Wrote `docs/ROADMAP.md` (Waves 0–8). Proposed Design Workload as Wave 1 — awaiting the owner's confirmation.
+- Push to GitHub failed: this computer isn't logged in to GitHub. Commits are saved locally on branch `setup/claude-brief-and-memory`.
