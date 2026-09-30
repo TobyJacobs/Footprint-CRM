@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import NoAccess from "@/components/NoAccess";
 import PageHeader from "@/components/PageHeader";
-import { features, findFeature } from "@/lib/features";
+import { getCurrentUser } from "@/lib/auth";
+import { findFeature } from "@/lib/features";
 
 // Placeholder page for each feature until its wave is built. Each feature
-// gets its own folder (e.g. src/app/customers) when real work starts on it,
-// which takes priority over this catch-all.
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return features.map((f) => ({ feature: f.href.slice(1) }));
-}
-
+// gets its own folder (e.g. src/app/(app)/customers) when real work starts
+// on it, which takes priority over this catch-all.
 export async function generateMetadata(
   props: PageProps<"/[feature]">,
 ): Promise<Metadata> {
@@ -23,6 +19,9 @@ export default async function FeaturePlaceholder(props: PageProps<"/[feature]">)
   const { feature: slug } = await props.params;
   const feature = findFeature(slug);
   if (!feature) notFound();
+
+  const user = await getCurrentUser();
+  if (!user.can(feature.key, "view")) return <NoAccess title={feature.label} />;
 
   return (
     <>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { features, home, type Feature } from "@/lib/features";
 
 function Wordmark() {
@@ -40,35 +40,65 @@ function NavLink({ feature, active }: { feature: Feature; active: boolean }) {
   );
 }
 
-function Nav({ pathname }: { pathname: string }) {
+function Nav({ pathname, visible }: { pathname: string; visible: Feature[] }) {
   const isActive = (f: Feature) =>
     f.href === "/" ? pathname === "/" : pathname.startsWith(f.href);
   return (
     <nav aria-label="Main" className="flex flex-col gap-1">
       <NavLink feature={home} active={isActive(home)} />
-      <div className="my-2 h-px bg-white/10" />
-      {features.map((f) => (
+      {visible.length > 0 && <div className="my-2 h-px bg-white/10" />}
+      {visible.map((f) => (
         <NavLink key={f.key} feature={f} active={isActive(f)} />
       ))}
     </nav>
   );
 }
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+function UserBox({ name, email }: { name: string; email: string }) {
+  return (
+    <div className="border-t border-white/10 px-5 py-4">
+      <p className="truncate text-sm font-semibold text-white">{name}</p>
+      {name !== email && <p className="truncate text-xs text-white/50">{email}</p>}
+      <form action="/auth/signout" method="post" className="mt-3">
+        <button
+          type="submit"
+          className="flex items-center gap-2 text-xs font-medium text-white/65 hover:text-white"
+        >
+          <LogOut size={14} aria-hidden />
+          Sign out
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export default function AppShell({
+  children,
+  visibleFeatureKeys,
+  userName,
+  userEmail,
+}: {
+  children: React.ReactNode;
+  visibleFeatureKeys: string[];
+  userName: string;
+  userEmail: string;
+}) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const visible = features.filter((f) => visibleFeatureKeys.includes(f.key));
 
   return (
     <div className="min-h-screen lg:flex">
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 flex-col bg-fp-black lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-fp-black lg:flex">
         <div className="bg-fp-gradient h-1" />
         <div className="px-5 py-6">
           <Wordmark />
         </div>
         <div className="flex-1 overflow-y-auto px-3 pb-6">
-          <Nav pathname={pathname} />
+          <Nav pathname={pathname} visible={visible} />
         </div>
+        <UserBox name={userName} email={userEmail} />
       </aside>
 
       {/* Mobile top bar */}
@@ -91,12 +121,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           // Close the menu once a link inside it is clicked.
           <div
             id="mobile-nav"
-            className="max-h-[80vh] overflow-y-auto px-3 pb-4 pt-2"
+            className="max-h-[80vh] overflow-y-auto pt-2"
             onClick={(e) => {
               if ((e.target as HTMLElement).closest("a")) setMenuOpen(false);
             }}
           >
-            <Nav pathname={pathname} />
+            <div className="px-3 pb-4">
+              <Nav pathname={pathname} visible={visible} />
+            </div>
+            <UserBox name={userName} email={userEmail} />
           </div>
         )}
       </header>
