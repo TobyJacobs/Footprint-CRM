@@ -4,6 +4,12 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 30 September 2026 — Session 2: Wave 0 begins
+- Merged the planning work into `main`. Created branch `wave-0/foundations`.
+- Confirmed the Supabase organisation. Its auto-created project (Frankfurt) becomes the test database; live will be in London (see DECISIONS).
+- Installed Node.js 24. The automatic install got stuck on a hidden Windows permission prompt, so the owner installed it manually.
+- Built the app shell: Next.js 16, Footprint branding, one navigation section per feature with placeholders, and a mobile menu. Build and lint pass, and it was checked in the browser.
+
 ## 29 September 2026 — Session 1: Kickoff
 - Created the memory files in `docs/memory/`.
 - Read footprintgroup.uk and forgetmenotonline.org for context.

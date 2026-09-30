@@ -1,40 +1,39 @@
 # Progress — where we are right now
 
-_Last updated: 29 September 2026_
+_Last updated: 30 September 2026_
 
 ## Current stage
-**Planning complete (Session 1).** Brief, technical foundations and roadmap are agreed. Next up: **Wave 0 — Foundations**. No application code yet.
+**Wave 0 — Foundations, part 1 of 2.** Working on branch `wave-0/foundations`.
 
 ## Done
-- Standing instructions (`CLAUDE.md`) and kickoff prompt.
-- Memory files in `docs/memory/` (plus `INTERVIEW-NOTES.md` with the raw interview answers).
-- `docs/PROJECT-BRIEF.md` — draft 2, reviewed and corrected by the owner.
-- Technical foundations agreed: Next.js + Supabase (London) + Netlify, with Microsoft 365 staff login. See `DECISIONS.md`.
-- `docs/ROADMAP.md` — draft 2, **owner-confirmed order**:
-  - 0 Foundations
-  - 1 Customers
-  - 2 **Quote to Invoice**
-  - 3 Projects, Time and Dashboards (Zoho off)
-  - 4 Design Workload
-  - 5 Magazines
-  - 6 Portal
-  - 7 Reporting and Intranet
-  - 8 Marketing
+- Planning (Session 1):
+  - brief (`docs/PROJECT-BRIEF.md`)
+  - roadmap (`docs/ROADMAP.md`, owner-confirmed order)
+  - decisions (`DECISIONS.md`)
+  - brand guide (`docs/BRAND.md`)
+- Planning work merged into `main` and pushed (30 September 2026).
+- Setup: GitHub auto-push ✅, Supabase "Footprint Group - CRM" organisation ✅, Netlify connected ✅, Microsoft 365 admin ✅.
+- Node.js 24 installed on the owner's computer.
+- **Wave 0 part 1: app shell**
+  - Next.js 16 app (TypeScript, Tailwind) in the repo root.
+  - Footprint branding: Montserrat, black sidebar, gradient accent, pink highlights.
+  - One navigation section per feature, driven by `src/lib/features.ts`. Each section shows a "Coming in Wave X" placeholder.
+  - Works on desktop and mobile (hamburger menu).
+  - Lint, type check and build all pass. Checked in the browser.
+  - `netlify.toml` sets Node 24.
+
+## Next (Wave 0 part 2)
+1. Get a Netlify preview link for the branch (open a pull request) and have the owner check it.
+2. Supabase test project (Frankfurt): rename to "Footprint Platform – Test" and connect the app.
+3. "Sign in with Microsoft": Microsoft 365 app registration (guided) + Supabase Azure provider. Protect every page.
+4. Users, teams, roles and permissions tables + admin screens; row-level security.
+5. Audit log, backups test, error monitoring.
 
 ## Waiting on the owner
-- Agree to a separate "Footprint Group" organisation in the existing Supabase account (see `OPEN-QUESTIONS.md`).
-- "Before we start Wave 0" list:
-  - ✅ GitHub push access
-  - ✅ Supabase "Footprint Group" organisation created and authorised with GitHub
-  - ✅ Netlify connected to GitHub
-  - ✅ The owner has a Microsoft 365 admin account
-  - ⏳ Logo files. The brand guide from the website is in `docs/BRAND.md`.
-- Merge the `setup/claude-brief-and-memory` branch into `main` (Claude to walk the owner through it).
-
-## Next
-1. Merge the branch into `main`.
-2. Start Wave 0: set up the Next.js app, Supabase test and live databases, and Microsoft sign-in.
-3. Side track: owner starts moving passwords to 1Password/Bitwarden and chat to Teams.
+- Logo files (see `docs/BRAND.md`). A text wordmark is used until then; the favicon is still the Next.js default.
 
 ## How backups work on this computer
-Since 29 September 2026, Git Credential Manager holds the owner's GitHub sign-in, so **Claude pushes automatically after every commit**. No GitHub Desktop step is needed.
+Git Credential Manager holds the owner's GitHub sign-in, so **Claude pushes automatically after every commit**.
+
+## Local running
+The dev server runs from the Claude desktop preview (`.claude/launch.json` in `Documents\claude`) at http://localhost:3000.
