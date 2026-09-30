@@ -9,6 +9,19 @@ One short entry per session. Newest at the top.
 - Confirmed the Supabase organisation. Its auto-created project (Frankfurt) becomes the test database; live will be in London (see DECISIONS).
 - Installed Node.js 24. The automatic install got stuck on a hidden Windows permission prompt, so the owner installed it manually.
 - Built the app shell: Next.js 16, Footprint branding, one navigation section per feature with placeholders, and a mobile menu. Build and lint pass, and it was checked in the browser.
+- Built Wave 0 part 2:
+  - the database migration: roles, permissions, audit log, row-level security
+  - Sign in with Microsoft
+  - admin screens
+- 1 October 2026 setup, done by Claude in the owner's Chrome with approval:
+  - renamed the Supabase project
+  - applied the migration
+  - turned on GitHub auto-deploy (at the owner's request)
+  - set the redirect URLs
+  - registered the Entra app with email claims
+  - filled in the Azure provider (the owner pasted the secret)
+  - saved `.env.local`
+- Checked that the local sign-in button reaches Footprint's Microsoft login.
 
 ## 29 September 2026 — Session 1: Kickoff
 - Created the memory files in `docs/memory/`.

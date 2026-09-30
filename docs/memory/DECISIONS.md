@@ -81,6 +81,21 @@ This replaces Claude's draft proposal of Design Workload as Wave 1.
 
 **Why:** It keeps the business's data, billing and access separate from the owner's other projects, and makes it easy to hand over or add colleagues.
 
+## 1 October 2026 — Supabase auto-deploys database changes from GitHub
+**Decision:** The Supabase GitHub integration's "Deploy to production" is switched on for branch `main`. Migrations in `supabase/migrations/` apply to the Supabase project automatically when merged into `main`. The first migration was applied by hand beforehand and recorded as applied.
+
+**Why:** The owner asked for it. It keeps the database in step with the code without manual SQL.
+
+**Note:** It currently points at the **test** project. When the live London project is created, decide which project follows `main`.
+
+## 1 October 2026 — Sign-in details
+**Decision:**
+- Staff sign in through a Microsoft Entra app, "Footprint Platform", that only accepts Footprint's own tenant (single tenant). New sign-ins get a profile automatically. The first ever sign-in becomes admin.
+- Access is controlled by an `is_active` switch, an `is_admin` switch, and roles made of (feature, action) permissions, where the actions are view, edit and delete.
+- The client secret lives only in Supabase and expires after 24 months.
+
+**Why:** Only Footprint staff can get in, using Microsoft's own two-step login. Nothing secret is kept in the code.
+
 ## 30 September 2026 — Test database in Frankfurt, live database in London
 **Decision:**
 - The existing Supabase project in the "Footprint Group - CRM" organisation is the **test** database. It is in **Frankfurt (eu-central-1)** and was auto-created when GitHub was connected. It will be renamed "Footprint Platform – Test".
