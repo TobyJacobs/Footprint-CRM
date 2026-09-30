@@ -81,6 +81,18 @@ This replaces Claude's draft proposal of Design Workload as Wave 1.
 
 **Why:** It keeps the business's data, billing and access separate from the owner's other projects, and makes it easy to hand over or add colleagues.
 
+## 30 September 2026 — Test database in Frankfurt, live database in London
+**Decision:**
+- The existing Supabase project in the "Footprint Group - CRM" organisation is the **test** database. It is in **Frankfurt (eu-central-1)** and was auto-created when GitHub was connected. It will be renamed "Footprint Platform – Test".
+- The **live** database will be a new project in **London (eu-west-2)** on the Pro plan, created before any real customer data goes in (before Wave 1), with the owner's approval.
+
+This refines the "Supabase, London region" part of the technical foundations decision.
+
+**Why:**
+- Test data is fake, and EU storage is within what the owner approved.
+- The free plan allows only 2 free projects per person, and the HED project already uses one.
+- A project's region can't be changed after it's created. Owner agreed.
+
 ## 29 September 2026 — Order of replacement
 **Decision:** Replace Zoho first, then monday.com, then Mag Manager, then GoHighLevel (internal use) last.
 **Why:** The owner's priority. The main driver is a bespoke, branded in-house platform, not a failing tool.
