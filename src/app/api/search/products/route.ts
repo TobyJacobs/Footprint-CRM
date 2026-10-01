@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { likePattern } from "@/lib/search";
 import { createClient } from "@/lib/supabase/server";
 
 // Product look-up for quote / order / invoice lines.
@@ -7,14 +8,15 @@ export async function GET(request: NextRequest) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json([], { status: 401 });
 
-  const q = (request.nextUrl.searchParams.get("q") ?? "").trim().replace(/[%_,()]/g, " ");
-  if (q.length < 2) return NextResponse.json([]);
+  const q = (request.nextUrl.searchParams.get("q") ?? "").trim();
+  const like = likePattern(q);
+  if (q.length < 2 || !like) return NextResponse.json([]);
 
   const { data } = await supabase
     .from("products")
     .select("id, name, description, unit, sale_price, cost_price, tax_rate_id, tax_rates(rate)")
     .eq("active", true)
-    .or(`name.ilike.%${q}%,sku.ilike.%${q}%`)
+    .or(`name.ilike.${like},sku.ilike.${like}`)
     .order("name")
     .limit(15);
 
