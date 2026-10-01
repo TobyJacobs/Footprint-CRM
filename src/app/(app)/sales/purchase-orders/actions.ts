@@ -155,7 +155,7 @@ export async function raisePurchaseOrders(salesOrderId: string) {
 
   const { data: so } = await supabase
     .from("sales_documents")
-    .select("id, number, doc_type, customer_id, owner_id, deadline_date, delivery_type, customers(name)")
+    .select("id, number, doc_type, customer_id, owner_id, deadline_date, delivery_type, customers!sales_documents_customer_id_fkey(name)")
     .eq("id", salesOrderId)
     .single();
   if (!so || so.doc_type !== "sales_order") fail(back, "Purchase orders can only be raised from a sales order");

@@ -87,6 +87,20 @@ Still to do for Wave 1: the Zoho import tool (built against made-up Zoho-format 
     - tested on made-up data: export contents, contact erase (audit log no longer mentions the person), customer erase
 
 - **Wave 2a LIVE for the demo**: PR [TobyJacobs/Footprint-CRM#4](https://github.com/TobyJacobs/Footprint-CRM/pull/4) merged as `3b85ccb` on 1 October 2026, using the test database with made-up data. Netlify visibility is now "previews only" (live public), so the approval link `/q/…` opens on live for signed-out customers (checked).
+- **Wave 2b built** (branch `wave-2b/purchase-orders-credit-notes`, 1 October 2026, not yet live):
+  - Migration `20261002130000_purchase_orders_credit_notes.sql`, applied to test:
+    - `credit_note` doc type plus `credit_reason`
+    - suppliers gain a contact name and account reference
+    - `purchase_orders` and lines (PO- numbering, totals by database, audit, RLS on "quotes")
+  - **Purchase orders:**
+    - list, editor (at our cost), view, print
+    - draft → sent → received → closed, or cancelled; only drafts can be deleted
+    - "Raise purchase orders" on a sales order creates one PO per product supplier
+  - **Suppliers** tab: contact details, product and open-PO counts, recent POs.
+  - **Credit notes:** raised from an issued or paid invoice (copies lines; edit for a partial credit), with a reason. The invoice shows "Credited" and "Balance". Issued credit notes and invoices are locked from editing and deletion.
+  - Fixed: adding purchase_orders made the "customers" link from sales_documents ambiguous, so the explicit hint `customers!sales_documents_customer_id_fkey` is now used.
+  - Tested: SO-010913 → PO-03271 (Digiprint £54) and PO-03272 (Design £72); PO-03271 sent → received → closed and printed; INV-074891 → CN-00009, edited to £66 (Pricing error) and issued, so the invoice balance is £274.80.
+  - Note: the local dev server sometimes keeps serving old code after edits. Restart the preview if a change doesn't show.
 - **Wave 2a details** (built on branch `wave-2/quote-to-invoice`):
   - Zoho Books discovery: `docs/discovery/ZOHO-BOOKS.md` (settings only; org `20091743642`, custom domain business.footprintsouth.co.uk).
   - Migration `20261002120000_sales.sql`, applied to test:

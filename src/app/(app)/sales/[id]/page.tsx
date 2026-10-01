@@ -40,11 +40,12 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
   const sp = await props.searchParams;
   const supabase = await createClient();
 
-  const { data: doc } = await supabase
+  const { data: doc, error: loadError } = await supabase
     .from("sales_documents")
-    .select("*, customers(id, name, credit_status), contacts(first_name, last_name, email), owner:owner_id(full_name, email)")
+    .select("*, customers!sales_documents_customer_id_fkey(id, name, credit_status), contacts(first_name, last_name, email), owner:owner_id(full_name, email)")
     .eq("id", id)
     .maybeSingle();
+  if (loadError) throw new Error(`Couldn't load document: ${loadError.message}`);
   if (!doc || !isDocType(doc.doc_type)) notFound();
   const type = doc.doc_type as DocType;
 
@@ -138,7 +139,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 Create invoice
               </ActionButton>
             )}
-            {type === "sales_order" && ["open", "completed"].includes(doc.status) && (
+            {type === "sales_order" && ["open", "completed", "invoiced"].includes(doc.status) && (
               <ActionButton action={raisePurchaseOrders.bind(null, id)}>Raise purchase orders</ActionButton>
             )}
             {type === "sales_order" && doc.status === "open" && (
