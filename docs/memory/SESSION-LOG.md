@@ -25,6 +25,13 @@ One short entry per session. Newest at the top.
 - The owner signed in and became admin. Added the Netlify environment variables.
 - Fixed the 404 on the Netlify preview by adding `@netlify/plugin-nextjs`.
 - The owner tested the preview. Claude merged PR #1 into `main`, and it's live at footprinthub.netlify.app.
+- Wave 0 finishing (PR #2):
+  - logo and icon (from the website, with permission)
+  - security headers
+  - Sentry (the owner made the account; Claude created the project; the owner pasted the DSN into Netlify)
+  - Admin → System test-error button
+  - backup runbook
+- The owner tested it and Claude merged it. **Wave 0 complete.**
 
 ## 29 September 2026 — Session 1: Kickoff
 - Created the memory files in `docs/memory/`.

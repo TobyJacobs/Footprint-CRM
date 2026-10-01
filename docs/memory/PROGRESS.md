@@ -3,7 +3,7 @@
 _Last updated: 1 October 2026_
 
 ## Current stage
-**Wave 0 — Foundations: merged into `main` and live on footprinthub.netlify.app (test database).** A few small Wave 0 items remain (see Next).
+**Wave 0 — Foundations: COMPLETE (1 October 2026)**, live on footprinthub.netlify.app (test database). The only deferred item is the backup restore test, which happens when the live London database is created. **Next: Wave 1 (Customers).**
 
 ## Done
 - Planning (Session 1):
@@ -54,15 +54,26 @@ _Last updated: 1 October 2026_
   - Netlify published it to **https://footprinthub.netlify.app**.
   - Checked afterwards: the Supabase data is intact (1 profile, 1 team, only migration `20260930120000` recorded).
 
+- **Wave 0 finishing**: PR [TobyJacobs/Footprint-CRM#2](https://github.com/TobyJacobs/Footprint-CRM/pull/2), merged as `a921069`, 1 October 2026:
+  - Logo from footprintgroup.uk in the sidebar and login page. Infinity tab icon (`src/app/icon.png`).
+  - Security headers in `next.config.ts`.
+  - **Sentry** error alerts:
+    - org `footprint-group`, EU region, project `footprint-platform`
+    - errors only, personal-data collection off
+    - DSN set in Netlify as `NEXT_PUBLIC_SENTRY_DSN`
+    - the owner tested it with Admin → System → "Send a test error" and it worked
+  - Friendly global error page.
+  - Backup runbook `docs/runbooks/BACKUPS.md`.
+
 ## Next
-1. Remaining Wave 0 items:
-   - backups restore test (needs a paid Supabase plan for point-in-time; plan this with the live London project)
-   - error monitoring
-   - logo files and favicon
-2. Then **Wave 1: Customers**, on a new branch.
+1. **Wave 1: Customers**, on a new branch. Start by agreeing the customer fields and the import approach for the ~15,000 Zoho records.
+2. Before any real customer data goes in:
+   - create the **live London Supabase project** (Pro plan, owner approval)
+   - point Netlify production at it
+   - run the first **backup restore test** (see the runbook)
 
 ## Waiting on the owner
-- Logo files (see `docs/BRAND.md`). The favicon is still the Next.js default.
+- Official logo files, ideally SVG (optional; the website logo is in use).
 
 ## Key IDs (not secret)
 - Netlify site: `footprinthub` → https://footprinthub.netlify.app
