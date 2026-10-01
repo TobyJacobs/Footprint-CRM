@@ -4,6 +4,12 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 1 October 2026 — Session 3 (continued): Wave 2a
+- Read Zoho Books settings (numbering, VAT, custom fields; no records) and wrote `docs/discovery/ZOHO-BOOKS.md`.
+- The owner chose: core flow first (2a/2b/2c), secure-link approval, and keep-and-tidy custom fields.
+- Built the products, quotes, orders, invoices, approval link, print layout and company settings, and tested the full flow end to end.
+- Found that Netlify "Team protection" also covered the live site. With the owner's approval it's now previews only. Merged PR #4, so Wave 2a is live for the demo.
+
 ## 1 October 2026 — Session 3: Wave 1 begins
 - Read Zoho CRM's module and field definitions through the owner's signed-in Chrome (no customer records) and wrote `docs/discovery/ZOHO-CRM.md`.
 - Found plain-text third-party passwords in Zoho Web Hosting Plans. Decision: these move to the password manager and are never migrated.

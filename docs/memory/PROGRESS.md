@@ -86,7 +86,8 @@ Still to do for Wave 1: the Zoho import tool (built against made-up Zoho-format 
     - staff runbook in `docs/runbooks/GDPR-REQUESTS.md`
     - tested on made-up data: export contents, contact erase (audit log no longer mentions the person), customer erase
 
-- **Wave 2a in progress** (branch `wave-2/quote-to-invoice`, 1 October 2026):
+- **Wave 2a LIVE for the demo**: PR [TobyJacobs/Footprint-CRM#4](https://github.com/TobyJacobs/Footprint-CRM/pull/4) merged as `3b85ccb` on 1 October 2026, using the test database with made-up data. Netlify visibility is now "previews only" (live public), so the approval link `/q/…` opens on live for signed-out customers (checked).
+- **Wave 2a details** (built on branch `wave-2/quote-to-invoice`):
   - Zoho Books discovery: `docs/discovery/ZOHO-BOOKS.md` (settings only; org `20091743642`, custom domain business.footprintsouth.co.uk).
   - Migration `20261002120000_sales.sql`, applied to test:
     - VAT rates, suppliers, products
