@@ -22,6 +22,9 @@ One short entry per session. Newest at the top.
   - filled in the Azure provider (the owner pasted the secret)
   - saved `.env.local`
 - Checked that the local sign-in button reaches Footprint's Microsoft login.
+- The owner signed in and became admin. Added the Netlify environment variables.
+- Fixed the 404 on the Netlify preview by adding `@netlify/plugin-nextjs`.
+- The owner tested the preview. Claude merged PR #1 into `main`, and it's live at footprinthub.netlify.app.
 
 ## 29 September 2026 — Session 1: Kickoff
 - Created the memory files in `docs/memory/`.

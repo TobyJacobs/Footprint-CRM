@@ -3,7 +3,7 @@
 _Last updated: 1 October 2026_
 
 ## Current stage
-**Wave 0 — Foundations, part 2 of 2: set up, about to be tested.** Working on branch `wave-0/foundations`.
+**Wave 0 — Foundations: merged into `main` and live on footprinthub.netlify.app (test database).** A few small Wave 0 items remain (see Next).
 
 ## Done
 - Planning (Session 1):
@@ -49,10 +49,17 @@ _Last updated: 1 October 2026_
   - Pull request [TobyJacobs/Footprint-CRM#1](https://github.com/TobyJacobs/Footprint-CRM/pull/1) is open. The first preview returned 404 because Netlify hadn't enabled its Next.js runtime (the site was created from an empty repo). Fixed by adding `@netlify/plugin-nextjs` to `netlify.toml` and devDependencies.
   - The preview at https://deploy-preview-1--footprinthub.netlify.app now shows the sign-in page. Netlify previews are also protected by a Netlify login.
 
+- **1 October 2026: merged and live.**
+  - The owner tested sign-in on the preview. Claude merged PR #1 into `main` (merge commit `1f3fa05`) at the owner's request.
+  - Netlify published it to **https://footprinthub.netlify.app**.
+  - Checked afterwards: the Supabase data is intact (1 profile, 1 team, only migration `20260930120000` recorded).
+
 ## Next
-1. The owner checks sign-in on the preview link, then merges PR #1 into `main`. That publishes to footprinthub.netlify.app; Supabase skips the already-applied migration.
-2. Remaining Wave 0 items: backups restore test, error monitoring, logo files.
-3. Then Wave 1 (Customers).
+1. Remaining Wave 0 items:
+   - backups restore test (needs a paid Supabase plan for point-in-time; plan this with the live London project)
+   - error monitoring
+   - logo files and favicon
+2. Then **Wave 1: Customers**, on a new branch.
 
 ## Waiting on the owner
 - Logo files (see `docs/BRAND.md`). The favicon is still the Next.js default.
