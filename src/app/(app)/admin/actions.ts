@@ -54,6 +54,14 @@ async function syncLinks(
   }
 }
 
+// ─── System ─────────────────────────────────────────────────────────────────
+
+// Deliberately fails so an admin can check that error alerts reach Sentry.
+export async function sendTestError() {
+  await requireAdmin();
+  throw new Error("Test error sent from Admin → System (this is expected)");
+}
+
 // ─── Users ──────────────────────────────────────────────────────────────────
 
 export async function saveUser(userId: string, formData: FormData) {
