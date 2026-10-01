@@ -63,6 +63,35 @@ export const creditReasons = [
   "Other",
 ];
 
+// Recurring invoices
+export const frequencies = [
+  { value: "monthly", label: "Monthly" },
+  { value: "quarterly", label: "Quarterly" },
+  { value: "six_monthly", label: "Every 6 months" },
+  { value: "annually", label: "Annually" },
+];
+export const frequencyLabel = (f: string) => frequencies.find((x) => x.value === f)?.label ?? f;
+export const recurringStatuses = [
+  { value: "active", label: "Active" },
+  { value: "paused", label: "Paused" },
+  { value: "ended", label: "Ended" },
+];
+
+// Maps the billing frequency words used on hosting plans to ours.
+export function frequencyFromHosting(billing: string | null | undefined) {
+  switch (billing) {
+    case "Quarterly":
+      return "quarterly";
+    case "6 Monthly":
+    case "Bi Annual":
+      return "six_monthly";
+    case "Annually":
+      return "annually";
+    default:
+      return "monthly";
+  }
+}
+
 // Purchase orders
 export const poStatuses = [
   { value: "draft", label: "Draft" },
