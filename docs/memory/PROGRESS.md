@@ -87,6 +87,21 @@ Still to do for Wave 1: the Zoho import tool (built against made-up Zoho-format 
     - tested on made-up data: export contents, contact erase (audit log no longer mentions the person), customer erase
 
 - **Wave 2a LIVE for the demo**: PR [TobyJacobs/Footprint-CRM#4](https://github.com/TobyJacobs/Footprint-CRM/pull/4) merged as `3b85ccb` on 1 October 2026, using the test database with made-up data. Netlify visibility is now "previews only" (live public), so the approval link `/q/…` opens on live for signed-out customers (checked).
+- **Wave 2c in progress** (branch `wave-2c/recurring-billing`, 1 October 2026):
+  - **Step 1 done: recurring invoices.** Migration `20261003120000_recurring_invoices.sql`, applied to test:
+    - templates plus lines
+    - `sales_documents.recurring_invoice_id`
+    - internal numbering helper
+    - `_generate_recurring_invoice`, `generate_due_recurring_invoices` (catches up missed periods, max 24)
+    - staff `generate_recurring_invoice_now`, admin `run_recurring_billing_now`
+    - **pg_cron job "generate-recurring-invoices" daily at 06:00 UTC**
+  - UI:
+    - Recurring tab (with the monthly value of active billing)
+    - new / edit (reuses the document editor)
+    - view: create now, pause, resume, end, and the invoices created
+    - "Set up recurring billing" on hosting plans and retainers (pre-fills customer, price and frequency)
+  - Tested: from Downs Garage's hosting plan, next date 1 September → "Run billing now" created INV-074892 (Sept) and INV-074893 (Oct) as drafts (£42, due +30 days), and the next date moved to 1 November.
+  - Next: step 2, emailing via Postmark (test mode first).
 - **Wave 2b LIVE for the demo**: PR [TobyJacobs/Footprint-CRM#5](https://github.com/TobyJacobs/Footprint-CRM/pull/5) merged as `1ae79cf` on 1 October 2026 (test data only).
 - **Wave 2b details** (branch `wave-2b/purchase-orders-credit-notes`):
   - Migration `20261002130000_purchase_orders_credit_notes.sql`, applied to test:
