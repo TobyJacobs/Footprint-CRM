@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -7,13 +8,16 @@ import { LogOut, Menu, X } from "lucide-react";
 import { features, home, type Feature } from "@/lib/features";
 
 function Wordmark() {
-  // Text wordmark until the official logo files arrive (see docs/BRAND.md).
+  // Logo taken from footprintgroup.uk until the official files arrive (see docs/BRAND.md).
   return (
-    <Link href="/" className="block leading-none text-white">
-      <span className="block text-lg font-black tracking-tight">FOOTPRINT</span>
-      <span className="block text-[10px] font-semibold tracking-[0.3em] text-white/60">
-        PLATFORM
-      </span>
+    <Link href="/" className="block">
+      <Image
+        src="/brand/footprint-logo-white.png"
+        alt="Footprint Group"
+        width={150}
+        height={44}
+        priority
+      />
     </Link>
   );
 }

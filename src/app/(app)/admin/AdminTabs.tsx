@@ -8,6 +8,7 @@ const tabs = [
   { href: "/admin/teams", label: "Teams" },
   { href: "/admin/roles", label: "Roles & permissions" },
   { href: "/admin/audit", label: "Audit log" },
+  { href: "/admin/system", label: "System" },
 ];
 
 export default function AdminTabs() {

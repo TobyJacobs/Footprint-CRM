@@ -81,6 +81,18 @@ This replaces Claude's draft proposal of Design Workload as Wave 1.
 
 **Why:** It keeps the business's data, billing and access separate from the owner's other projects, and makes it easy to hand over or add colleagues.
 
+## 1 October 2026 — Sentry (EU region) for error alerts
+**Decision:**
+- Use Sentry's free plan in its **EU (Frankfurt) data region** to alert us when something breaks.
+- Errors only: no performance tracing and no session replay.
+- All personal-data collection is switched off (user info, cookies, headers, bodies, query strings, variable values).
+- It's switched on by setting `NEXT_PUBLIC_SENTRY_DSN` in Netlify. Source-map upload is off, so no secret Sentry token is needed.
+
+**Why:** It's the industry standard, free at our size, sends email alerts, and keeps EU data residency. The owner chose it over an in-house error log (no alerts until email arrives in Wave 2) and over relying on Netlify logs.
+
+## 1 October 2026 — Logo taken from the website until official files arrive
+**Decision:** With the owner's permission, the white logo from footprintgroup.uk is used in the sidebar and login page, and its infinity mark as the tab icon. See `docs/BRAND.md`.
+
 ## 1 October 2026 — Supabase auto-deploys database changes from GitHub
 **Decision:** The Supabase GitHub integration's "Deploy to production" is switched on for branch `main`. Migrations in `supabase/migrations/` apply to the Supabase project automatically when merged into `main`. The first migration was applied by hand beforehand and recorded as applied.
 

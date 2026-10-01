@@ -44,5 +44,9 @@ _Taken from footprintgroup.uk on 29 September 2026. The owner will supply the of
   - _(to confirm: a distinct red for errors, so errors aren't confused with the brand pink)_
 - **Accessibility:** text colours will be checked for contrast so everything is easy to read.
 
+## Logo files in use
+- `public/brand/footprint-logo-white.png`: the white "Footprint Group" logo with the gradient infinity "oo". It was downloaded from footprintgroup.uk with the owner's permission on 1 October 2026 and resized to 1200×352. It's for **dark backgrounds only** and is used in the sidebar and on the login page.
+- `src/app/icon.png`: the browser tab icon. It's the gradient infinity mark on a black rounded square, made from the same file.
+
 ## Still needed from the owner
-- Logo files (ideally SVG, plus PNG): full-colour, white, and a small square icon for browser tabs.
+- Official logo files (ideally SVG): full-colour for light backgrounds, white for dark backgrounds, and the mark on its own. They'll replace the files above.
