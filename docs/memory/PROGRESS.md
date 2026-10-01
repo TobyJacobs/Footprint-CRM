@@ -66,7 +66,9 @@ _Last updated: 1 October 2026_
   - Backup runbook `docs/runbooks/BACKUPS.md`.
 
 ## Next
-1. **Wave 1: Customers**, on a new branch. Start by agreeing the customer fields and the import approach for the ~15,000 Zoho records.
+1. **Wave 1: Customers**, on a new branch. Start by agreeing the customer fields and the import approach for the ~15,000 Zoho records. **Ask the owner for:**
+   - the column headings of a Zoho CRM/Books customer and contact export, plus a few made-up example rows (no real customer data in chat)
+   - how subscriptions and web hosting plans are recorded today
 2. Before any real customer data goes in:
    - create the **live London Supabase project** (Pro plan, owner approval)
    - point Netlify production at it
