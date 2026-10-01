@@ -54,6 +54,52 @@ async function syncLinks(
   }
 }
 
+// ─── Company details & numbering ────────────────────────────────────────────
+
+export async function saveCompanySettings(formData: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const n = (name: string, fallback: number) => {
+    const v = Number(text(formData, name));
+    return Number.isFinite(v) && v > 0 ? Math.round(v) : fallback;
+  };
+  const fields = {
+    company_name: text(formData, "company_name") || "Footprint Group",
+    legal_name: text(formData, "legal_name") || null,
+    address: text(formData, "address") || null,
+    phone: text(formData, "phone") || null,
+    email: text(formData, "email") || null,
+    website: text(formData, "website") || null,
+    vat_number: text(formData, "vat_number") || null,
+    company_number: text(formData, "company_number") || null,
+    bank_details: text(formData, "bank_details") || null,
+    quote_terms: text(formData, "quote_terms") || null,
+    order_terms: text(formData, "order_terms") || null,
+    invoice_notes: text(formData, "invoice_notes") || null,
+    invoice_terms: text(formData, "invoice_terms") || null,
+    quote_valid_days: n("quote_valid_days", 30),
+    invoice_due_days: n("invoice_due_days", 30),
+  };
+  const { error } = await supabase.from("company_settings").update(fields).eq("id", true);
+  if (error) fail("/admin/company", error.message);
+
+  // Next document numbers (only ever moved forwards, to avoid duplicates).
+  const { data: seqs } = await supabase.from("number_sequences").select("doc_type, next_number");
+  for (const s of seqs ?? []) {
+    const wanted = Number(text(formData, `next_${s.doc_type}`));
+    if (Number.isFinite(wanted) && wanted > Number(s.next_number)) {
+      const { error: seqError } = await supabase
+        .from("number_sequences")
+        .update({ next_number: Math.round(wanted) })
+        .eq("doc_type", s.doc_type);
+      if (seqError) fail("/admin/company", seqError.message);
+    }
+  }
+
+  revalidatePath("/admin/company");
+  redirect("/admin/company?saved=1");
+}
+
 // ─── System ─────────────────────────────────────────────────────────────────
 
 // Deliberately fails so an admin can check that error alerts reach Sentry.

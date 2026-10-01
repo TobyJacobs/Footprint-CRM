@@ -48,7 +48,7 @@ export const features: Feature[] = [
   {
     key: "quotes",
     label: "Quotes & Invoices",
-    href: "/quotes",
+    href: "/sales",
     icon: FileText,
     description:
       "Quotes approved online, sales orders, purchase orders, invoices, subscription billing and payments, sent to Xero.",

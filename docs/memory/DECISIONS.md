@@ -91,6 +91,21 @@ This replaces Claude's draft proposal of Design Workload as Wave 1.
 
 **Why:** These are the owner's choices (29 September and 1 October 2026). See `docs/discovery/ZOHO-CRM.md`.
 
+## 1 October 2026 — Wave 2 approach
+**Decision:**
+- **Build order:**
+  - **2a:** products, quotes (with gross profit and online approval), sales orders, invoices, printable documents
+  - **2b:** purchase orders and credit notes
+  - **2c:** emailing (Postmark), payments (Stripe, GoCardless), Xero sync, subscription billing (these need test accounts)
+- **Quote approval** uses a private secure link. The customer types their name (and optional PO number) and clicks Accept or Decline. We record who, when and their IP address. No login needed.
+- **Custom fields kept and tidied:**
+  - kept: Probability, Business Unit, Expected Order/Invoice Date, Delivery Type, Reason for Loss, Labour Cost, GP, Deadline, Copy Shop flags, Collected, and the sales order production steps
+  - Zoho's multi-select "Quote Stage" is replaced by clear statuses: Draft → Sent → Accepted / Declined → Converted
+- Numbering continues Zoho's series (QT-, SO-, INV-, PO-, CN-) from the next numbers at cut-over.
+- Every line has a cost as well as a price, so gross profit is shown.
+
+**Why:** The owner's choices. See `docs/discovery/ZOHO-BOOKS.md`.
+
 ## 1 October 2026 — Live database and real data on hold until the final wave
 **Decision:**
 - The live London Supabase project (Pro plan, about £20 a month) is **on hold** until the owner has shown the project to their director, and won't be created before the last wave.

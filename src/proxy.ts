@@ -6,8 +6,9 @@ import {
   supabaseUrl,
 } from "@/lib/supabase/config";
 
-// Pages anyone can reach without signing in.
-const PUBLIC_PATHS = ["/login", "/auth/"];
+// Pages anyone can reach without signing in. "/q/" is the private quote
+// approval link sent to customers (it only works with the secret token).
+const PUBLIC_PATHS = ["/login", "/auth/", "/q/"];
 
 // Runs before every page request: keeps the login session fresh and sends
 // signed-out visitors to the login page. The real permission checks happen
