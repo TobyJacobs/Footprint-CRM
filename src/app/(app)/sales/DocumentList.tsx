@@ -25,7 +25,7 @@ export default async function DocumentList({
   const supabase = await createClient();
   let query = supabase
     .from("sales_documents")
-    .select("id, number, status, title, issue_date, valid_until, due_date, total, subtotal, cost_total, customers(name)", {
+    .select("id, number, status, title, issue_date, valid_until, due_date, total, subtotal, cost_total, customers!sales_documents_customer_id_fkey(name)", {
       count: "exact",
     })
     .eq("doc_type", docType)
@@ -84,7 +84,10 @@ export default async function DocumentList({
             </Link>
           )}
         </form>
-        {user.can("quotes", "edit") && (
+        {docType === "credit_note" && (
+          <p className="text-sm text-fp-dark/75">To raise a credit note, open the invoice and choose “Raise credit note”.</p>
+        )}
+        {user.can("quotes", "edit") && docType !== "credit_note" && (
           <Link href={`/sales/new?type=${docType}`} className={`${primaryButton} inline-flex items-center gap-2`}>
             <Plus size={16} aria-hidden /> New {label.toLowerCase()}
           </Link>

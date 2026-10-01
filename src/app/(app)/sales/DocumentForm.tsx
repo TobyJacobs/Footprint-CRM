@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Card, Checkbox, Field, Select, TextArea, TextInput, primaryButton, secondaryButton } from "@/components/ui";
 import {
-  businessUnits, deliveryTypes, docTypes, expectedDates, lossReasons, probabilities, productionSteps,
+  businessUnits, creditReasons, deliveryTypes, docTypes, expectedDates, lossReasons, probabilities, productionSteps,
   type DocType,
 } from "@/lib/sales/options";
 import DocumentEditor, { type EditorLine } from "./DocumentEditor";
@@ -108,14 +108,20 @@ export default function DocumentForm({
               </Field>
             </>
           )}
-          {docType !== "invoice" && (
+          {(docType === "quote" || docType === "sales_order") && (
             <Field label="Delivery">
               <Select name="delivery_type" options={deliveryTypes} defaultValue={v("delivery_type") as string} />
             </Field>
           )}
-          <Field label="Labour cost (£)">
-            <TextInput name="labour_cost" type="number" step="0.01" defaultValue={v("labour_cost")} />
-          </Field>
+          {docType === "credit_note" ? (
+            <Field label="Reason for credit">
+              <Select name="credit_reason" options={creditReasons} defaultValue={v("credit_reason") as string} />
+            </Field>
+          ) : (
+            <Field label="Labour cost (£)">
+              <TextInput name="labour_cost" type="number" step="0.01" defaultValue={v("labour_cost")} />
+            </Field>
+          )}
           {docType === "sales_order" && (
             <div className="grid gap-2 sm:col-span-2 lg:col-span-4">
               <Checkbox name="copy_shop_job" label="Copy shop job" defaultChecked={doc?.copy_shop_job as boolean} />

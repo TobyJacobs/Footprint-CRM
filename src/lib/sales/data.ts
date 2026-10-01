@@ -56,6 +56,33 @@ export async function getCustomerWithContacts(customerId: string) {
   return { customer, contacts: contacts ?? [] };
 }
 
+export async function getSuppliers(activeOnly = true) {
+  const supabase = await createClient();
+  let q = supabase.from("suppliers").select("id, name").order("name");
+  if (activeOnly) q = q.eq("active", true);
+  const { data } = await q;
+  return (data ?? []) as { id: string; name: string }[];
+}
+
+export async function getPurchaseOrderLines(poId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("purchase_order_lines")
+    .select("*")
+    .eq("purchase_order_id", poId)
+    .order("position");
+  return (data ?? []).map((l) => ({
+    key: l.id as string,
+    product_id: l.product_id as string | null,
+    description: l.description as string,
+    quantity: Number(l.quantity),
+    unit_cost: Number(l.unit_cost),
+    tax_rate_id: l.tax_rate_id as string | null,
+    tax_rate: Number(l.tax_rate),
+    line_net: Number(l.line_net),
+  }));
+}
+
 export function addDays(days: number, from = new Date()) {
   const d = new Date(from);
   d.setDate(d.getDate() + days);

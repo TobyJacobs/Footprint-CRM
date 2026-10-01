@@ -24,6 +24,8 @@ const tableLabels: Record<string, string> = {
   tax_rates: "VAT rates",
   company_settings: "Company details",
   number_sequences: "Numbering",
+  purchase_orders: "Purchase orders",
+  purchase_order_lines: "Purchase order lines",
 };
 
 const actionLabels: Record<string, string> = {

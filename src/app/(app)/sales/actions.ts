@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { bool, int, num, str } from "@/lib/forms";
-import { defaultStatus, docTypes, isDocType, statuses, type DocType } from "@/lib/sales/options";
+import { defaultStatus, docTypes, isDocType, isLockedRecord, statuses, type DocType } from "@/lib/sales/options";
+
+const isFinalised = (status: string) => ["accepted", "converted", "paid", "void", "invoiced"].includes(status);
 import { createClient } from "@/lib/supabase/server";
 
 // Every action checks the "quotes" permission and runs as the signed-in
@@ -66,6 +68,7 @@ function headerFields(fd: FormData, docType: DocType) {
     consumer_copy_shop: docType === "sales_order" ? bool(fd, "consumer_copy_shop") : false,
     copy_shop_minutes: docType === "sales_order" ? int(fd, "copy_shop_minutes") : null,
     collected: docType === "invoice" ? bool(fd, "collected") : false,
+    credit_reason: docType === "credit_note" ? str(fd, "credit_reason") : null,
     notes: str(fd, "notes"),
     terms: str(fd, "terms"),
     internal_notes: str(fd, "internal_notes"),
@@ -118,7 +121,7 @@ export async function saveDocument(docType: DocType, documentId: string | null, 
   let id = documentId;
   if (documentId) {
     const { data: existing } = await supabase.from("sales_documents").select("status").eq("id", documentId).single();
-    if (existing && ["accepted", "converted", "paid", "void", "invoiced"].includes(existing.status)) {
+    if (existing && (isFinalised(existing.status) || isLockedRecord(docType, existing.status))) {
       fail(back, "This document is finalised and can no longer be changed");
     }
     const { error } = await supabase.from("sales_documents").update(fields).eq("id", documentId);
@@ -171,6 +174,9 @@ export async function convertDocument(documentId: string, to: DocType) {
 
   const { data: src } = await supabase.from("sales_documents").select("*").eq("id", documentId).single();
   if (!src) fail(back, "Document not found");
+  if (to === "credit_note" && !(src.doc_type === "invoice" && ["issued", "paid"].includes(src.status))) {
+    fail(back, "Credit notes can only be raised against an issued or paid invoice");
+  }
   const { data: srcLines } = await supabase
     .from("sales_document_lines")
     .select("product_id, description, quantity, unit_price, unit_cost, discount_percent, tax_rate_id, tax_rate, position")
@@ -199,17 +205,29 @@ export async function convertDocument(documentId: string, to: DocType) {
       contact_id: src.contact_id,
       owner_id: src.owner_id,
       source_document_id: src.id,
-      title: src.title,
+      title: to === "credit_note" ? `Credit for invoice ${src.number}` : src.title,
       customer_reference: src.response_po ?? src.customer_reference,
       issue_date: today.toISOString().slice(0, 10),
       due_date: to === "invoice" ? due.toISOString().slice(0, 10) : null,
       business_unit: src.business_unit,
-      delivery_type: to === "invoice" ? null : src.delivery_type,
-      labour_cost: src.labour_cost,
+      delivery_type: to === "invoice" || to === "credit_note" ? null : src.delivery_type,
+      labour_cost: to === "credit_note" ? null : src.labour_cost,
       production_step: to === "sales_order" ? "New Sales Order" : null,
       deadline_date: to === "sales_order" ? src.deadline_date : null,
-      notes: to === "invoice" ? (settings?.invoice_notes ?? src.notes) : src.notes,
-      terms: to === "invoice" ? (settings?.invoice_terms ?? src.terms) : to === "sales_order" ? (settings?.order_terms ?? src.terms) : src.terms,
+      notes:
+        to === "credit_note"
+          ? `This credit note relates to invoice ${src.number}.`
+          : to === "invoice"
+            ? (settings?.invoice_notes ?? src.notes)
+            : src.notes,
+      terms:
+        to === "credit_note"
+          ? null
+          : to === "invoice"
+            ? (settings?.invoice_terms ?? src.terms)
+            : to === "sales_order"
+              ? (settings?.order_terms ?? src.terms)
+              : src.terms,
       internal_notes: src.internal_notes,
     })
     .select("id")
@@ -236,8 +254,8 @@ export async function deleteDocument(documentId: string) {
   const supabase = await createClient();
   const { data: doc } = await supabase.from("sales_documents").select("doc_type, status").eq("id", documentId).single();
   if (!doc) fail("/sales", "Document not found");
-  if (doc.doc_type === "invoice" && doc.status !== "draft") {
-    fail(`/sales/${documentId}`, "Issued invoices can't be deleted — mark them as void instead (they must be kept for HMRC)");
+  if (isLockedRecord(doc.doc_type as DocType, doc.status)) {
+    fail(`/sales/${documentId}`, "Issued invoices and credit notes can't be deleted — void them instead (they must be kept for HMRC)");
   }
   const { error } = await supabase.from("sales_documents").delete().eq("id", documentId);
   if (error) fail(`/sales/${documentId}`, error.message);

@@ -17,7 +17,7 @@ export default async function PrintDocumentPage(props: PageProps<"/sales/[id]/pr
   const supabase = await createClient();
   const { data: doc } = await supabase
     .from("sales_documents")
-    .select("*, customers(*), contacts(first_name, last_name)")
+    .select("*, customers!sales_documents_customer_id_fkey(*), contacts(first_name, last_name)")
     .eq("id", id)
     .maybeSingle();
   if (!doc || !isDocType(doc.doc_type)) notFound();
@@ -51,6 +51,7 @@ export default async function PrintDocumentPage(props: PageProps<"/sales/[id]/pr
           notes: doc.notes,
           terms: doc.terms,
           bank_details: doc.doc_type === "invoice" ? company?.bank_details : null,
+          reason: doc.doc_type === "credit_note" ? doc.credit_reason : null,
           company,
         }}
       />

@@ -9,9 +9,12 @@ import { Badge, Card, Notice, dangerButton, primaryButton, secondaryButton } fro
 import { requirePermission } from "@/lib/auth";
 import { gbp, longDate, personName, shortDateTime } from "@/lib/customers/display";
 import { getDocumentLines } from "@/lib/sales/data";
-import { docTypes, isDocType, marginPercent, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
+import {
+  docTypes, isDocType, isLockedRecord, marginPercent, poStatusLabel, statusLabel, statusToneFor, type DocType,
+} from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 import { convertDocument, deleteDocument, setDocumentStatus } from "../actions";
+import { raisePurchaseOrders } from "../purchase-orders/actions";
 
 export async function generateMetadata(props: PageProps<"/sales/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -37,26 +40,35 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
   const sp = await props.searchParams;
   const supabase = await createClient();
 
-  const { data: doc } = await supabase
+  const { data: doc, error: loadError } = await supabase
     .from("sales_documents")
-    .select("*, customers(id, name, credit_status), contacts(first_name, last_name, email), owner:owner_id(full_name, email)")
+    .select("*, customers!sales_documents_customer_id_fkey(id, name, credit_status), contacts(first_name, last_name, email), owner:owner_id(full_name, email)")
     .eq("id", id)
     .maybeSingle();
+  if (loadError) throw new Error(`Couldn't load document: ${loadError.message}`);
   if (!doc || !isDocType(doc.doc_type)) notFound();
   const type = doc.doc_type as DocType;
 
-  const [lines, { data: source }, { data: children }] = await Promise.all([
+  const [lines, { data: source }, { data: children }, { data: pos }] = await Promise.all([
     getDocumentLines(id),
     doc.source_document_id
       ? supabase.from("sales_documents").select("id, number, doc_type").eq("id", doc.source_document_id).maybeSingle()
       : Promise.resolve({ data: null }),
-    supabase.from("sales_documents").select("id, number, doc_type, status").eq("source_document_id", id),
+    supabase.from("sales_documents").select("id, number, doc_type, status, total").eq("source_document_id", id),
+    type === "sales_order"
+      ? supabase.from("purchase_orders").select("id, number, status, total, suppliers(name)").eq("sales_document_id", id)
+      : Promise.resolve({ data: [] }),
   ]);
 
   const customer = doc.customers as unknown as { id: string; name: string; credit_status: string | null };
   const contact = doc.contacts as unknown as { first_name: string | null; last_name: string; email: string | null } | null;
   const owner = doc.owner as unknown as { full_name: string | null; email: string } | null;
-  const finalised = ["accepted", "converted", "paid", "void", "invoiced"].includes(doc.status);
+  const finalised = ["accepted", "converted", "paid", "void", "invoiced"].includes(doc.status) || isLockedRecord(type, doc.status);
+
+  // For invoices: credit notes raised against it reduce what's owed.
+  const credits = (children ?? []).filter((c) => c.doc_type === "credit_note" && c.status === "issued");
+  const credited = credits.reduce((sum, c) => sum + Number(c.total), 0);
+  const balance = Number(doc.total) - credited;
   const gp = Number(doc.subtotal) - Number(doc.cost_total);
   const margin = marginPercent(Number(doc.subtotal), Number(doc.cost_total));
 
@@ -127,11 +139,29 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 Create invoice
               </ActionButton>
             )}
+            {type === "sales_order" && ["open", "completed", "invoiced"].includes(doc.status) && (
+              <ActionButton action={raisePurchaseOrders.bind(null, id)}>Raise purchase orders</ActionButton>
+            )}
             {type === "sales_order" && doc.status === "open" && (
               <>
                 <ActionButton action={setDocumentStatus.bind(null, id, "completed")}>Mark completed</ActionButton>
                 <ActionButton action={setDocumentStatus.bind(null, id, "cancelled")}>Cancel order</ActionButton>
               </>
+            )}
+            {type === "invoice" && ["issued", "paid"].includes(doc.status) && (
+              <ActionButton action={convertDocument.bind(null, id, "credit_note")}>Raise credit note</ActionButton>
+            )}
+            {type === "credit_note" && doc.status === "draft" && (
+              <ActionButton action={setDocumentStatus.bind(null, id, "issued")} tone="primary">
+                Issue credit note
+              </ActionButton>
+            )}
+            {type === "credit_note" && doc.status === "issued" && (
+              <form action={setDocumentStatus.bind(null, id, "void")}>
+                <ConfirmSubmit className={secondaryButton} message={`Void credit note ${doc.number}?`}>
+                  Void credit note
+                </ConfirmSubmit>
+              </form>
             )}
             {type === "invoice" && doc.status === "draft" && (
               <ActionButton action={setDocumentStatus.bind(null, id, "issued")} tone="primary">
@@ -150,7 +180,9 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 </form>
               </>
             )}
-            {finalised && <p className="text-sm text-fp-dark/75">This document is finalised.</p>}
+            {["paid", "void", "converted", "invoiced"].includes(doc.status) && (
+              <p className="text-sm text-fp-dark/75">This document is finalised and can no longer be changed.</p>
+            )}
           </div>
 
           {type === "quote" && doc.status !== "draft" && (
@@ -217,6 +249,14 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
             <dd className="text-right">{gbp(Number(doc.vat_total))}</dd>
             <dt className="font-bold">Total</dt>
             <dd className="text-right font-bold">{gbp(Number(doc.total))}</dd>
+            {type === "invoice" && credited > 0 && (
+              <>
+                <dt className="text-fp-dark/75">Credited</dt>
+                <dd className="text-right">−{gbp(credited)}</dd>
+                <dt className="font-bold">Balance</dt>
+                <dd className="text-right font-bold">{gbp(balance)}</dd>
+              </>
+            )}
           </dl>
         </Card>
 
@@ -253,6 +293,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 ["Expected", doc.expected_date],
                 ["Delivery", doc.delivery_type],
                 ["Reason for loss", doc.reason_for_loss],
+                ["Reason for credit", doc.credit_reason],
                 ["Copy shop job", doc.copy_shop_job ? (doc.consumer_copy_shop ? "Yes (consumer)" : "Yes") : null],
                 ["Collected", type === "invoice" ? (doc.collected ? "Yes" : "No") : null],
                 ["Sent", shortDateTime(doc.sent_at)],
@@ -266,6 +307,22 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 ))}
             </dl>
           </Card>
+
+          {(pos ?? []).length > 0 && (
+            <Card title="Purchase orders">
+              <ul className="grid gap-1 text-sm">
+                {(pos ?? []).map((p) => (
+                  <li key={p.id} className="flex items-center justify-between gap-2">
+                    <Link href={`/sales/purchase-orders/${p.id}`} className="font-semibold text-fp-teal-deep hover:underline">
+                      {p.number}
+                    </Link>
+                    <span className="text-fp-dark/75">{(p.suppliers as unknown as { name: string } | null)?.name}</span>
+                    <Badge tone={statusToneFor(p.status)}>{poStatusLabel(p.status)}</Badge>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
 
           {(source || (children ?? []).length > 0) && (
             <Card title="Linked documents">
@@ -298,7 +355,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         </div>
       </div>
 
-      {user.can("quotes", "delete") && !(type === "invoice" && doc.status !== "draft") && (
+      {user.can("quotes", "delete") && !isLockedRecord(type, doc.status) && (
         <form action={deleteDocument.bind(null, id)} className="mt-10 border-t border-fp-border pt-6">
           <ConfirmSubmit className={dangerButton} message={`Delete ${docTypes[type].label.toLowerCase()} ${doc.number}? This can't be undone.`}>
             Delete {docTypes[type].label.toLowerCase()}
