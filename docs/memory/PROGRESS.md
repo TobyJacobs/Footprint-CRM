@@ -101,7 +101,19 @@ Still to do for Wave 1: the Zoho import tool (built against made-up Zoho-format 
     - view: create now, pause, resume, end, and the invoices created
     - "Set up recurring billing" on hosting plans and retainers (pre-fills customer, price and frequency)
   - Tested: from Downs Garage's hosting plan, next date 1 September → "Run billing now" created INV-074892 (Sept) and INV-074893 (Oct) as drafts (£42, due +30 days), and the next date moved to 1 November.
-  - Next: step 2, emailing via Postmark (test mode first).
+  - **Step 2 done: emailing via Postmark (test mode).** Migration `20261003130000_email.sql`, applied to test:
+    - `email_log` (every email sent, audited, RLS on "quotes")
+    - `get_public_document` (read-only private link for non-draft invoices, credit notes and orders)
+  - UI:
+    - "Email to customer" card on documents: To, CC, subject and message are pre-filled, plus email history
+    - sending a draft quote marks it sent; a draft invoice or credit note becomes issued
+    - "Customer view link" `/d/…` opens without login
+    - every email is also logged on the customer timeline
+  - Tested on 1 October 2026: emailed INV-074893 in Postmark test mode. It became Issued, the log showed "Test", the `/d/` link opened signed out, and a made-up link showed "Document not found".
+  - To send real email later, the owner needs to:
+    - sign up to Postmark and add its DNS records for footprintgroup.uk
+    - put `POSTMARK_SERVER_TOKEN` (secret) and `EMAIL_FROM` in Netlify
+  - Next: steps 3 and 4 (card payments and Direct Debit; waiting on the provider choice), then step 5 (Xero sync).
 - **Wave 2b LIVE for the demo**: PR [TobyJacobs/Footprint-CRM#5](https://github.com/TobyJacobs/Footprint-CRM/pull/5) merged as `1ae79cf` on 1 October 2026 (test data only).
 - **Wave 2b details** (branch `wave-2b/purchase-orders-credit-notes`):
   - Migration `20261002130000_purchase_orders_credit_notes.sql`, applied to test:
