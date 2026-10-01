@@ -10,6 +10,13 @@ const tableLabels: Record<string, string> = {
   roles: "Roles",
   role_permissions: "Role permissions",
   user_roles: "User roles",
+  customers: "Customers",
+  contacts: "Contacts",
+  hosting_plans: "Hosting plans",
+  hosting_items: "Hosting lines",
+  retainers: "Retainers",
+  retainer_services: "Retainer services",
+  customer_activity: "Timeline",
 };
 
 const actionLabels: Record<string, string> = {
