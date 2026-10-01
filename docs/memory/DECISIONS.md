@@ -192,3 +192,12 @@ This refines the "Supabase, London region" part of the technical foundations dec
 ## 29 September 2026 — Order of replacement
 **Decision:** Replace Zoho first, then monday.com, then Mag Manager, then GoHighLevel (internal use) last.
 **Why:** The owner's priority. The main driver is a bespoke, branded in-house platform, not a failing tool.
+
+## 1 October 2026 — GoCardless for customer payments; no card payments
+**Decision:**
+- Customers pay through **GoCardless** only.
+- Recurring invoices are collected by Direct Debit: the customer signs a mandate once, then each invoice is collected automatically.
+- One-off invoices can be paid through GoCardless from the invoice link.
+- No card payment provider (Stripe) for now.
+
+**Why:** The owner's choice. GoCardless is the UK standard for Direct Debit and works with Xero. It is built in GoCardless's sandbox first, and the real account is set up at go-live.
