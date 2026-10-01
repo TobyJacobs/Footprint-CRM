@@ -4,6 +4,13 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 1 October 2026 — Session 3: Wave 1 begins
+- Read Zoho CRM's module and field definitions through the owner's signed-in Chrome (no customer records) and wrote `docs/discovery/ZOHO-CRM.md`.
+- Found plain-text third-party passwords in Zoho Web Hosting Plans. Decision: these move to the password manager and are never migrated.
+- The owner chose core + Footprint fields, with hosting plans and retainers in Wave 1 and Zoho Billing in Wave 2.
+- Built the Customers section, its database tables and the made-up test data, and tested it end to end in the browser. Fixed a line-saving bug.
+- Microsoft sign-in now also brings people's names through.
+
 ## 30 September 2026 — Session 2: Wave 0 begins
 - Merged the planning work into `main`. Created branch `wave-0/foundations`.
 - Confirmed the Supabase organisation. Its auto-created project (Frankfurt) becomes the test database; live will be in London (see DECISIONS).
