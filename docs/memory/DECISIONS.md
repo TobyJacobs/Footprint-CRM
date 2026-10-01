@@ -91,6 +91,16 @@ This replaces Claude's draft proposal of Design Workload as Wave 1.
 
 **Why:** These are the owner's choices (29 September and 1 October 2026). See `docs/discovery/ZOHO-CRM.md`.
 
+## 1 October 2026 — Live database and real data on hold until the final wave
+**Decision:**
+- The live London Supabase project (Pro plan, about £20 a month) is **on hold** until the owner has shown the project to their director, and won't be created before the last wave.
+- Until then, everything is built and demonstrated on the **test** database with **made-up data only**.
+- The Zoho import tool is still built and tested, but against **made-up files in Zoho's export format**. The real import, the nightly Zoho copy, and switching off old tools all happen at the end.
+
+**Why:** The owner wants director sign-off before spending money or moving real customer data.
+
+**Consequence:** No old tool (Zoho, monday.com, Mag Manager) is switched off until the live database exists and real data has moved. The roadmap's "switch off" steps move to a final cut-over stage.
+
 ## 1 October 2026 — How GDPR requests work in the platform
 **Decision:**
 - Exporting and erasing personal data are **admin-only**.

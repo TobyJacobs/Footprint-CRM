@@ -88,7 +88,7 @@ _Last updated: 1 October 2026_
 1. **Finish Wave 1:**
    - the **Zoho import tool**: map the Zoho export to our tables; never import third-party passwords; skip legacy fields
    - the one-way nightly Zoho → platform copy (needs a Zoho API connection; its secret is set by the owner)
-2. **Before real data:** create the live London Supabase project (Pro, owner approval), apply the migrations, point Netlify production at it, and run the first restore test.
+2. **ON HOLD (owner, 1 October 2026):** the live London database, the real Zoho import, the nightly sync and switching off old tools. These wait until the owner has shown the project to their director, and until the final wave. Keep building on the test database with made-up data only.
 3. Open a pull request for `wave-1/customers` so the owner can check it on the preview.
 2. Before any real customer data goes in:
    - create the **live London Supabase project** (Pro plan, owner approval)

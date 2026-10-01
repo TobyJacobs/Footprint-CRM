@@ -29,6 +29,9 @@ These are rough guides for building steadily with Claude. They depend on how muc
 | 7 | Reporting and Intranet | Custom HTML sites | M |
 | 8 | Marketing (internal use) | GoHighLevel (Footprint's own use only) | L |
 | Later | Distributor management | Round Control (possibly) | TBC |
+| **Final** | **Go-live cut-over**: create the live London database, rehearse and run the real data imports (Zoho, monday.com, Mag Manager…), test a backup restore, train staff, switch off old tools | All of the above | M–L |
+
+> **Update 1 October 2026:** the live database and all real data are **on hold until the final wave**, after the owner has shown the project to their director. Until then, every wave is built and demonstrated on the test database with **made-up data**, and **no old tool is switched off**. Each wave's "switch off" step now happens in the **Final** cut-over. See `DECISIONS.md`.
 
 ---
 
