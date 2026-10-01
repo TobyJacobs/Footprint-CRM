@@ -4,3 +4,9 @@
 
 [build.environment]
   NODE_VERSION = "24"
+
+# Turns the Next.js build into a working Netlify site (server pages, login
+# checks, etc.). Netlify didn't detect Next.js automatically because the site
+# was created while the repository was still empty.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
