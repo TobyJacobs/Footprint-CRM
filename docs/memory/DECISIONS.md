@@ -91,6 +91,16 @@ This replaces Claude's draft proposal of Design Workload as Wave 1.
 
 **Why:** These are the owner's choices (29 September and 1 October 2026). See `docs/discovery/ZOHO-CRM.md`.
 
+## 1 October 2026 — How GDPR requests work in the platform
+**Decision:**
+- Exporting and erasing personal data are **admin-only**.
+- Erasure **anonymises rather than deletes**: the record stays as "Removed (GDPR)", so links and history still work.
+- The person's data is also **redacted from the audit log**. The log keeps only the record id and a "GDPR erasure" event (who and when).
+- Erased records carry `erased_at`, so imports and syncs skip them.
+- Records kept by law (e.g. invoices for 6 years, from Wave 2) are out of scope for erasure.
+
+**Why:** Meets UK GDPR rights of access and erasure without breaking history. An audit log that kept erased data would defeat the erasure. Process is in `docs/runbooks/GDPR-REQUESTS.md`.
+
 ## 1 October 2026 — Third-party passwords are not migrated
 **Decision:** The plain-text "3rd Party Password" values in Zoho's Web Hosting Plans are **never** copied into the platform. They move to the password manager. Each hosting plan keeps the username and a note saying where the login is stored.
 

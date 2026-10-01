@@ -23,6 +23,8 @@ const actionLabels: Record<string, string> = {
   insert: "Added",
   update: "Changed",
   delete: "Removed",
+  gdpr_export: "GDPR data export",
+  gdpr_erase: "GDPR erasure",
 };
 
 // Shows what changed on an update, or the record itself otherwise.
@@ -32,6 +34,9 @@ function describe(entry: {
   new_data: Record<string, unknown> | null;
   record: Record<string, unknown> | null;
 }) {
+  if (entry.record?.redacted) return "Details removed (GDPR erasure)";
+  if (entry.action === "gdpr_export") return "Personal data exported for a subject access request";
+  if (entry.action === "gdpr_erase") return "Personal data erased on request";
   if (entry.action === "update" && entry.old_data && entry.new_data) {
     const changes = Object.keys(entry.new_data)
       .filter((k) => k !== "updated_at")

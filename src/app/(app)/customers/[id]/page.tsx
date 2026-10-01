@@ -74,6 +74,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
             ← All customers
           </Link>
           <div className="flex flex-wrap items-center gap-2">
+            {c.erased_at && <Badge>Erased (GDPR)</Badge>}
             {c.status && <Badge tone={statusTone(c.status)}>{c.status}</Badge>}
             {(c.services ?? []).map((s: string) => (
               <Badge key={s}>{s}</Badge>
@@ -144,7 +145,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                           {personName(p)}
                           {p.is_primary && <Star size={14} className="fill-fp-amber text-fp-amber" aria-label="Primary contact" />}
                           {p.financial_status === "ON STOP" && <Badge tone="red">On stop</Badge>}
-                          {p.email_opt_out && <Badge>No marketing</Badge>}
+                          {p.erased_at ? <Badge>Erased (GDPR)</Badge> : p.email_opt_out && <Badge>No marketing</Badge>}
                         </p>
                         {(p.job_title || p.department) && (
                           <p className="text-xs text-fp-mid">{[p.job_title, p.department].filter(Boolean).join(", ")}</p>

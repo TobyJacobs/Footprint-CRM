@@ -7,7 +7,8 @@ import { Notice, dangerButton } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { personName } from "@/lib/customers/display";
 import { createClient } from "@/lib/supabase/server";
-import { deleteContact, saveContact } from "../../../actions";
+import { deleteContact, eraseContact, saveContact } from "../../../actions";
+import DataProtectionCard from "../../../DataProtectionCard";
 import ContactForm from "../ContactForm";
 
 export const metadata: Metadata = { title: "Edit contact" };
@@ -34,6 +35,17 @@ export default async function EditContactPage(props: PageProps<"/customers/[id]/
           <Notice searchParams={searchParams} />
           <ContactForm contact={contact} action={saveContact.bind(null, id, contactId)} cancelHref={`/customers/${id}`} />
         </div>
+        {user.isAdmin && (
+          <div className="mt-10 max-w-3xl">
+            <DataProtectionCard
+              subject={personName(contact)}
+              kind="contact"
+              exportHref={`/customers/${id}/contacts/${contactId}/export`}
+              eraseAction={eraseContact.bind(null, id, contactId)}
+              erasedAt={contact.erased_at}
+            />
+          </div>
+        )}
         {user.can("customers", "delete") && (
           <form action={deleteContact.bind(null, id, contactId)} className="mt-10 max-w-3xl border-t border-fp-border pt-6">
             <ConfirmSubmit className={dangerButton} message={`Delete ${personName(contact)}? This can't be undone.`}>

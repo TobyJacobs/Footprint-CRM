@@ -7,8 +7,9 @@ import { Notice, dangerButton } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { getStaffOptions } from "@/lib/customers/staff";
 import { createClient } from "@/lib/supabase/server";
-import { deleteCustomer, saveCustomer } from "../../actions";
+import { deleteCustomer, eraseCustomer, saveCustomer } from "../../actions";
 import CustomerForm from "../../CustomerForm";
+import DataProtectionCard from "../../DataProtectionCard";
 
 export const metadata: Metadata = { title: "Edit customer" };
 
@@ -40,6 +41,17 @@ export default async function EditCustomerPage(props: PageProps<"/customers/[id]
           />
         </div>
 
+        {user.isAdmin && (
+          <div className="mt-10 max-w-4xl">
+            <DataProtectionCard
+              subject={customer.name}
+              kind="customer"
+              exportHref={`/customers/${id}/export`}
+              eraseAction={eraseCustomer.bind(null, id)}
+              erasedAt={customer.erased_at}
+            />
+          </div>
+        )}
         {user.can("customers", "delete") && (
           <form action={deleteCustomer.bind(null, id)} className="mt-10 max-w-4xl border-t border-fp-border pt-6">
             <p className="mb-3 text-sm text-fp-dark/75">

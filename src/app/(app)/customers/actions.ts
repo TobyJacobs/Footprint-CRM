@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requirePermission } from "@/lib/auth";
+import { requireAdmin, requirePermission } from "@/lib/auth";
 import { bool, dateTime, int, list, num, str } from "@/lib/forms";
 import { createClient } from "@/lib/supabase/server";
 
@@ -345,6 +345,29 @@ export async function deleteRetainer(customerId: string, retainerId: string) {
   if (error) fail(`/customers/${customerId}/retainers/${retainerId}`, error.message);
   revalidatePath(`/customers/${customerId}`);
   redirect(`/customers/${customerId}?deleted=1#retainers`);
+}
+
+// ─── GDPR erasure (admins only) ─────────────────────────────────────────────
+
+export async function eraseContact(customerId: string, contactId: string, fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("gdpr_erase_contact", {
+    p_contact_id: contactId,
+    p_delete_activity: bool(fd, "delete_activity"),
+  });
+  if (error) fail(`/customers/${customerId}/contacts/${contactId}`, error.message);
+  revalidatePath(`/customers/${customerId}`);
+  redirect(`/customers/${customerId}?erased=1#contacts`);
+}
+
+export async function eraseCustomer(customerId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("gdpr_erase_customer", { p_customer_id: customerId });
+  if (error) fail(`/customers/${customerId}/edit`, error.message);
+  revalidatePath("/customers");
+  redirect(`/customers/${customerId}?erased=1`);
 }
 
 // ─── Timeline ───────────────────────────────────────────────────────────────

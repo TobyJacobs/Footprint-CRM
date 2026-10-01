@@ -17,7 +17,14 @@ export function Notice({
 }: {
   searchParams: Record<string, string | string[] | undefined>;
 }) {
-  const { error, saved, deleted } = searchParams;
+  const { error, saved, deleted, erased } = searchParams;
+  if (erased) {
+    return (
+      <p role="status" className="mb-6 rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-4 py-3 text-sm text-fp-teal-deep">
+        Personal data erased. The erasure is recorded in the audit log.
+      </p>
+    );
+  }
   if (typeof error === "string") {
     return (
       <p role="alert" className="mb-6 rounded-md border border-fp-error/30 bg-fp-error/5 px-4 py-3 text-sm text-fp-error">

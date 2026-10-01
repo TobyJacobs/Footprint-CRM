@@ -77,9 +77,15 @@ _Last updated: 1 October 2026_
   - Tested in the browser: list, search, customer page, edit, add contact (primary contact swap, opt-out), hosting lines, retainer services, timeline note.
   - Bug found and fixed: saving web and email hosting lines together failed and lost the old lines. Child lines are now saved before the old ones are removed.
 
+  - **GDPR tools** (migration `20261001140000_gdpr.sql`, applied to test):
+    - admin-only **export** (JSON download) for a contact or a whole customer
+    - admin-only **erase** for a contact or a whole customer: details blanked, the record kept as "Removed (GDPR)", and the audit log cleaned (redacted) with an erasure event recorded
+    - `erased_at` flags erased records so the import and sync never bring them back
+    - staff runbook in `docs/runbooks/GDPR-REQUESTS.md`
+    - tested on made-up data: export contents, contact erase (audit log no longer mentions the person), customer erase
+
 ## Next
 1. **Finish Wave 1:**
-   - GDPR tools: export a person's data, anonymise or delete on request
    - the **Zoho import tool**: map the Zoho export to our tables; never import third-party passwords; skip legacy fields
    - the one-way nightly Zoho → platform copy (needs a Zoho API connection; its secret is set by the owner)
 2. **Before real data:** create the live London Supabase project (Pro, owner approval), apply the migrations, point Netlify production at it, and run the first restore test.
