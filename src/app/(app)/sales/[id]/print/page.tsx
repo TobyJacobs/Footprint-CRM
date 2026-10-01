@@ -51,6 +51,7 @@ export default async function PrintDocumentPage(props: PageProps<"/sales/[id]/pr
           notes: doc.notes,
           terms: doc.terms,
           bank_details: doc.doc_type === "invoice" ? company?.bank_details : null,
+          reason: doc.doc_type === "credit_note" ? doc.credit_reason : null,
           company,
         }}
       />

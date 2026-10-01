@@ -8,7 +8,7 @@ import { totals, lineNet, marginPercent } from "@/lib/sales/options";
 type TaxRate = { id: string; name: string; rate: number };
 type Contact = { id: string; first_name: string | null; last_name: string; email: string | null; is_primary: boolean };
 type CustomerHit = { id: string; name: string; billing_city: string | null; credit_status: string | null };
-type ProductHit = {
+export type ProductHit = {
   id: string;
   name: string;
   description: string | null;
@@ -121,7 +121,7 @@ function CustomerPicker({
   );
 }
 
-function ProductSearch({ onPick }: { onPick: (p: ProductHit) => void }) {
+export function ProductSearch({ onPick }: { onPick: (p: ProductHit) => void }) {
   const [text, setText] = useState("");
   const { results, search, clear } = useSearch<ProductHit>("/api/search/products");
   return (

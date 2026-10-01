@@ -12,11 +12,15 @@ export type PrintableLine = {
 
 export type PrintableData = {
   label: string;
+  forLabel?: string;
   number: string;
   title?: string | null;
   issue_date: string;
   valid_until?: string | null;
   due_date?: string | null;
+  needed_by?: string | null;
+  deliver_to?: string | null;
+  reason?: string | null;
   customer_reference?: string | null;
   customer: { name: string; address?: string | null; contact?: string | null };
   lines: PrintableLine[];
@@ -56,7 +60,7 @@ export default function PrintableDocument({ d }: { d: PrintableData }) {
 
       <section className="mt-8 flex flex-wrap justify-between gap-6">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-fp-mid">{d.label} for</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-fp-mid">{d.forLabel ?? `${d.label} for`}</p>
           <p className="mt-1 text-base font-bold">{d.customer.name}</p>
           {d.customer.contact && <p>FAO {d.customer.contact}</p>}
           {d.customer.address && <p className="whitespace-pre-line text-fp-dark/80">{d.customer.address}</p>}
@@ -78,14 +82,37 @@ export default function PrintableDocument({ d }: { d: PrintableData }) {
               <dd className="font-semibold">{longDate(d.due_date)}</dd>
             </>
           )}
+          {d.needed_by && (
+            <>
+              <dt className="text-fp-mid">Needed by</dt>
+              <dd className="font-semibold">{longDate(d.needed_by)}</dd>
+            </>
+          )}
           {d.customer_reference && (
             <>
-              <dt className="text-fp-mid">Your reference</dt>
+              <dt className="text-fp-mid">{d.forLabel === "Supplier" ? "Our account" : "Your reference"}</dt>
               <dd>{d.customer_reference}</dd>
             </>
           )}
         </dl>
       </section>
+
+      {(d.deliver_to || d.reason) && (
+        <section className="mt-6 grid gap-1 rounded-md bg-fp-offwhite p-3 print:bg-white">
+          {d.deliver_to && (
+            <p>
+              <span className="font-semibold">Deliver to: </span>
+              {d.deliver_to}
+            </p>
+          )}
+          {d.reason && (
+            <p>
+              <span className="font-semibold">Reason for credit: </span>
+              {d.reason}
+            </p>
+          )}
+        </section>
+      )}
 
       {d.title && <h1 className="mt-8 text-lg font-black">{d.title}</h1>}
 

@@ -1,15 +1,21 @@
 // Shared definitions for quotes, sales orders and invoices.
 
-export type DocType = "quote" | "sales_order" | "invoice";
+export type DocType = "quote" | "sales_order" | "invoice" | "credit_note";
 
 export const docTypes: Record<DocType, { label: string; plural: string; path: string }> = {
   quote: { label: "Quote", plural: "Quotes", path: "/sales/quotes" },
   sales_order: { label: "Sales order", plural: "Sales orders", path: "/sales/orders" },
   invoice: { label: "Invoice", plural: "Invoices", path: "/sales/invoices" },
+  credit_note: { label: "Credit note", plural: "Credit notes", path: "/sales/credit-notes" },
 };
 
 export function isDocType(v: unknown): v is DocType {
-  return v === "quote" || v === "sales_order" || v === "invoice";
+  return v === "quote" || v === "sales_order" || v === "invoice" || v === "credit_note";
+}
+
+// Documents that are legal records once issued: never deleted, only voided.
+export function isLockedRecord(type: DocType, status: string) {
+  return (type === "invoice" || type === "credit_note") && status !== "draft";
 }
 
 // Statuses per document type, in the order they normally happen.
@@ -33,20 +39,49 @@ export const statuses: Record<DocType, { value: string; label: string }[]> = {
     { value: "paid", label: "Paid" },
     { value: "void", label: "Void" },
   ],
+  credit_note: [
+    { value: "draft", label: "Draft" },
+    { value: "issued", label: "Issued" },
+    { value: "void", label: "Void" },
+  ],
 };
 
 export const defaultStatus: Record<DocType, string> = {
   quote: "draft",
   sales_order: "open",
   invoice: "draft",
+  credit_note: "draft",
 };
+
+export const creditReasons = [
+  "Goods returned",
+  "Damaged or faulty",
+  "Pricing error",
+  "Goodwill gesture",
+  "Cancelled order",
+  "Duplicate invoice",
+  "Other",
+];
+
+// Purchase orders
+export const poStatuses = [
+  { value: "draft", label: "Draft" },
+  { value: "sent", label: "Sent to supplier" },
+  { value: "received", label: "Received" },
+  { value: "closed", label: "Closed" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
+export function poStatusLabel(status: string) {
+  return poStatuses.find((s) => s.value === status)?.label ?? status;
+}
 
 export function statusLabel(type: DocType, status: string) {
   return statuses[type].find((s) => s.value === status)?.label ?? status;
 }
 
 export function statusToneFor(status: string) {
-  if (["accepted", "completed", "paid", "invoiced", "converted"].includes(status)) return "teal" as const;
+  if (["accepted", "completed", "paid", "invoiced", "converted", "received", "closed"].includes(status)) return "teal" as const;
   if (["declined", "cancelled", "void"].includes(status)) return "red" as const;
   if (["sent", "issued", "open"].includes(status)) return "pink" as const;
   return "grey" as const;
