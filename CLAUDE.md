@@ -51,3 +51,6 @@ Rules:
 - Small steps. Commit often with plain-English commit messages.
 - Test changes on a Netlify preview link before they go live, and give the owner the link to check.
 - Prefer well-known, well-supported tools over clever or obscure ones — this platform must be maintainable for years.
+
+## Technical notes for Claude
+@AGENTS.md

@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/* Footprint brand colours and font — see docs/BRAND.md */
+@theme {
+  --color-fp-black: #000000;
+  --color-fp-dark: #222222;
+  --color-fp-mid: #888888;
+  --color-fp-border: #e8e8e8;
+  --color-fp-light: #f2f2f2;
+  --color-fp-offwhite: #f7f7f7;
+
+  --color-fp-pink: #de2277;
+  --color-fp-pink-light: #eb5cb8;
+  --color-fp-orange: #e58207;
+  --color-fp-amber: #fab200;
+  --color-fp-teal: #7bcbd1;
+  --color-fp-teal-deep: #0092a3;
+
+  /* Errors get their own red so they are never confused with brand pink. */
+  --color-fp-error: #c81e1e;
+
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+}
+
+@utility bg-fp-gradient {
+  background-image: linear-gradient(90deg, #de2277 0%, #e58207 50%, #7bcbd1 100%);
+}
+
+body {
+  background: var(--color-fp-offwhite);
+  color: var(--color-fp-black);
+}
