@@ -43,11 +43,16 @@ _Last updated: 1 October 2026_
   - `.env.local` on the owner's computer points at the test project (git-ignored).
   - Checked: clicking "Sign in with Microsoft" locally reaches Footprint's Microsoft sign-in page.
 
+- **1 October 2026, tested:**
+  - The owner signed in locally and became the first admin. They created a team, and the audit log recorded it.
+  - Netlify environment variables added: Claude added the URL; the owner pasted the publishable key.
+  - Pull request [TobyJacobs/Footprint-CRM#1](https://github.com/TobyJacobs/Footprint-CRM/pull/1) is open. The first preview returned 404 because Netlify hadn't enabled its Next.js runtime (the site was created from an empty repo). Fixed by adding `@netlify/plugin-nextjs` to `netlify.toml` and devDependencies.
+  - The preview at https://deploy-preview-1--footprinthub.netlify.app now shows the sign-in page. Netlify previews are also protected by a Netlify login.
+
 ## Next
-1. The owner signs in locally (becomes the first admin) and tests the admin screens.
-2. The owner adds the two Netlify environment variables (see `.env.example`).
-3. Open a pull request → Netlify deploy preview → the owner checks it → merge into `main`.
-4. Remaining Wave 0 items: backups restore test, error monitoring, logo files.
+1. The owner checks sign-in on the preview link, then merges PR #1 into `main`. That publishes to footprinthub.netlify.app; Supabase skips the already-applied migration.
+2. Remaining Wave 0 items: backups restore test, error monitoring, logo files.
+3. Then Wave 1 (Customers).
 
 ## Waiting on the owner
 - Logo files (see `docs/BRAND.md`). The favicon is still the Next.js default.
