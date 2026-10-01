@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -40,12 +41,17 @@ export default async function LoginPage(props: PageProps<"/login">) {
   return (
     <div className="flex min-h-screen flex-col bg-fp-black">
       <div className="bg-fp-gradient h-1" />
-      <div className="flex flex-1 items-center justify-center px-4 py-12">
+      <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
+        <Image
+          src="/brand/footprint-logo-white.png"
+          alt="Footprint Group"
+          width={220}
+          height={65}
+          priority
+          className="mb-8"
+        />
         <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-xl">
-          <p className="text-2xl font-black tracking-tight">FOOTPRINT</p>
-          <p className="text-[11px] font-semibold tracking-[0.3em] text-fp-mid">PLATFORM</p>
-
-          <h1 className="mt-8 text-lg font-bold">Sign in</h1>
+          <h1 className="text-lg font-bold">Sign in to the Footprint Platform</h1>
           <p className="mt-1 text-sm text-fp-dark/75">
             Use your Footprint Microsoft 365 work account.
           </p>

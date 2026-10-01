@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 // Standard browser security settings, sent with every page.
 const securityHeaders = [
@@ -21,4 +22,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Adds Sentry error alerts (settings in src/lib/sentry-options.ts). Source-map
+// upload is off: it would need a secret Sentry token in Netlify.
+export default withSentryConfig(nextConfig, {
+  silent: !process.env.CI,
+  sourcemaps: { disable: true },
+  telemetry: false,
+});
