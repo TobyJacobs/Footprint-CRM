@@ -18,7 +18,8 @@ export async function signInWithMicrosoft(formData: FormData) {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "azure",
     options: {
-      scopes: "email",
+      // "profile" brings the person's name through from Microsoft.
+      scopes: "email profile",
       redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });

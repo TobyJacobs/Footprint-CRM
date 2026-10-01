@@ -27,6 +27,32 @@ function rows(fd: FormData, prefix: string): Map<number, Record<string, string>>
   return out;
 }
 
+// Swap a record's child lines (e.g. a hosting plan's domains) for a new set.
+// The new lines are saved first and the old ones removed only afterwards, so
+// if anything fails the existing lines are kept. Returns an error message, or null.
+async function replaceChildRows(
+  table: "hosting_items" | "retainer_services",
+  parentColumn: "hosting_plan_id" | "retainer_id",
+  parentId: string,
+  newRows: Record<string, unknown>[],
+): Promise<string | null> {
+  const supabase = await createClient();
+  const { data: old, error: readError } = await supabase.from(table).select("id").eq(parentColumn, parentId);
+  if (readError) return readError.message;
+
+  if (newRows.length) {
+    const { error: insertError } = await supabase.from(table).insert(newRows);
+    if (insertError) return insertError.message;
+  }
+
+  const oldIds = (old ?? []).map((r) => r.id as string);
+  if (oldIds.length) {
+    const { error: deleteError } = await supabase.from(table).delete().in("id", oldIds);
+    if (deleteError) return deleteError.message;
+  }
+  return null;
+}
+
 const blankToNull = (v: string | undefined) => (v && v !== "" ? v : null);
 const toNumber = (v: string | undefined) => {
   if (!v) return null;
@@ -214,10 +240,21 @@ export async function saveHostingPlan(customerId: string, planId: string | null,
   }
 
   // Replace the plan's web and email hosting lines with what's on the form.
+  // Every line carries every column, so web and email lines can be saved together.
+  const blankItem = {
+    hosting_plan_id: id!,
+    plan: null,
+    domain: null,
+    included_hours: null,
+    on_20i: false,
+    mailbox_qty: null,
+    email_platform: null,
+    footprint_hosted: null,
+  };
   const web = [...rows(fd, "web").values()]
     .filter((r) => r.plan || r.domain)
     .map((r) => ({
-      hosting_plan_id: id!,
+      ...blankItem,
       kind: "web",
       plan: blankToNull(r.plan),
       domain: blankToNull(r.domain),
@@ -227,19 +264,15 @@ export async function saveHostingPlan(customerId: string, planId: string | null,
   const email = [...rows(fd, "email").values()]
     .filter((r) => r.qty || r.platform)
     .map((r) => ({
-      hosting_plan_id: id!,
+      ...blankItem,
       kind: "email",
       mailbox_qty: toNumber(r.qty),
       email_platform: blankToNull(r.platform),
       footprint_hosted: r.footprint === "yes" ? true : r.footprint === "no" ? false : null,
     }));
 
-  const { error: clearError } = await supabase.from("hosting_items").delete().eq("hosting_plan_id", id!);
-  if (clearError) fail(back, clearError.message);
-  if (web.length + email.length) {
-    const { error: itemsError } = await supabase.from("hosting_items").insert([...web, ...email]);
-    if (itemsError) fail(back, itemsError.message);
-  }
+  const replaced = await replaceChildRows("hosting_items", "hosting_plan_id", id!, [...web, ...email]);
+  if (replaced) fail(back, replaced);
 
   revalidatePath(`/customers/${customerId}`);
   redirect(`/customers/${customerId}?saved=1#hosting`);
@@ -298,12 +331,8 @@ export async function saveRetainer(customerId: string, retainerId: string | null
       notes: blankToNull(r.notes),
     }));
 
-  const { error: clearError } = await supabase.from("retainer_services").delete().eq("retainer_id", id!);
-  if (clearError) fail(back, clearError.message);
-  if (services.length) {
-    const { error: svcError } = await supabase.from("retainer_services").insert(services);
-    if (svcError) fail(back, svcError.message);
-  }
+  const replaced = await replaceChildRows("retainer_services", "retainer_id", id!, services);
+  if (replaced) fail(back, replaced);
 
   revalidatePath(`/customers/${customerId}`);
   redirect(`/customers/${customerId}?saved=1#retainers`);

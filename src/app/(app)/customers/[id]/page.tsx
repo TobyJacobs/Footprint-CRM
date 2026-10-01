@@ -19,7 +19,13 @@ export async function generateMetadata(props: PageProps<"/customers/[id]">): Pro
 }
 
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
-  if (children === null || children === undefined || children === "" || (Array.isArray(children) && children.length === 0)) {
+  if (
+    children === null ||
+    children === undefined ||
+    children === false ||
+    children === "" ||
+    (Array.isArray(children) && children.length === 0)
+  ) {
     return null;
   }
   return (
