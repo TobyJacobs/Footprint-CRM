@@ -58,6 +58,12 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
   };
 });
 
+export async function requirePermission(feature: string, action: Action): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (!user.can(feature, action)) redirect("/?error=forbidden");
+  return user;
+}
+
 export async function requireAdmin(): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user.isAdmin) redirect("/?error=forbidden");

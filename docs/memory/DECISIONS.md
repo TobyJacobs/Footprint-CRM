@@ -81,6 +81,41 @@ This replaces Claude's draft proposal of Design Workload as Wave 1.
 
 **Why:** It keeps the business's data, billing and access separate from the owner's other projects, and makes it easy to hand over or add colleagues.
 
+## 1 October 2026 — Wave 1 scope: customers, contacts, hosting plans, retainers
+**Decision:**
+- Customers get the core Zoho fields plus Footprint's own: credit status, Direct Debit statuses, services, payment terms, Xero ID, how they heard about us, and status.
+- Leftovers from old integrations are dropped: WorkflowMax, Zoom webinar stats, SalesIQ visit stats, and unused "Option 1/2" lists.
+- Wave 1 also includes **hosting plans** (with web and email hosting details) and **digital retainers** (with monthly services) on each customer.
+- **Zoho Billing subscriptions** move in **Wave 2**, together with billing.
+- Picklist options are kept as the same wording as Zoho, so the import is simple. They're checked in the app rather than locked into the database, so new options don't need a database change.
+
+**Why:** These are the owner's choices (29 September and 1 October 2026). See `docs/discovery/ZOHO-CRM.md`.
+
+## 1 October 2026 — Live database and real data on hold until the final wave
+**Decision:**
+- The live London Supabase project (Pro plan, about £20 a month) is **on hold** until the owner has shown the project to their director, and won't be created before the last wave.
+- Until then, everything is built and demonstrated on the **test** database with **made-up data only**.
+- The Zoho import tool is still built and tested, but against **made-up files in Zoho's export format**. The real import, the nightly Zoho copy, and switching off old tools all happen at the end.
+
+**Why:** The owner wants director sign-off before spending money or moving real customer data.
+
+**Consequence:** No old tool (Zoho, monday.com, Mag Manager) is switched off until the live database exists and real data has moved. The roadmap's "switch off" steps move to a final cut-over stage.
+
+## 1 October 2026 — How GDPR requests work in the platform
+**Decision:**
+- Exporting and erasing personal data are **admin-only**.
+- Erasure **anonymises rather than deletes**: the record stays as "Removed (GDPR)", so links and history still work.
+- The person's data is also **redacted from the audit log**. The log keeps only the record id and a "GDPR erasure" event (who and when).
+- Erased records carry `erased_at`, so imports and syncs skip them.
+- Records kept by law (e.g. invoices for 6 years, from Wave 2) are out of scope for erasure.
+
+**Why:** Meets UK GDPR rights of access and erasure without breaking history. An audit log that kept erased data would defeat the erasure. Process is in `docs/runbooks/GDPR-REQUESTS.md`.
+
+## 1 October 2026 — Third-party passwords are not migrated
+**Decision:** The plain-text "3rd Party Password" values in Zoho's Web Hosting Plans are **never** copied into the platform. They move to the password manager. Each hosting plan keeps the username and a note saying where the login is stored.
+
+**Why:** Storing passwords in a CRM is a security and GDPR risk. The password manager exists for this. Owner agreed.
+
 ## 1 October 2026 — Sentry (EU region) for error alerts
 **Decision:**
 - Use Sentry's free plan in its **EU (Frankfurt) data region** to alert us when something breaks.

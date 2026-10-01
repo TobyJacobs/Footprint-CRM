@@ -29,6 +29,9 @@ These are rough guides for building steadily with Claude. They depend on how muc
 | 7 | Reporting and Intranet | Custom HTML sites | M |
 | 8 | Marketing (internal use) | GoHighLevel (Footprint's own use only) | L |
 | Later | Distributor management | Round Control (possibly) | TBC |
+| **Final** | **Go-live cut-over**: create the live London database, rehearse and run the real data imports (Zoho, monday.com, Mag Manager…), test a backup restore, train staff, switch off old tools | All of the above | M–L |
+
+> **Update 1 October 2026:** the live database and all real data are **on hold until the final wave**, after the owner has shown the project to their director. Until then, every wave is built and demonstrated on the test database with **made-up data**, and **no old tool is switched off**. Each wave's "switch off" step now happens in the **Final** cut-over. See `DECISIONS.md`.
 
 ---
 
@@ -103,11 +106,12 @@ These are rough guides for building steadily with Claude. They depend on how muc
 
 **Included:**
 - Customer (company) records with **multiple contacts**.
-- **Subscriptions** and **web hosting plans** recorded against each customer.
+- **Web hosting plans** (with web and email hosting details) and **digital retainers** (with monthly services) recorded against each customer. Zoho Billing subscriptions move in Wave 2, together with billing. _(Updated 1 October 2026; see `docs/discovery/ZOHO-CRM.md`.)_
 - **Activity timeline** per customer (notes now; emails, quotes, invoices and bookings are added in later waves).
 - Search, filters and GDPR tools: export a person's data, delete or anonymise on request, and record marketing consent.
 - **Migration:** all **~15,000 customers and their contacts** from Zoho CRM/Books.
-  - Rehearsed on the test database first.
+  - Built and tested with **made-up** customers on the test database. Real data only goes into the **live London database**, rehearsed first on a temporary copy that is deleted afterwards.
+  - Third-party passwords are **not** migrated (see DECISIONS).
   - Record counts checked, and staff spot-check a sample.
 - **Until Wave 2 goes live**, Zoho Books still needs customers. We run a **one-way nightly copy from Zoho → platform**, so staff can look customers up in the platform while still quoting in Zoho.
 

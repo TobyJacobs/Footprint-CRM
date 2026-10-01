@@ -3,7 +3,7 @@
 _Last updated: 1 October 2026_
 
 ## Current stage
-**Wave 0 — Foundations: COMPLETE (1 October 2026)**, live on footprinthub.netlify.app (test database). The only deferred item is the backup restore test, which happens when the live London database is created. **Next: Wave 1 (Customers).**
+**Wave 1 — Customers: IN PROGRESS** on branch `wave-1/customers`. The Customers section is built and tested with made-up data. Still to do: GDPR tools, the Zoho import tool and the nightly sync (see Next). Wave 0 is complete and live on footprinthub.netlify.app (test database).
 
 ## Done
 - Planning (Session 1):
@@ -65,10 +65,31 @@ _Last updated: 1 October 2026_
   - Friendly global error page.
   - Backup runbook `docs/runbooks/BACKUPS.md`.
 
+- **Wave 1 in progress** (branch `wave-1/customers`, 1 October 2026):
+  - Zoho discovery (`docs/discovery/ZOHO-CRM.md`): field definitions read from Zoho CRM settings (EU, org `20091739281`), never records. The scope decisions are in `DECISIONS.md`.
+  - Migrations `20261001120000_customers.sql` and `20261001130000_profile_names.sql`. Both are applied by hand to the **test** database and recorded in `supabase_migrations`.
+  - Customers section built:
+    - list with search (also by contact name, email, phone, postcode), status and service filters, 50 per page
+    - customer page with details, contacts, hosting plans (web and email lines), digital retainers (monthly services), and a timeline of notes, calls, emails and meetings
+    - add, edit and delete forms; deletes ask "Are you sure?"
+    - everything is checked against the "customers" permission
+  - 60 **made-up** customers in the test database (`supabase/seed/fake-customers.sql`, test only).
+  - Tested in the browser: list, search, customer page, edit, add contact (primary contact swap, opt-out), hosting lines, retainer services, timeline note.
+  - Bug found and fixed: saving web and email hosting lines together failed and lost the old lines. Child lines are now saved before the old ones are removed.
+
+  - **GDPR tools** (migration `20261001140000_gdpr.sql`, applied to test):
+    - admin-only **export** (JSON download) for a contact or a whole customer
+    - admin-only **erase** for a contact or a whole customer: details blanked, the record kept as "Removed (GDPR)", and the audit log cleaned (redacted) with an erasure event recorded
+    - `erased_at` flags erased records so the import and sync never bring them back
+    - staff runbook in `docs/runbooks/GDPR-REQUESTS.md`
+    - tested on made-up data: export contents, contact erase (audit log no longer mentions the person), customer erase
+
 ## Next
-1. **Wave 1: Customers**, on a new branch. Start by agreeing the customer fields and the import approach for the ~15,000 Zoho records. **Ask the owner for:**
-   - the column headings of a Zoho CRM/Books customer and contact export, plus a few made-up example rows (no real customer data in chat)
-   - how subscriptions and web hosting plans are recorded today
+1. **Finish Wave 1:**
+   - the **Zoho import tool**: map the Zoho export to our tables; never import third-party passwords; skip legacy fields
+   - the one-way nightly Zoho → platform copy (needs a Zoho API connection; its secret is set by the owner)
+2. **ON HOLD (owner, 1 October 2026):** the live London database, the real Zoho import, the nightly sync and switching off old tools. These wait until the owner has shown the project to their director, and until the final wave. Keep building on the test database with made-up data only.
+3. Open a pull request for `wave-1/customers` so the owner can check it on the preview.
 2. Before any real customer data goes in:
    - create the **live London Supabase project** (Pro plan, owner approval)
    - point Netlify production at it
