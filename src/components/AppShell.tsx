@@ -94,7 +94,7 @@ export default function AppShell({
   return (
     <div className="min-h-screen lg:flex">
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-fp-black lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-fp-black print:hidden lg:flex">
         <div className="bg-fp-gradient h-1" />
         <div className="px-5 py-6">
           <Wordmark />
@@ -106,7 +106,7 @@ export default function AppShell({
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-20 bg-fp-black lg:hidden">
+      <header className="sticky top-0 z-20 bg-fp-black print:hidden lg:hidden">
         <div className="flex items-center justify-between px-4 py-3">
           <Wordmark />
           <button

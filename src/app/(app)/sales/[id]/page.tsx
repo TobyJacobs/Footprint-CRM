@@ -1,0 +1,310 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { headers } from "next/headers";
+import { notFound } from "next/navigation";
+import { Pencil, Printer } from "lucide-react";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
+import CopyButton from "@/components/CopyButton";
+import { Badge, Card, Notice, dangerButton, primaryButton, secondaryButton } from "@/components/ui";
+import { requirePermission } from "@/lib/auth";
+import { gbp, longDate, personName, shortDateTime } from "@/lib/customers/display";
+import { getDocumentLines } from "@/lib/sales/data";
+import { docTypes, isDocType, marginPercent, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
+import { createClient } from "@/lib/supabase/server";
+import { convertDocument, deleteDocument, setDocumentStatus } from "../actions";
+
+export async function generateMetadata(props: PageProps<"/sales/[id]">): Promise<Metadata> {
+  const { id } = await props.params;
+  const supabase = await createClient();
+  const { data } = await supabase.from("sales_documents").select("number").eq("id", id).maybeSingle();
+  return { title: data?.number ?? "Document" };
+}
+
+function ActionButton({ action, children, tone = "secondary" }: { action: () => Promise<void>; children: React.ReactNode; tone?: "primary" | "secondary" }) {
+  return (
+    <form action={action}>
+      <button type="submit" className={tone === "primary" ? primaryButton : secondaryButton}>
+        {children}
+      </button>
+    </form>
+  );
+}
+
+export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
+  const user = await requirePermission("quotes", "view");
+  const canEdit = user.can("quotes", "edit");
+  const { id } = await props.params;
+  const sp = await props.searchParams;
+  const supabase = await createClient();
+
+  const { data: doc } = await supabase
+    .from("sales_documents")
+    .select("*, customers(id, name, credit_status), contacts(first_name, last_name, email), owner:owner_id(full_name, email)")
+    .eq("id", id)
+    .maybeSingle();
+  if (!doc || !isDocType(doc.doc_type)) notFound();
+  const type = doc.doc_type as DocType;
+
+  const [lines, { data: source }, { data: children }] = await Promise.all([
+    getDocumentLines(id),
+    doc.source_document_id
+      ? supabase.from("sales_documents").select("id, number, doc_type").eq("id", doc.source_document_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from("sales_documents").select("id, number, doc_type, status").eq("source_document_id", id),
+  ]);
+
+  const customer = doc.customers as unknown as { id: string; name: string; credit_status: string | null };
+  const contact = doc.contacts as unknown as { first_name: string | null; last_name: string; email: string | null } | null;
+  const owner = doc.owner as unknown as { full_name: string | null; email: string } | null;
+  const finalised = ["accepted", "converted", "paid", "void", "invoiced"].includes(doc.status);
+  const gp = Number(doc.subtotal) - Number(doc.cost_total);
+  const margin = marginPercent(Number(doc.subtotal), Number(doc.cost_total));
+
+  const h = await headers();
+  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const approvalLink = `${origin}/q/${doc.public_token}`;
+
+  return (
+    <>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <Link href={docTypes[type].path} className="text-sm font-semibold text-fp-teal-deep hover:underline">
+            ← {docTypes[type].plural}
+          </Link>
+          <h2 className="mt-2 flex flex-wrap items-center gap-3 text-2xl font-black">
+            {docTypes[type].label} {doc.number}
+            <Badge tone={statusToneFor(doc.status)}>{statusLabel(type, doc.status)}</Badge>
+          </h2>
+          <p className="mt-1 text-sm text-fp-dark/75">
+            <Link href={`/customers/${customer.id}`} className="font-semibold hover:text-fp-pink">
+              {customer.name}
+            </Link>
+            {contact && ` · FAO ${personName(contact)}`}
+            {doc.title && ` · ${doc.title}`}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/sales/${id}/print`} className={`${secondaryButton} inline-flex items-center gap-2`}>
+            <Printer size={14} aria-hidden /> Print / PDF
+          </Link>
+          {canEdit && !finalised && (
+            <Link href={`/sales/${id}/edit`} className={`${secondaryButton} inline-flex items-center gap-2`}>
+              <Pencil size={14} aria-hidden /> Edit
+            </Link>
+          )}
+        </div>
+      </div>
+
+      <Notice searchParams={sp} />
+
+      {customer.credit_status && /ON STOP|Up Front|before we order/i.test(customer.credit_status) && (
+        <p className="mb-6 rounded-md border border-fp-error/30 bg-fp-error/5 px-4 py-3 text-sm text-fp-error">
+          Credit warning for this customer: {customer.credit_status}
+        </p>
+      )}
+
+      {canEdit && (
+        <Card title="Next steps">
+          <div className="flex flex-wrap items-center gap-3">
+            {type === "quote" && doc.status === "draft" && (
+              <ActionButton action={setDocumentStatus.bind(null, id, "sent")} tone="primary">
+                Mark as sent & get approval link
+              </ActionButton>
+            )}
+            {type === "quote" && ["sent", "accepted", "declined"].includes(doc.status) && (
+              <ActionButton action={convertDocument.bind(null, id, "sales_order")} tone={doc.status === "accepted" ? "primary" : "secondary"}>
+                Convert to sales order
+              </ActionButton>
+            )}
+            {type === "quote" && doc.status === "sent" && (
+              <>
+                <ActionButton action={setDocumentStatus.bind(null, id, "accepted")}>Mark accepted (by phone/email)</ActionButton>
+                <ActionButton action={setDocumentStatus.bind(null, id, "declined")}>Mark declined</ActionButton>
+              </>
+            )}
+            {type === "sales_order" && ["open", "completed"].includes(doc.status) && (
+              <ActionButton action={convertDocument.bind(null, id, "invoice")} tone="primary">
+                Create invoice
+              </ActionButton>
+            )}
+            {type === "sales_order" && doc.status === "open" && (
+              <>
+                <ActionButton action={setDocumentStatus.bind(null, id, "completed")}>Mark completed</ActionButton>
+                <ActionButton action={setDocumentStatus.bind(null, id, "cancelled")}>Cancel order</ActionButton>
+              </>
+            )}
+            {type === "invoice" && doc.status === "draft" && (
+              <ActionButton action={setDocumentStatus.bind(null, id, "issued")} tone="primary">
+                Issue invoice
+              </ActionButton>
+            )}
+            {type === "invoice" && doc.status === "issued" && (
+              <>
+                <ActionButton action={setDocumentStatus.bind(null, id, "paid")} tone="primary">
+                  Mark as paid
+                </ActionButton>
+                <form action={setDocumentStatus.bind(null, id, "void")}>
+                  <ConfirmSubmit className={secondaryButton} message={`Void invoice ${doc.number}? It stays on record but no longer counts.`}>
+                    Void invoice
+                  </ConfirmSubmit>
+                </form>
+              </>
+            )}
+            {finalised && <p className="text-sm text-fp-dark/75">This document is finalised.</p>}
+          </div>
+
+          {type === "quote" && doc.status !== "draft" && (
+            <div className="mt-5 rounded-md bg-fp-offwhite p-4 text-sm">
+              <p className="font-semibold">Customer approval link</p>
+              <p className="mb-2 text-fp-dark/75">
+                Send this private link to the customer. They can view the quote and accept or decline it — no login needed.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <code className="break-all rounded bg-white px-2 py-1 text-xs">{approvalLink}</code>
+                <CopyButton text={approvalLink} label="Copy link" />
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {doc.responded_at && (
+        <div className="mt-6">
+          <Card title="Customer's response">
+            <p className="text-sm">
+              <Badge tone={doc.status === "declined" ? "red" : "teal"}>{doc.status === "declined" ? "Declined" : "Accepted"}</Badge>{" "}
+              by <strong>{doc.response_name}</strong> on {shortDateTime(doc.responded_at)}
+              {doc.response_po && <> · their PO: <strong>{doc.response_po}</strong></>}
+              {doc.response_ip && <span className="text-fp-mid"> · from {doc.response_ip}</span>}
+            </p>
+            {doc.response_note && <p className="mt-2 whitespace-pre-line text-sm">“{doc.response_note}”</p>}
+          </Card>
+        </div>
+      )}
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
+        <Card title="Lines">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
+                <tr>
+                  <th className="py-2 pr-3 font-semibold">Description</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Qty</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Price</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Disc</th>
+                  <th className="py-2 pr-3 text-right font-semibold">VAT</th>
+                  <th className="py-2 text-right font-semibold">Net</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lines.map((l) => (
+                  <tr key={l.key} className="border-b border-fp-border align-top last:border-0">
+                    <td className="whitespace-pre-line py-2 pr-3">{l.description}</td>
+                    <td className="py-2 pr-3 text-right">{l.quantity}</td>
+                    <td className="py-2 pr-3 text-right">{gbp(l.unit_price)}</td>
+                    <td className="py-2 pr-3 text-right">{l.discount_percent ? `${l.discount_percent}%` : ""}</td>
+                    <td className="py-2 pr-3 text-right">{l.tax_rate}%</td>
+                    <td className="py-2 text-right font-semibold">{gbp(l.line_net)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <dl className="ml-auto mt-4 grid max-w-xs grid-cols-2 gap-x-6 gap-y-1 text-sm">
+            <dt className="text-fp-dark/75">Subtotal</dt>
+            <dd className="text-right">{gbp(Number(doc.subtotal))}</dd>
+            <dt className="text-fp-dark/75">VAT</dt>
+            <dd className="text-right">{gbp(Number(doc.vat_total))}</dd>
+            <dt className="font-bold">Total</dt>
+            <dd className="text-right font-bold">{gbp(Number(doc.total))}</dd>
+          </dl>
+        </Card>
+
+        <div className="grid content-start gap-6">
+          <Card title="Profit">
+            <dl className="grid grid-cols-2 gap-y-1 text-sm">
+              <dt className="text-fp-dark/75">Cost</dt>
+              <dd className="text-right">{gbp(Number(doc.cost_total))}</dd>
+              <dt className="text-fp-dark/75">Gross profit</dt>
+              <dd className="text-right font-semibold">{gbp(gp)}</dd>
+              <dt className="text-fp-dark/75">Margin</dt>
+              <dd className="text-right">{margin === null ? "—" : `${margin}%`}</dd>
+              {doc.labour_cost !== null && (
+                <>
+                  <dt className="text-fp-dark/75">Labour cost</dt>
+                  <dd className="text-right">{gbp(Number(doc.labour_cost))}</dd>
+                </>
+              )}
+            </dl>
+          </Card>
+
+          <Card title="Details">
+            <dl className="grid gap-2 text-sm">
+              {[
+                ["Date", longDate(doc.issue_date)],
+                ["Valid until", type === "quote" ? longDate(doc.valid_until) : null],
+                ["Due", type === "invoice" ? longDate(doc.due_date) : null],
+                ["Deadline", type === "sales_order" ? longDate(doc.deadline_date) : null],
+                ["Production step", doc.production_step],
+                ["Customer reference", doc.customer_reference],
+                ["Salesperson", owner ? (owner.full_name ?? owner.email) : null],
+                ["Business unit", doc.business_unit],
+                ["Probability", doc.probability],
+                ["Expected", doc.expected_date],
+                ["Delivery", doc.delivery_type],
+                ["Reason for loss", doc.reason_for_loss],
+                ["Copy shop job", doc.copy_shop_job ? (doc.consumer_copy_shop ? "Yes (consumer)" : "Yes") : null],
+                ["Collected", type === "invoice" ? (doc.collected ? "Yes" : "No") : null],
+                ["Sent", shortDateTime(doc.sent_at)],
+              ]
+                .filter(([, v]) => v)
+                .map(([k, v]) => (
+                  <div key={k as string} className="grid grid-cols-2 gap-2">
+                    <dt className="text-fp-dark/75">{k}</dt>
+                    <dd>{v}</dd>
+                  </div>
+                ))}
+            </dl>
+          </Card>
+
+          {(source || (children ?? []).length > 0) && (
+            <Card title="Linked documents">
+              <ul className="grid gap-1 text-sm">
+                {source && (
+                  <li>
+                    From{" "}
+                    <Link href={`/sales/${source.id}`} className="font-semibold text-fp-teal-deep hover:underline">
+                      {docTypes[source.doc_type as DocType]?.label} {source.number}
+                    </Link>
+                  </li>
+                )}
+                {(children ?? []).map((c) => (
+                  <li key={c.id}>
+                    Became{" "}
+                    <Link href={`/sales/${c.id}`} className="font-semibold text-fp-teal-deep hover:underline">
+                      {docTypes[c.doc_type as DocType]?.label} {c.number}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {doc.internal_notes && (
+            <Card title="Internal notes">
+              <p className="whitespace-pre-line text-sm">{doc.internal_notes}</p>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {user.can("quotes", "delete") && !(type === "invoice" && doc.status !== "draft") && (
+        <form action={deleteDocument.bind(null, id)} className="mt-10 border-t border-fp-border pt-6">
+          <ConfirmSubmit className={dangerButton} message={`Delete ${docTypes[type].label.toLowerCase()} ${doc.number}? This can't be undone.`}>
+            Delete {docTypes[type].label.toLowerCase()}
+          </ConfirmSubmit>
+        </form>
+      )}
+    </>
+  );
+}

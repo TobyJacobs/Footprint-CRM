@@ -17,6 +17,13 @@ const tableLabels: Record<string, string> = {
   retainers: "Retainers",
   retainer_services: "Retainer services",
   customer_activity: "Timeline",
+  sales_documents: "Quotes, orders & invoices",
+  sales_document_lines: "Document lines",
+  products: "Products",
+  suppliers: "Suppliers",
+  tax_rates: "VAT rates",
+  company_settings: "Company details",
+  number_sequences: "Numbering",
 };
 
 const actionLabels: Record<string, string> = {

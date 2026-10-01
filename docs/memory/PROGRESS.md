@@ -86,6 +86,27 @@ Still to do for Wave 1: the Zoho import tool (built against made-up Zoho-format 
     - staff runbook in `docs/runbooks/GDPR-REQUESTS.md`
     - tested on made-up data: export contents, contact erase (audit log no longer mentions the person), customer erase
 
+- **Wave 2a in progress** (branch `wave-2/quote-to-invoice`, 1 October 2026):
+  - Zoho Books discovery: `docs/discovery/ZOHO-BOOKS.md` (settings only; org `20091743642`, custom domain business.footprintsouth.co.uk).
+  - Migration `20261002120000_sales.sql`, applied to test:
+    - VAT rates, suppliers, products
+    - number sequences continuing Zoho (QT-009972, SO-010913, INV-074891, PO-03271, CN-00009)
+    - company settings
+    - sales_documents and lines, with database-calculated totals and gross profit
+    - quote approval functions (`get_quote_by_token`, `respond_to_quote`)
+  - 12 **made-up** products (`supabase/seed/fake-products.sql`).
+  - Screens:
+    - Quotes & Invoices tabs: quotes, orders, invoices, products
+    - a shared document editor with customer and product search, live totals and GP
+    - the document page, with next-step buttons and linked documents
+    - convert quote → order → invoice
+    - issue, mark paid or void
+    - print / save as PDF (dark logo)
+    - Admin → Company (details, bank details, default wording, numbering)
+    - a quotes section on the customer page
+    - the public approval page `/q/[token]`
+  - Tested end to end on localhost: QT-009972 created (£340.80, GP £179), marked sent, accepted anonymously with a PO and note, converted to SO-010913 (PO carried over), then INV-074891 (due in 30 days) → Issued → Paid. Issued invoices can't be deleted. The print layout was checked.
+
 ## Next
 1. **Finish Wave 1:**
    - the **Zoho import tool**: map the Zoho export to our tables; never import third-party passwords; skip legacy fields

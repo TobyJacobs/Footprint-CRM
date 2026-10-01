@@ -8,6 +8,7 @@ import { Badge, Card, Notice, Select, inputClass, primaryButton, secondaryButton
 import { requirePermission } from "@/lib/auth";
 import { address, gbp, longDate, personName, shortDateTime, statusTone, toLocalInput } from "@/lib/customers/display";
 import { activityKinds } from "@/lib/customers/options";
+import { statusLabel as salesStatus, statusToneFor as salesTone, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 import { addActivity, deleteActivity } from "../actions";
 
@@ -54,6 +55,16 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
       supabase.from("profiles").select("id, full_name, email"),
     ]);
   if (!c) notFound();
+
+  const canSeeSales = user.can("quotes", "view");
+  const { data: salesDocs } = canSeeSales
+    ? await supabase
+        .from("sales_documents")
+        .select("id, doc_type, number, status, issue_date, total, title")
+        .eq("customer_id", id)
+        .order("issue_date", { ascending: false })
+        .limit(20)
+    : { data: [] };
 
   const staffName = (pid: string | null) => {
     const p = (staff ?? []).find((s) => s.id === pid);
@@ -173,6 +184,45 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                 </ul>
               )}
             </Card>
+
+            {canSeeSales && (
+              <Card
+                title="Quotes, orders & invoices"
+                action={
+                  user.can("quotes", "edit") &&
+                  !c.erased_at && (
+                    <Link
+                      href={`/sales/new?type=quote&customer=${id}`}
+                      className="inline-flex items-center gap-1 text-sm font-semibold text-fp-teal-deep hover:underline"
+                    >
+                      <Plus size={14} aria-hidden /> New quote
+                    </Link>
+                  )
+                }
+              >
+                {(salesDocs ?? []).length === 0 ? (
+                  <p className="text-sm text-fp-mid">None yet.</p>
+                ) : (
+                  <ul className="divide-y divide-fp-border">
+                    {(salesDocs ?? []).map((d) => (
+                      <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
+                        <span>
+                          <Link href={`/sales/${d.id}`} className="font-semibold hover:text-fp-pink">
+                            {d.number}
+                          </Link>
+                          {d.title && <span className="text-fp-mid"> · {d.title}</span>}
+                        </span>
+                        <span className="flex items-center gap-3">
+                          <span className="text-fp-mid">{longDate(d.issue_date)}</span>
+                          <Badge tone={salesTone(d.status)}>{salesStatus(d.doc_type as DocType, d.status)}</Badge>
+                          <span className="w-24 text-right font-semibold">{gbp(Number(d.total))}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Card>
+            )}
 
             <Card
               title="Hosting plans"
