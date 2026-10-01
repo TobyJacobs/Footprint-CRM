@@ -91,6 +91,20 @@ This replaces Claude's draft proposal of Design Workload as Wave 1.
 
 **Why:** These are the owner's choices (29 September and 1 October 2026). See `docs/discovery/ZOHO-CRM.md`.
 
+## 1 October 2026 — Wave 2c order and email provider
+**Decision:**
+- **Order:**
+  1. recurring billing (no outside accounts needed)
+  2. emailing
+  3. card payments
+  4. Direct Debit
+  5. Xero sync
+- **Email goes through Postmark**, built first against Postmark's test mode. The owner signs up and adds the footprintgroup.uk DNS records before real sending.
+- The owner has a **Xero** account. They do **not** currently have Stripe or GoCardless accounts (see OPEN-QUESTIONS).
+- **Recurring invoices run inside the database** on a daily schedule (Supabase pg_cron), so no secret keys are needed. Admins can also run them on demand.
+
+**Why:** The owner's choices on 1 October 2026. Recurring billing replaces Zoho Billing / Zoho Books recurring invoices and works without any new accounts.
+
 ## 1 October 2026 — Netlify visibility: live site public, previews private
 **Decision:** Netlify "Team protection" changed from "production and previews" to **previews only**. The live site (footprinthub.netlify.app) opens normally. Our own Microsoft sign-in protects every page except `/login` and customers' private quote links (`/q/…`). Deploy previews still need a Netlify team login.
 
