@@ -10,6 +10,9 @@ One short entry per session. Newest at the top.
 - The owner chose core + Footprint fields, with hosting plans and retainers in Wave 1 and Zoho Billing in Wave 2.
 - Built the Customers section, its database tables and the made-up test data, and tested it end to end in the browser. Fixed a line-saving bug.
 - Microsoft sign-in now also brings people's names through.
+- Built and tested the GDPR tools: admin-only export and erasure, with audit-log redaction.
+- The owner put the live database and real data **on hold until the final wave**, pending a director demo. The roadmap now has a final "Go-live cut-over" stage.
+- The owner checked the preview. Claude merged PR #3, so Wave 1 is live on footprinthub.netlify.app with made-up data. Supabase correctly skipped the already-applied migrations.
 
 ## 30 September 2026 — Session 2: Wave 0 begins
 - Merged the planning work into `main`. Created branch `wave-0/foundations`.

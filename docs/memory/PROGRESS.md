@@ -3,7 +3,9 @@
 _Last updated: 1 October 2026_
 
 ## Current stage
-**Wave 1 — Customers: IN PROGRESS** on branch `wave-1/customers`. The Customers section is built and tested with made-up data. Still to do: GDPR tools, the Zoho import tool and the nightly sync (see Next). Wave 0 is complete and live on footprinthub.netlify.app (test database).
+**Wave 1 — Customers: built and LIVE for the demo** (PR [TobyJacobs/Footprint-CRM#3](https://github.com/TobyJacobs/Footprint-CRM/pull/3) merged as `e5276cf`, 1 October 2026). It's on footprinthub.netlify.app, using the **test database with made-up data only**. The owner will show it to their director.
+
+Still to do for Wave 1: the Zoho import tool (built against made-up Zoho-format files). The real import and nightly sync wait for the final cut-over.
 
 ## Done
 - Planning (Session 1):
