@@ -1,8 +1,11 @@
 "use server";
 
+import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
+import { isDirectoryConfigured } from "@/lib/entra/graph";
+import { runDirectorySync } from "@/lib/entra/sync";
 import { createClient } from "@/lib/supabase/server";
 import { permissionFeatures, ACTIONS } from "./permissions";
 
@@ -19,6 +22,8 @@ function fail(path: string, message: string): never {
 }
 
 // Add and remove link rows so the set matches `wanted`, touching only what changed.
+// For user roles, only roles added by hand are touched: roles that come from
+// the person's Microsoft 365 job title are managed by the directory sync.
 async function syncLinks(
   table: "user_roles" | "team_members",
   fixedColumn: "user_id" | "team_id",
@@ -27,14 +32,17 @@ async function syncLinks(
   wanted: string[],
 ) {
   const supabase = await createClient();
+  const isRoles = table === "user_roles";
   const { data: current, error } = await supabase
     .from(table)
-    .select(otherColumn)
+    .select(isRoles ? `${otherColumn}, source` : otherColumn)
     .eq(fixedColumn, fixedId);
   if (error) throw error;
 
-  const have = new Set((current ?? []).map((r) => (r as Record<string, string>)[otherColumn]));
-  const want = new Set(wanted);
+  const rows = (current ?? []) as unknown as Record<string, string>[];
+  const managed = new Set(rows.filter((r) => r.source === "directory").map((r) => r[otherColumn]));
+  const have = new Set(rows.filter((r) => r.source !== "directory").map((r) => r[otherColumn]));
+  const want = new Set(wanted.filter((id) => !managed.has(id)));
   const toAdd = [...want].filter((id) => !have.has(id));
   const toRemove = [...have].filter((id) => !want.has(id));
 
@@ -45,11 +53,9 @@ async function syncLinks(
     if (addError) throw addError;
   }
   if (toRemove.length) {
-    const { error: removeError } = await supabase
-      .from(table)
-      .delete()
-      .eq(fixedColumn, fixedId)
-      .in(otherColumn, toRemove);
+    let remove = supabase.from(table).delete().eq(fixedColumn, fixedId).in(otherColumn, toRemove);
+    if (isRoles) remove = remove.eq("source", "manual");
+    const { error: removeError } = await remove;
     if (removeError) throw removeError;
   }
 }
@@ -267,4 +273,73 @@ export async function deleteRole(roleId: string) {
   if (error) fail(`/admin/roles/${roleId}`, error.message);
   revalidatePath("/", "layout");
   redirect("/admin/roles?deleted=1");
+}
+
+// ─── Microsoft 365 staff directory ──────────────────────────────────────────
+
+export async function syncDirectoryNow() {
+  await requireAdmin();
+  if (!isDirectoryConfigured()) fail("/admin/directory", "Microsoft 365 sync isn't set up yet");
+  const supabase = await createClient();
+  const result = await runDirectorySync(supabase);
+  if (!result.ok) fail("/admin/directory", result.error);
+  revalidatePath("/admin", "layout");
+  redirect(`/admin/directory?synced=${result.seen}&added=${result.added}&off=${result.switched_off}`);
+}
+
+async function reapplyRoles(path: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reapply_directory_roles");
+  if (error) fail(path, error.message);
+}
+
+export async function addJobRoleRule(formData: FormData) {
+  await requireAdmin();
+  const matchText = text(formData, "match_text");
+  const roleId = text(formData, "role_id");
+  const priority = Number(text(formData, "priority")) || 100;
+  if (!matchText || !roleId) fail("/admin/directory", "Please enter some job title text and pick a role");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("job_role_rules").insert({ match_text: matchText, role_id: roleId, priority });
+  if (error) fail("/admin/directory", error.code === "23505" ? "That rule already exists" : error.message);
+  await reapplyRoles("/admin/directory");
+  revalidatePath("/admin", "layout");
+  redirect("/admin/directory?saved=1");
+}
+
+export async function deleteJobRoleRule(ruleId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("job_role_rules").delete().eq("id", ruleId);
+  if (error) fail("/admin/directory", error.message);
+  await reapplyRoles("/admin/directory");
+  revalidatePath("/admin", "layout");
+  redirect("/admin/directory?deleted=1");
+}
+
+// Pick a role for one person (wins over the job title rules), or go back to
+// "Automatic" (empty value).
+export async function setDirectoryRole(directoryId: string, back: string, formData: FormData) {
+  await requireAdmin();
+  const safeBack = back.startsWith("/admin/") ? back : "/admin/users";
+  const roleId = text(formData, "role_id") || null;
+  const supabase = await createClient();
+  const { error } = await supabase.from("staff_directory").update({ role_id: roleId }).eq("id", directoryId);
+  if (error) fail(safeBack, error.message);
+  await reapplyRoles(safeBack);
+  revalidatePath("/admin", "layout");
+  redirect(`${safeBack}?saved=1`);
+}
+
+// Creates the key the daily sync uses. Only its fingerprint is stored; the key
+// is shown once so the admin can paste it into Netlify as DIRECTORY_SYNC_KEY.
+export async function createDirectorySyncKey(): Promise<{ key?: string; error?: string }> {
+  await requireAdmin();
+  const key = randomBytes(32).toString("base64url");
+  const hash = createHash("sha256").update(key, "utf8").digest("hex");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_directory_sync_key_hash", { p_hash: hash });
+  if (error) return { error: error.message };
+  return { key };
 }

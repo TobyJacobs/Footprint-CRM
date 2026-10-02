@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const tabs = [
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/directory", label: "Microsoft 365" },
   { href: "/admin/teams", label: "Teams" },
   { href: "/admin/roles", label: "Roles & permissions" },
   { href: "/admin/company", label: "Company" },
