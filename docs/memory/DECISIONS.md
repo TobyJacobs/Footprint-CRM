@@ -201,3 +201,15 @@ This refines the "Supabase, London region" part of the technical foundations dec
 - No card payment provider (Stripe) for now.
 
 **Why:** The owner's choice. GoCardless is the UK standard for Direct Debit and works with Xero. It is built in GoCardless's sandbox first, and the real account is set up at go-live.
+
+## 2 October 2026 — Director's improvements: first answers
+**Decision:**
+- Margin is shown as a **percentage** instead of a £ gross-profit figure, on quotes, orders and invoices (staff only; customers never see cost, GP or margin).
+- Commission: show an **example** calculation for now; the real rules come later.
+- Monthly goal: **£300,000 per month** for the group, as a placeholder until real numbers are given.
+- Staff roles come from **job titles in Microsoft 365 (Entra)**. If titles turn out wrong, switch to Microsoft groups.
+- Everyone in Microsoft 365 is **listed in Admin → Users before they first sign in**, with their job title and suggested role, so the admin can sort them out in advance.
+
+**Order:** quick wins (3, 5, 8, 9) → automatic access from Microsoft (1, 2 plus pre-listing) → charts (4) → targets, commission, Staff hub and role home pages (6, 7, 10).
+
+**Why:** The owner's and director's answers, 2 October 2026.
