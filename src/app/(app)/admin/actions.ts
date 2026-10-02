@@ -211,7 +211,12 @@ export async function createRole(formData: FormData) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("roles")
-    .insert({ name, description: text(formData, "description") || null, dashboard: dashboardValue(formData) })
+    .insert({
+      name,
+      description: text(formData, "description") || null,
+      dashboard: dashboardValue(formData),
+      own_records_only: formData.get("own_records_only") === "on",
+    })
     .select("id")
     .single();
   if (error) fail("/admin/roles", error.code === "23505" ? "A role with that name already exists" : error.message);
@@ -229,7 +234,12 @@ export async function saveRole(roleId: string, formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("roles")
-    .update({ name, description: text(formData, "description") || null, dashboard: dashboardValue(formData) })
+    .update({
+      name,
+      description: text(formData, "description") || null,
+      dashboard: dashboardValue(formData),
+      own_records_only: formData.get("own_records_only") === "on",
+    })
     .eq("id", roleId);
   if (error) fail(path, error.code === "23505" ? "A role with that name already exists" : error.message);
 

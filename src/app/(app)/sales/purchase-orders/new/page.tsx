@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
-import { getStaffOptions } from "@/lib/customers/staff";
+import { getSalespersonOptions } from "@/lib/customers/staff";
 import { getSuppliers, getTaxRates } from "@/lib/sales/data";
 import { savePurchaseOrder } from "../actions";
 import PoForm from "../PoForm";
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "New purchase order" };
 export default async function NewPurchaseOrderPage(props: PageProps<"/sales/purchase-orders/new">) {
   const user = await requirePermission("quotes", "edit");
   const sp = await props.searchParams;
-  const [suppliers, taxRates, staff] = await Promise.all([getSuppliers(), getTaxRates(), getStaffOptions()]);
+  const [suppliers, taxRates, staff] = await Promise.all([getSuppliers(), getTaxRates(), getSalespersonOptions()]);
   return (
     <>
       <Link href="/sales/purchase-orders" className="text-sm font-semibold text-fp-teal-deep hover:underline">

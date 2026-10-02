@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
-import { getStaffOptions } from "@/lib/customers/staff";
+import { getSalespersonOptions } from "@/lib/customers/staff";
 import { getCustomerWithContacts, getRecurringLines, getTaxRates } from "@/lib/sales/data";
 import { createClient } from "@/lib/supabase/server";
 import { saveRecurring } from "../../actions";
@@ -20,7 +20,7 @@ export default async function EditRecurringPage(props: PageProps<"/sales/recurri
   if (!r) notFound();
   const [taxRates, staff, lines, picked] = await Promise.all([
     getTaxRates(),
-    getStaffOptions(),
+    getSalespersonOptions(),
     getRecurringLines(recurringId),
     getCustomerWithContacts(r.customer_id),
   ]);

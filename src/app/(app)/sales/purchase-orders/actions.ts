@@ -70,7 +70,7 @@ async function replaceLines(poId: string, lines: PoLine[]): Promise<string | nul
 }
 
 export async function savePurchaseOrder(poId: string | null, fd: FormData) {
-  await requirePermission("quotes", "edit");
+  const user = await requirePermission("quotes", "edit");
   const back = poId ? `/sales/purchase-orders/${poId}/edit` : "/sales/purchase-orders/new";
   const fields = {
     supplier_id: str(fd, "supplier_id"),
@@ -83,6 +83,7 @@ export async function savePurchaseOrder(poId: string | null, fd: FormData) {
     notes: str(fd, "notes"),
     internal_notes: str(fd, "internal_notes"),
   };
+  if (!user.seesAllSales) fields.owner_id = user.id;
   const lines = parseLines(fd);
   if (!fields.supplier_id) fail(back, "Please choose a supplier");
   if (!lines) fail(back, "The lines couldn't be read — please try again");

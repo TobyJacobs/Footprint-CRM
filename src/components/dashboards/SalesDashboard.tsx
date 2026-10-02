@@ -13,7 +13,7 @@ export default async function SalesDashboard({ userId }: { userId: string }) {
   const soon = isoDate(7);
   const today = isoDate();
 
-  const [team, targets, rules, { data: openQuotes }, { data: recentInvoices }] = await Promise.all([
+  const [team, targets, rules, { data: openQuotes }, { data: recentInvoices }, { data: rankData }] = await Promise.all([
     getTeamStats(month),
     getTargets(),
     getCommissionRules(),
@@ -33,14 +33,15 @@ export default async function SalesDashboard({ userId }: { userId: string }) {
       .neq("status", "draft")
       .order("issue_date", { ascending: false })
       .limit(5),
+    supabase.rpc("my_sales_rank", { p_from: month.from, p_to: month.to }),
   ]);
 
   const me = team.find((t) => t.owner_id === userId) ?? sumStats([]);
   const target = targetFor(targets, "invoiced", userId, month);
   const rule = ruleForPerson(rules, userId);
   const commission = commissionFor(me, rule);
-  const ranked = team.filter((t) => t.owner_id).sort((a, b) => b.invoiced - a.invoiced);
-  const rank = ranked.findIndex((t) => t.owner_id === userId) + 1;
+  // Place on the leaderboard, worked out without showing anyone else's figures.
+  const { rank, of: outOf } = (rankData as { rank: number | null; of: number } | null) ?? { rank: null, of: 0 };
   const margin = marginOf(me);
   const customerName = (c: unknown) => (c as { name: string } | null)?.name ?? "";
 
@@ -70,8 +71,8 @@ export default async function SalesDashboard({ userId }: { userId: string }) {
         />
         <Tile
           label="Leaderboard"
-          value={rank > 0 ? `#${rank}` : "—"}
-          note={rank > 0 ? `of ${ranked.length} by sales this month` : "No sales yet this month"}
+          value={rank ? `#${rank}` : "—"}
+          note={rank ? `of ${outOf} by sales this month` : "No sales yet this month"}
         />
       </div>
 

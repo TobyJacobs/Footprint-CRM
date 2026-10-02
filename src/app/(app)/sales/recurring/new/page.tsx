@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
-import { getStaffOptions } from "@/lib/customers/staff";
+import { getSalespersonOptions } from "@/lib/customers/staff";
 import { getCustomerWithContacts, getTaxRates } from "@/lib/sales/data";
 import { frequencyFromHosting } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
@@ -20,7 +20,7 @@ export default async function NewRecurringPage(props: PageProps<"/sales/recurrin
   const user = await requirePermission("quotes", "edit");
   const sp = await props.searchParams;
   const supabase = await createClient();
-  const [taxRates, staff] = await Promise.all([getTaxRates(), getStaffOptions()]);
+  const [taxRates, staff] = await Promise.all([getTaxRates(), getSalespersonOptions()]);
   const vat = taxRates[0];
 
   let customerId: string | null = isId(sp.customer) ? sp.customer : null;

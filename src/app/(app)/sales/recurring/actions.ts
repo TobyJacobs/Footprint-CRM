@@ -45,7 +45,7 @@ function parseLines(fd: FormData): LineIn[] | null {
 }
 
 export async function saveRecurring(recurringId: string | null, fd: FormData) {
-  await requirePermission("quotes", "edit");
+  const user = await requirePermission("quotes", "edit");
   const back = recurringId ? `/sales/recurring/${recurringId}/edit` : "/sales/recurring/new";
   const frequency = str(fd, "frequency") ?? "monthly";
   const status = str(fd, "status") ?? "active";
@@ -53,7 +53,7 @@ export async function saveRecurring(recurringId: string | null, fd: FormData) {
     name: str(fd, "name"),
     customer_id: str(fd, "customer_id"),
     contact_id: str(fd, "contact_id"),
-    owner_id: str(fd, "owner_id"),
+    owner_id: user.seesAllSales ? str(fd, "owner_id") : user.id,
     hosting_plan_id: str(fd, "hosting_plan_id"),
     retainer_id: str(fd, "retainer_id"),
     frequency,

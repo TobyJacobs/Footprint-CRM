@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
-import { getStaffOptions } from "@/lib/customers/staff";
+import { getSalespersonOptions } from "@/lib/customers/staff";
 import { getPurchaseOrderLines, getSuppliers, getTaxRates } from "@/lib/sales/data";
 import { createClient } from "@/lib/supabase/server";
 import { savePurchaseOrder } from "../../actions";
@@ -21,7 +21,7 @@ export default async function EditPurchaseOrderPage(props: PageProps<"/sales/pur
   const [suppliers, taxRates, staff, lines] = await Promise.all([
     getSuppliers(false),
     getTaxRates(),
-    getStaffOptions(),
+    getSalespersonOptions(),
     getPurchaseOrderLines(poId),
   ]);
   return (

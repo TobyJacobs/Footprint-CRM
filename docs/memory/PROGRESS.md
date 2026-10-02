@@ -253,3 +253,18 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - Toby has a test personal target of £25,000
   - made-up open orders and POs were added (DEMO DATA)
 - Every made-up document is owned by Toby, so the team table has one row until other staff exist.
+
+## Sales team see only their own documents (2 October 2026), done and tested
+- Owner decision: salespeople only see their own quotes, orders and invoices. Customers stay visible to all.
+- Migration `20261008120000_own_records_only.sql` (applied to test) adds:
+  - `roles.own_records_only` (ON for Sales team)
+  - `sees_all_sales()`, `can_see_sales_owner`, `can_see_sales_document`, `can_see_purchase_order`, `can_see_recurring_invoice`
+  - rebuilt RLS on sales_documents and lines, purchase_orders and lines, recurring_invoices and lines, and email_log
+  - `my_sales_rank()` (leaderboard place without others' figures)
+- The rule: you see all documents if you're an admin, or if any of your roles has Quotes view without "own only". Otherwise you see only documents where you are the salesperson, and you can't create or hand documents to anyone else.
+- App:
+  - `CurrentUser.seesAllSales`
+  - `getSalespersonOptions()` (only yourself if restricted)
+  - save actions force owner = self when restricted
+  - a role tick-box "Only their own quotes, orders and invoices"
+- Tested with a rolled-back dry run (a test account set non-admin with Sales team only): saw 1 of 356 documents and 0 POs; inserting for someone else was blocked; inserting for self was allowed; reassigning was blocked.

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
-import { getStaffOptions } from "@/lib/customers/staff";
+import { getSalespersonOptions } from "@/lib/customers/staff";
 import { addDays, getCompanySettings, getCustomerWithContacts, getTaxRates } from "@/lib/sales/data";
 import { docTypes, isDocType } from "@/lib/sales/options";
 import { saveDocument } from "../actions";
@@ -18,7 +18,7 @@ export default async function NewDocumentPage(props: PageProps<"/sales/new">) {
 
   const [taxRates, staff, settings, picked] = await Promise.all([
     getTaxRates(),
-    getStaffOptions(),
+    getSalespersonOptions(),
     getCompanySettings(),
     customerId ? getCustomerWithContacts(customerId) : Promise.resolve({ customer: null, contacts: [] }),
   ]);
