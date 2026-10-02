@@ -77,7 +77,6 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
   const credits = (children ?? []).filter((c) => c.doc_type === "credit_note" && c.status === "issued");
   const credited = credits.reduce((sum, c) => sum + Number(c.total), 0);
   const balance = Number(doc.total) - credited;
-  const gp = Number(doc.subtotal) - Number(doc.cost_total);
   const margin = marginPercent(Number(doc.subtotal), Number(doc.cost_total));
 
   const h = await headers();
@@ -150,7 +149,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
               </ActionButton>
             )}
             {type === "sales_order" && ["open", "completed", "invoiced"].includes(doc.status) && (
-              <ActionButton action={raisePurchaseOrders.bind(null, id)}>Raise purchase orders</ActionButton>
+              <ActionButton action={raisePurchaseOrders.bind(null, id)}>Order from suppliers (raise POs)</ActionButton>
             )}
             {type === "sales_order" && doc.status === "open" && (
               <>
@@ -304,14 +303,12 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         </Card>
 
         <div className="grid content-start gap-6">
-          <Card title="Profit">
+          <Card title="Margin">
+            <p className="text-3xl font-black text-fp-teal-deep">{margin === null ? "—" : `${margin}%`}</p>
+            <p className="mb-3 text-xs text-fp-mid">Staff only — customers never see cost or margin.</p>
             <dl className="grid grid-cols-2 gap-y-1 text-sm">
               <dt className="text-fp-dark/75">Cost</dt>
               <dd className="text-right">{gbp(Number(doc.cost_total))}</dd>
-              <dt className="text-fp-dark/75">Gross profit</dt>
-              <dd className="text-right font-semibold">{gbp(gp)}</dd>
-              <dt className="text-fp-dark/75">Margin</dt>
-              <dd className="text-right">{margin === null ? "—" : `${margin}%`}</dd>
               {doc.labour_cost !== null && (
                 <>
                   <dt className="text-fp-dark/75">Labour cost</dt>
