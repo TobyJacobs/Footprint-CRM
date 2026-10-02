@@ -262,11 +262,18 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                               </p>
                             )}
                           </div>
-                          {canEdit && (
-                            <Link href={`/customers/${id}/hosting/${h.id}`} className="text-sm font-semibold text-fp-teal-deep hover:underline">
-                              Edit
-                            </Link>
-                          )}
+                          <span className="flex flex-col items-end gap-1">
+                            {canEdit && (
+                              <Link href={`/customers/${id}/hosting/${h.id}`} className="text-sm font-semibold text-fp-teal-deep hover:underline">
+                                Edit
+                              </Link>
+                            )}
+                            {user.can("quotes", "edit") && h.status !== "Cancelled" && (
+                              <Link href={`/sales/recurring/new?hosting=${h.id}`} className="text-xs font-semibold text-fp-teal-deep hover:underline">
+                                Set up recurring billing
+                              </Link>
+                            )}
+                          </span>
                         </div>
                       </li>
                     );
@@ -316,11 +323,18 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                               </p>
                             )}
                           </div>
-                          {canEdit && (
-                            <Link href={`/customers/${id}/retainers/${r.id}`} className="text-sm font-semibold text-fp-teal-deep hover:underline">
-                              Edit
-                            </Link>
-                          )}
+                          <span className="flex flex-col items-end gap-1">
+                            {canEdit && (
+                              <Link href={`/customers/${id}/retainers/${r.id}`} className="text-sm font-semibold text-fp-teal-deep hover:underline">
+                                Edit
+                              </Link>
+                            )}
+                            {user.can("quotes", "edit") && r.status !== "Cancelled" && (
+                              <Link href={`/sales/recurring/new?retainer=${r.id}`} className="text-xs font-semibold text-fp-teal-deep hover:underline">
+                                Set up recurring billing
+                              </Link>
+                            )}
+                          </span>
                         </div>
                       </li>
                     );

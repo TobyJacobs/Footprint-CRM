@@ -107,11 +107,12 @@ async function nextNumber(docType: DocType) {
 }
 
 export async function saveDocument(docType: DocType, documentId: string | null, fd: FormData) {
-  await requirePermission("quotes", "edit");
+  const user = await requirePermission("quotes", "edit");
   if (!isDocType(docType)) throw new Error("Unknown document type");
   const back = documentId ? `/sales/${documentId}/edit` : `/sales/new?type=${docType}`;
 
   const fields = headerFields(fd, docType);
+  if (!user.seesAllSales) fields.owner_id = user.id;
   const lines = parseLines(fd);
   if (!fields.customer_id) fail(back, "Please choose a customer");
   if (!lines) fail(back, "The lines couldn't be read — please try again");

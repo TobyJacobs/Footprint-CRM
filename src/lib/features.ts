@@ -8,6 +8,7 @@ import {
   Newspaper,
   Palette,
   Settings,
+  Target,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -35,6 +36,14 @@ export const home: Feature = {
 };
 
 export const features: Feature[] = [
+  {
+    key: "hub",
+    label: "Staff hub",
+    href: "/hub",
+    icon: Target,
+    description: "Your month at a glance: your progress against target, your commission and your recent work.",
+    wave: 2,
+  },
   {
     key: "customers",
     label: "Customers",
@@ -95,10 +104,10 @@ export const features: Feature[] = [
   },
   {
     key: "reports",
-    label: "Reports & Intranet",
+    label: "Reports",
     href: "/reports",
     icon: BarChart3,
-    description: "Reporting dashboards and intranet pages.",
+    description: "Reports across the whole business (the old custom HTML reports).",
     wave: 7,
     replaces: "Custom HTML sites",
   },

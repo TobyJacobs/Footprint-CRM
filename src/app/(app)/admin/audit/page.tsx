@@ -26,6 +26,8 @@ const tableLabels: Record<string, string> = {
   number_sequences: "Numbering",
   purchase_orders: "Purchase orders",
   purchase_order_lines: "Purchase order lines",
+  recurring_invoices: "Recurring invoices",
+  recurring_invoice_lines: "Recurring invoice lines",
 };
 
 const actionLabels: Record<string, string> = {

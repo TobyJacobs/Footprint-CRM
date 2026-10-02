@@ -1,8 +1,12 @@
 "use server";
 
+import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
+import { isDirectoryConfigured } from "@/lib/entra/graph";
+import { runDirectorySync } from "@/lib/entra/sync";
+import { dashboardTypes } from "@/lib/dashboards/data";
 import { createClient } from "@/lib/supabase/server";
 import { permissionFeatures, ACTIONS } from "./permissions";
 
@@ -19,6 +23,8 @@ function fail(path: string, message: string): never {
 }
 
 // Add and remove link rows so the set matches `wanted`, touching only what changed.
+// For user roles, only roles added by hand are touched: roles that come from
+// the person's Microsoft 365 job title are managed by the directory sync.
 async function syncLinks(
   table: "user_roles" | "team_members",
   fixedColumn: "user_id" | "team_id",
@@ -27,14 +33,17 @@ async function syncLinks(
   wanted: string[],
 ) {
   const supabase = await createClient();
+  const isRoles = table === "user_roles";
   const { data: current, error } = await supabase
     .from(table)
-    .select(otherColumn)
+    .select(isRoles ? `${otherColumn}, source` : otherColumn)
     .eq(fixedColumn, fixedId);
   if (error) throw error;
 
-  const have = new Set((current ?? []).map((r) => (r as Record<string, string>)[otherColumn]));
-  const want = new Set(wanted);
+  const rows = (current ?? []) as unknown as Record<string, string>[];
+  const managed = new Set(rows.filter((r) => r.source === "directory").map((r) => r[otherColumn]));
+  const have = new Set(rows.filter((r) => r.source !== "directory").map((r) => r[otherColumn]));
+  const want = new Set(wanted.filter((id) => !managed.has(id)));
   const toAdd = [...want].filter((id) => !have.has(id));
   const toRemove = [...have].filter((id) => !want.has(id));
 
@@ -45,11 +54,9 @@ async function syncLinks(
     if (addError) throw addError;
   }
   if (toRemove.length) {
-    const { error: removeError } = await supabase
-      .from(table)
-      .delete()
-      .eq(fixedColumn, fixedId)
-      .in(otherColumn, toRemove);
+    let remove = supabase.from(table).delete().eq(fixedColumn, fixedId).in(otherColumn, toRemove);
+    if (isRoles) remove = remove.eq("source", "manual");
+    const { error: removeError } = await remove;
     if (removeError) throw removeError;
   }
 }
@@ -190,6 +197,12 @@ export async function deleteTeam(teamId: string) {
 
 // ─── Roles ──────────────────────────────────────────────────────────────────
 
+// Which home page dashboard a role gets (see lib/dashboards/data.ts).
+function dashboardValue(formData: FormData) {
+  const value = text(formData, "dashboard");
+  return dashboardTypes.some((d) => d.value === value) ? value : "general";
+}
+
 export async function createRole(formData: FormData) {
   await requireAdmin();
   const name = text(formData, "name");
@@ -198,7 +211,12 @@ export async function createRole(formData: FormData) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("roles")
-    .insert({ name, description: text(formData, "description") || null })
+    .insert({
+      name,
+      description: text(formData, "description") || null,
+      dashboard: dashboardValue(formData),
+      own_records_only: formData.get("own_records_only") === "on",
+    })
     .select("id")
     .single();
   if (error) fail("/admin/roles", error.code === "23505" ? "A role with that name already exists" : error.message);
@@ -216,7 +234,12 @@ export async function saveRole(roleId: string, formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("roles")
-    .update({ name, description: text(formData, "description") || null })
+    .update({
+      name,
+      description: text(formData, "description") || null,
+      dashboard: dashboardValue(formData),
+      own_records_only: formData.get("own_records_only") === "on",
+    })
     .eq("id", roleId);
   if (error) fail(path, error.code === "23505" ? "A role with that name already exists" : error.message);
 
@@ -267,4 +290,188 @@ export async function deleteRole(roleId: string) {
   if (error) fail(`/admin/roles/${roleId}`, error.message);
   revalidatePath("/", "layout");
   redirect("/admin/roles?deleted=1");
+}
+
+// ─── Microsoft 365 staff directory ──────────────────────────────────────────
+
+export async function syncDirectoryNow() {
+  await requireAdmin();
+  if (!isDirectoryConfigured()) fail("/admin/directory", "Microsoft 365 sync isn't set up yet");
+  const supabase = await createClient();
+  const result = await runDirectorySync(supabase);
+  if (!result.ok) fail("/admin/directory", result.error);
+  revalidatePath("/admin", "layout");
+  redirect(`/admin/directory?synced=${result.seen}&added=${result.added}&off=${result.switched_off}`);
+}
+
+async function reapplyRoles(path: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reapply_directory_roles");
+  if (error) fail(path, error.message);
+}
+
+export async function addJobRoleRule(formData: FormData) {
+  await requireAdmin();
+  const matchText = text(formData, "match_text");
+  const roleId = text(formData, "role_id");
+  const priority = Number(text(formData, "priority")) || 100;
+  if (!matchText || !roleId) fail("/admin/directory", "Please enter some job title text and pick a role");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("job_role_rules").insert({ match_text: matchText, role_id: roleId, priority });
+  if (error) fail("/admin/directory", error.code === "23505" ? "That rule already exists" : error.message);
+  await reapplyRoles("/admin/directory");
+  revalidatePath("/admin", "layout");
+  redirect("/admin/directory?saved=1");
+}
+
+export async function deleteJobRoleRule(ruleId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("job_role_rules").delete().eq("id", ruleId);
+  if (error) fail("/admin/directory", error.message);
+  await reapplyRoles("/admin/directory");
+  revalidatePath("/admin", "layout");
+  redirect("/admin/directory?deleted=1");
+}
+
+// Pick a role for one person (wins over the job title rules), or go back to
+// "Automatic" (empty value).
+export async function setDirectoryRole(directoryId: string, back: string, formData: FormData) {
+  await requireAdmin();
+  const safeBack = back.startsWith("/admin/") ? back : "/admin/users";
+  const roleId = text(formData, "role_id") || null;
+  const supabase = await createClient();
+  const { error } = await supabase.from("staff_directory").update({ role_id: roleId }).eq("id", directoryId);
+  if (error) fail(safeBack, error.message);
+  await reapplyRoles(safeBack);
+  revalidatePath("/admin", "layout");
+  redirect(`${safeBack}?saved=1`);
+}
+
+// Creates the key the daily sync uses. Only its fingerprint is stored; the key
+// is shown once so the admin can paste it into Netlify as DIRECTORY_SYNC_KEY.
+export async function createDirectorySyncKey(): Promise<{ key?: string; error?: string }> {
+  await requireAdmin();
+  const key = randomBytes(32).toString("base64url");
+  const hash = createHash("sha256").update(key, "utf8").digest("hex");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_directory_sync_key_hash", { p_hash: hash });
+  if (error) return { error: error.message };
+  return { key };
+}
+
+// ─── Targets & commission ───────────────────────────────────────────────────
+
+function amount(formData: FormData, name: string): number | null {
+  const raw = text(formData, name).replace(/[£,%\s]/g, "");
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : NaN;
+}
+
+// Set (or clear, when empty) one "every month" target.
+async function upsertTarget(userId: string | null, metric: string, value: number | null, month: string | null = null) {
+  const supabase = await createClient();
+  let existing = supabase.from("monthly_targets").select("id").eq("metric", metric);
+  existing = userId ? existing.eq("user_id", userId) : existing.is("user_id", null);
+  existing = month ? existing.eq("month", month) : existing.is("month", null);
+  const { data: row } = await existing.maybeSingle();
+  if (value === null) {
+    if (row) await supabase.from("monthly_targets").delete().eq("id", row.id);
+    return null;
+  }
+  const { error } = row
+    ? await supabase.from("monthly_targets").update({ amount: value, is_example: false }).eq("id", row.id)
+    : await supabase.from("monthly_targets").insert({ user_id: userId, metric, month, amount: value, is_example: false });
+  return error;
+}
+
+export async function saveGroupTargets(formData: FormData) {
+  await requireAdmin();
+  const path = "/admin/targets";
+  const values = {
+    invoiced: amount(formData, "invoiced"),
+    gross_profit: amount(formData, "gross_profit"),
+    margin_pct: amount(formData, "margin_pct"),
+  };
+  if (Object.values(values).some((v) => Number.isNaN(v))) fail(path, "Please enter numbers only");
+  if (values.margin_pct !== null && values.margin_pct > 100) fail(path, "Margin must be 100% or less");
+  for (const [metric, value] of Object.entries(values)) {
+    const error = await upsertTarget(null, metric, value);
+    if (error) fail(path, error.message);
+  }
+  revalidatePath("/", "layout");
+  redirect(`${path}?saved=1`);
+}
+
+export async function saveMonthTarget(formData: FormData) {
+  await requireAdmin();
+  const path = "/admin/targets";
+  const month = text(formData, "month");
+  const value = amount(formData, "amount");
+  if (!/^\d{4}-\d{2}$/.test(month)) fail(path, "Please pick a month");
+  if (value === null || Number.isNaN(value)) fail(path, "Please enter the goal for that month");
+  const error = await upsertTarget(null, "invoiced", value, `${month}-01`);
+  if (error) fail(path, error.message);
+  revalidatePath("/", "layout");
+  redirect(`${path}?saved=1`);
+}
+
+export async function deleteTarget(targetId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("monthly_targets").delete().eq("id", targetId);
+  if (error) fail("/admin/targets", error.message);
+  revalidatePath("/", "layout");
+  redirect("/admin/targets?deleted=1");
+}
+
+// Every person's monthly sales target in one go (empty = no target).
+export async function savePersonTargets(formData: FormData) {
+  await requireAdmin();
+  const path = "/admin/targets";
+  for (const [key] of formData.entries()) {
+    if (!key.startsWith("target_")) continue;
+    const userId = key.slice("target_".length);
+    if (!/^[0-9a-f-]{36}$/i.test(userId)) continue;
+    const value = amount(formData, key);
+    if (Number.isNaN(value)) fail(path, "Please enter numbers only");
+    const error = await upsertTarget(userId, "invoiced", value);
+    if (error) fail(path, error.message);
+  }
+  revalidatePath("/", "layout");
+  redirect(`${path}?saved=1`);
+}
+
+// The default commission rule (userId null) or one person's own rule.
+export async function saveCommissionRule(userId: string | null, formData: FormData) {
+  await requireAdmin();
+  const path = "/admin/targets";
+  const targetUser = userId ?? (text(formData, "user_id") || null);
+  const rate = amount(formData, "rate");
+  const basis = text(formData, "basis") === "invoiced" ? "invoiced" : "gross_profit";
+  const countedWhen = text(formData, "counted_when") === "invoiced" ? "invoiced" : "paid";
+  if (rate === null || Number.isNaN(rate) || rate > 100) fail(path, "Please enter a commission rate between 0 and 100%");
+
+  const supabase = await createClient();
+  let existing = supabase.from("commission_rules").select("id");
+  existing = targetUser ? existing.eq("user_id", targetUser) : existing.is("user_id", null);
+  const { data: row } = await existing.maybeSingle();
+  const fields = { basis, rate, counted_when: countedWhen, is_example: false };
+  const { error } = row
+    ? await supabase.from("commission_rules").update(fields).eq("id", row.id)
+    : await supabase.from("commission_rules").insert({ ...fields, user_id: targetUser });
+  if (error) fail(path, error.message);
+  revalidatePath("/", "layout");
+  redirect(`${path}?saved=1`);
+}
+
+export async function deleteCommissionRule(ruleId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("commission_rules").delete().eq("id", ruleId).not("user_id", "is", null);
+  if (error) fail("/admin/targets", error.message);
+  revalidatePath("/", "layout");
+  redirect("/admin/targets?deleted=1");
 }

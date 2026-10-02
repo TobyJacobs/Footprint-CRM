@@ -83,6 +83,27 @@ export async function getPurchaseOrderLines(poId: string) {
   }));
 }
 
+export async function getRecurringLines(recurringId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("recurring_invoice_lines")
+    .select("*")
+    .eq("recurring_invoice_id", recurringId)
+    .order("position");
+  return (data ?? []).map((l) => ({
+    key: l.id as string,
+    product_id: l.product_id as string | null,
+    description: l.description as string,
+    quantity: Number(l.quantity),
+    unit_price: Number(l.unit_price),
+    unit_cost: l.unit_cost === null ? null : Number(l.unit_cost),
+    discount_percent: Number(l.discount_percent),
+    tax_rate_id: l.tax_rate_id as string | null,
+    tax_rate: Number(l.tax_rate),
+    line_net: Number(l.line_net),
+  }));
+}
+
 export function addDays(days: number, from = new Date()) {
   const d = new Date(from);
   d.setDate(d.getDate() + days);

@@ -87,6 +87,34 @@ Still to do for Wave 1: the Zoho import tool (built against made-up Zoho-format 
     - tested on made-up data: export contents, contact erase (audit log no longer mentions the person), customer erase
 
 - **Wave 2a LIVE for the demo**: PR [TobyJacobs/Footprint-CRM#4](https://github.com/TobyJacobs/Footprint-CRM/pull/4) merged as `3b85ccb` on 1 October 2026, using the test database with made-up data. Netlify visibility is now "previews only" (live public), so the approval link `/q/…` opens on live for signed-out customers (checked).
+- **Wave 2c in progress** (branch `wave-2c/recurring-billing`, 1 October 2026):
+  - **Step 1 done: recurring invoices.** Migration `20261003120000_recurring_invoices.sql`, applied to test:
+    - templates plus lines
+    - `sales_documents.recurring_invoice_id`
+    - internal numbering helper
+    - `_generate_recurring_invoice`, `generate_due_recurring_invoices` (catches up missed periods, max 24)
+    - staff `generate_recurring_invoice_now`, admin `run_recurring_billing_now`
+    - **pg_cron job "generate-recurring-invoices" daily at 06:00 UTC**
+  - UI:
+    - Recurring tab (with the monthly value of active billing)
+    - new / edit (reuses the document editor)
+    - view: create now, pause, resume, end, and the invoices created
+    - "Set up recurring billing" on hosting plans and retainers (pre-fills customer, price and frequency)
+  - Tested: from Downs Garage's hosting plan, next date 1 September → "Run billing now" created INV-074892 (Sept) and INV-074893 (Oct) as drafts (£42, due +30 days), and the next date moved to 1 November.
+  - **Step 2 done: emailing via Postmark (test mode).** Migration `20261003130000_email.sql`, applied to test:
+    - `email_log` (every email sent, audited, RLS on "quotes")
+    - `get_public_document` (read-only private link for non-draft invoices, credit notes and orders)
+  - UI:
+    - "Email to customer" card on documents: To, CC, subject and message are pre-filled, plus email history
+    - sending a draft quote marks it sent; a draft invoice or credit note becomes issued
+    - "Customer view link" `/d/…` opens without login
+    - every email is also logged on the customer timeline
+  - Tested on 1 October 2026: emailed INV-074893 in Postmark test mode. It became Issued, the log showed "Test", the `/d/` link opened signed out, and a made-up link showed "Document not found".
+  - To send real email later, the owner needs to:
+    - sign up to Postmark and add its DNS records for footprintgroup.uk
+    - put `POSTMARK_SERVER_TOKEN` (secret) and `EMAIL_FROM` in Netlify
+  - Next: steps 3 and 4 (GoCardless only, see DECISIONS), then step 5 (Xero sync).
+  - **ON HOLD from 2 October 2026** while we work through the director's list of improvements. To resume, the owner signs up for a GoCardless sandbox account and pastes the access token themselves.
 - **Wave 2b LIVE for the demo**: PR [TobyJacobs/Footprint-CRM#5](https://github.com/TobyJacobs/Footprint-CRM/pull/5) merged as `1ae79cf` on 1 October 2026 (test data only).
 - **Wave 2b details** (branch `wave-2b/purchase-orders-credit-notes`):
   - Migration `20261002130000_purchase_orders_credit_notes.sql`, applied to test:
@@ -148,3 +176,95 @@ Git Credential Manager holds the owner's GitHub sign-in, so **Claude pushes auto
 
 ## Local running
 The dev server runs from the Claude desktop preview (`.claude/launch.json` in `Documents\claude`) at http://localhost:3000.
+
+## Director's improvements list (received 2 October 2026, not yet started)
+1. New staff with a Footprint email get access automatically.
+2. Staff roles assigned automatically from their job role in Microsoft Entra.
+3. "Resend" buttons on quotes and invoices.
+4. Live charts in the Quotes & Invoices section.
+5. Customer approves a quote online, and it then moves to sales orders automatically.
+6. Split "Reports & Intranet" into a Staff hub (personal monthly progress, by role) and Reports.
+7. Commission calculated per staff member per month.
+8. Raise a purchase order or order from a supplier inside a sales order.
+9. Margin shown as a percentage; customers only ever see their price, never cost or GP.
+10. Home page that changes by role: directors see group GP and monthly goals, the sales team sees their own stats, and so on.
+
+## Director's improvements: batch 1, quick wins (branch `improvements/quick-wins`, 2 October 2026), done and tested
+- **Item 9:** the profit box is now "Margin", showing a big % (staff only). The £ gross profit line was removed from the document page and the editor. Customer pages show prices only (checked on `/q/`).
+- **Item 3:** after the first email, a one-click "Resend quote/invoice/…" button goes to the same address with a "Reminder:" subject. The full form is tucked under "Send to someone else or change the message". Tested on INV-074893.
+- **Item 5:** migration `20261004120000_auto_order_on_accept.sql` (applied to test) adds `_convert_quote_to_order`. Accepting online now creates the sales order at once (customer PO goes into the reference) and marks the quote converted. Tested: made-up quote QT-009973 accepted on `/q/` → SO-010914.
+- **Item 8:** the sales order button is now "Order from suppliers (raise POs)". The PO page has a "Place order with supplier" email box: the email includes a lines table, needed-by date and delivery address, and moves a draft PO to "sent". Migration `20261004130000_po_email.sql` (applied) adds `email_log.purchase_order_id`. Tested on PO-03273 (to a made-up address).
+- Next: items 1 and 2 plus pre-listing staff from Microsoft 365 (needs an Entra permission the owner approves).
+
+## Director's improvements: batch 2, staff from Microsoft 365 (items 1 and 2), built and waiting on admin consent (2 October 2026)
+- Migration `20261005120000_staff_directory.sql` (applied to test) adds:
+  - tables `staff_directory`, `job_role_rules`, `directory_sync_runs`, `directory_sync_settings`
+  - `user_roles.source` ('manual' / 'directory')
+  - functions `suggested_role`, `_apply_directory_access`, `reapply_directory_roles`, `directory_sync_apply` (admin, or the daily job with a key whose sha256 is stored), `set_directory_sync_key_hash`
+  - `handle_new_user` now links the directory entry and gives the role at first sign-in
+  - `protect_profile_flags` lets the sync switch leavers off
+- App:
+  - `src/lib/entra/` (Graph client-credentials, rules)
+  - new tab Admin → Microsoft 365 (`/admin/directory`): Sync now, run history, job title rules, list of job titles, daily sync key
+  - `/admin/directory/[dirId]` for people who haven't signed in yet
+  - Users list shows everyone with job title and sort options
+  - the user page has a "From Microsoft 365" role picker; directory roles are locked in the "Extra roles" list
+  - `/api/cron/directory-sync` plus Netlify scheduled function `netlify/functions/directory-sync.mts` (05:00 UTC daily)
+- Entra:
+  - app "Footprint Platform" now has the **User.Read.All (Application)** permission
+  - client secret "Staff sync" created by the owner, held in `.env.local` only
+  - **Admin consent FAILED**: Toby's account isn't Global Admin. The tenant is "Footprint Copy & Design", and a Global Administrator must click "Grant admin consent".
+- Tested: with the secret, "Sync now" reaches Microsoft and gets "needs admin consent" (so the secret works).
+- The test database has **no roles yet**. They need creating (e.g. Director, Sales, Studio, Accounts) before job title rules can be added.
+- Still to do at go-live: add `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET` (secret), `STAFF_EMAIL_DOMAINS` and `DIRECTORY_SYNC_KEY` (secret, from Admin → Microsoft 365) to Netlify.
+
+## Director's improvements: item 4, charts (2 October 2026), done and tested
+- Migration `20261006120000_sales_stats.sql` (applied to test): `sales_stats(p_from, p_owner)`, a security-invoker function so RLS applies. It adds everything up in the database, so it isn't affected by the 1,000-row API limit.
+- `src/lib/sales/stats.ts`, Recharts components in `src/components/charts/` (SalesCharts, ChartFilters), brand colours.
+- New **Overview** tab (first tab; `/sales` now opens it):
+  - tiles: invoiced, margin %, win rate, open quotes, owed / overdue
+  - charts: invoiced per month (paid / unpaid plus margin line), quotes won / lost / quoted, money owed by lateness, top customers
+  - filters: period (3/6/12/24 months), salesperson
+- A 6-month chart strip sits above the Quotes and Invoices lists.
+- Made-up history `supabase/seed/fake-sales-history.sql` was run on TEST: about 200 quotes over 12 months, marked internal_notes = 'DEMO DATA'.
+- The Microsoft 365 admin consent is paused at the owner's request (2 October 2026). Only the @footprintgroup.uk domain is used, as confirmed.
+
+## Director's improvements: items 6, 7 and 10, role home pages, Staff hub, targets and commission (2 October 2026), done and tested
+- Roles from the owner: **Directors, Sales team, Finance team, Operations team**. More will be added later, which is why each role has a **dashboard type** (`roles.dashboard`: director / sales / finance / operations / general), picked in Admin → Roles. New roles need no code.
+- Migration `20261007120000_dashboards_targets_commission.sql` (applied to test) adds:
+  - `roles.dashboard`, `my_dashboards()`
+  - `sales_documents.paid_at` plus a `set_paid_at` trigger
+  - `monthly_targets` (group or person; every month or one month; invoiced / gross_profit / margin_pct)
+  - `commission_rules` (standard plus personal; % of GP or sales; when paid or raised)
+  - `team_month_stats(from, to)` (security invoker)
+  - the 4 roles with permissions, and starting job-title rules (Director, Sales, Account Manager, Business Development, Finance, Accounts, Bookkeep, Operations, Production, Print)
+  - seeds: group goal £300,000/month (example), target margin 45% (example), commission 10% of GP on paid invoices (example)
+  - RLS on targets and commission: read your own, group or default ones; directors, finance and admins read all; admins write
+- New `hub` feature ("Staff hub", `/hub`). "Reports & Intranet" is renamed "Reports".
+- Home page `/` shows dashboards by role, with tabs if someone has several. Admins with no role get the Directors view. Feature tiles move under "Your sections".
+  - Directors: goal bar with pace marker, GP, margin against target, pipeline, owed, cash in, recurring, quotes, credit notes, team table (target %, GP, margin, won, commission), 12-month chart, owed chart.
+  - Sales: own goal bar, commission, GP, win rate, leaderboard rank, open quotes (expiring ones flagged), latest invoices.
+  - Finance: invoiced against budget, margin against target (in points), cash in, GP, owed, credit notes, recurring, draft invoices, owed chart, oldest overdue.
+  - Operations: open orders, past deadline, POs to send, late deliveries, supplier spend, orders due soonest, orders by production step, unsent POs, late POs.
+- Staff hub: month picker (6 months), own and group goal bars, commission / GP / quotes tiles, commission history (with "based on" column), own documents.
+- Admin → **Targets & commission** (`/admin/targets`): group goals, one-month overrides, personal targets (people with Sales or Directors roles), standard and personal commission rules.
+- Test data:
+  - Toby's test account was given all 4 roles so the demo can switch views
+  - Toby has a test personal target of £25,000
+  - made-up open orders and POs were added (DEMO DATA)
+- Every made-up document is owned by Toby, so the team table has one row until other staff exist.
+
+## Sales team see only their own documents (2 October 2026), done and tested
+- Owner decision: salespeople only see their own quotes, orders and invoices. Customers stay visible to all.
+- Migration `20261008120000_own_records_only.sql` (applied to test) adds:
+  - `roles.own_records_only` (ON for Sales team)
+  - `sees_all_sales()`, `can_see_sales_owner`, `can_see_sales_document`, `can_see_purchase_order`, `can_see_recurring_invoice`
+  - rebuilt RLS on sales_documents and lines, purchase_orders and lines, recurring_invoices and lines, and email_log
+  - `my_sales_rank()` (leaderboard place without others' figures)
+- The rule: you see all documents if you're an admin, or if any of your roles has Quotes view without "own only". Otherwise you see only documents where you are the salesperson, and you can't create or hand documents to anyone else.
+- App:
+  - `CurrentUser.seesAllSales`
+  - `getSalespersonOptions()` (only yourself if restricted)
+  - save actions force owner = self when restricted
+  - a role tick-box "Only their own quotes, orders and invoices"
+- Tested with a rolled-back dry run (a test account set non-admin with Sales team only): saw 1 of 356 documents and 0 POs; inserting for someone else was blocked; inserting for self was allowed; reassigning was blocked.

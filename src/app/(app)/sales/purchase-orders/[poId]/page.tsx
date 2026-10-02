@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil, Printer } from "lucide-react";
+import { Mail, Pencil, Printer } from "lucide-react";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
-import { Badge, Card, Notice, dangerButton, primaryButton, secondaryButton } from "@/components/ui";
+import { Badge, Card, Field, Notice, dangerButton, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { gbp, longDate, shortDateTime } from "@/lib/customers/display";
 import { getPurchaseOrderLines } from "@/lib/sales/data";
 import { poStatusLabel, statusToneFor } from "@/lib/sales/options";
+import { isEmailConfigured, isEmailTestMode } from "@/lib/email/postmark";
 import { createClient } from "@/lib/supabase/server";
 import { deletePurchaseOrder, setPurchaseOrderStatus } from "../actions";
+import { sendPurchaseOrderEmail } from "../email-actions";
 
 export async function generateMetadata(props: PageProps<"/sales/purchase-orders/[poId]">): Promise<Metadata> {
   const { poId } = await props.params;
@@ -40,12 +42,33 @@ export default async function PurchaseOrderPage(props: PageProps<"/sales/purchas
     .eq("id", poId)
     .maybeSingle();
   if (!po) notFound();
-  const lines = await getPurchaseOrderLines(poId);
+  const [lines, { data: emailLog }, { data: settings }] = await Promise.all([
+    getPurchaseOrderLines(poId),
+    supabase
+      .from("email_log")
+      .select("id, to_addresses, status, error, sent_at")
+      .eq("purchase_order_id", poId)
+      .order("sent_at", { ascending: false })
+      .limit(10),
+    supabase.from("company_settings").select("company_name").single(),
+  ]);
   const supplier = po.suppliers as unknown as { id: string; name: string; email: string | null; phone: string | null; contact_name: string | null };
   const so = po.sales_documents as unknown as { id: string; number: string } | null;
   const customer = po.customers as unknown as { id: string; name: string } | null;
   const owner = po.owner as unknown as { full_name: string | null; email: string } | null;
   const finished = ["received", "closed", "cancelled"].includes(po.status);
+  const company = settings?.company_name ?? "Footprint Group";
+  const emailed = typeof sp.emailed === "string" ? sp.emailed : null;
+  const raisedBy = owner ? (owner.full_name ?? owner.email) : company;
+  const supplierMessage = `${supplier.contact_name ? `Hi ${supplier.contact_name.split(" ")[0]},` : "Hello,"}
+
+Please supply the items below against our purchase order ${po.number}, and quote this number on your invoice and delivery note.
+
+Could you confirm receipt and the expected delivery date?
+
+Kind regards,
+${raisedBy}
+${company}`;
 
   return (
     <>
@@ -100,8 +123,8 @@ export default async function PurchaseOrderPage(props: PageProps<"/sales/purchas
         <Card title="Next steps">
           <div className="flex flex-wrap items-center gap-3">
             {po.status === "draft" && (
-              <StatusButton poId={poId} status="sent" primary>
-                Mark as sent to supplier
+              <StatusButton poId={poId} status="sent">
+                Mark as sent (ordered by phone)
               </StatusButton>
             )}
             {po.status === "sent" && (
@@ -124,6 +147,62 @@ export default async function PurchaseOrderPage(props: PageProps<"/sales/purchas
             {finished && <p className="text-sm text-fp-dark/75">This purchase order is finished.</p>}
           </div>
         </Card>
+      )}
+
+      {emailed && (
+        <p role="status" className="mt-6 rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-4 py-3 text-sm text-fp-teal-deep">
+          {emailed === "test" ? "Order email accepted in test mode (not actually delivered)." : "Order emailed to the supplier."}
+        </p>
+      )}
+
+      {canEdit && ["draft", "sent"].includes(po.status) && (
+        <div className="mt-6">
+          <Card title="Place order with supplier">
+            {!isEmailConfigured() ? (
+              <p className="text-sm text-fp-dark/75">Email isn&apos;t switched on yet. Once Postmark is set up, you&apos;ll be able to email orders from here.</p>
+            ) : (
+              <form action={sendPurchaseOrderEmail.bind(null, poId)} className="grid gap-3">
+                {isEmailTestMode() && (
+                  <p className="rounded-md bg-fp-amber/15 px-3 py-2 text-xs">
+                    Test mode: emails are accepted by Postmark but <strong>not delivered</strong>.
+                  </p>
+                )}
+                <Field label="To">
+                  <input name="to" type="text" defaultValue={supplier.email ?? ""} required className={inputClass} placeholder="orders@supplier.co.uk" />
+                </Field>
+                <Field label="CC (optional)">
+                  <input name="cc" type="text" className={inputClass} placeholder="Separate several with commas" />
+                </Field>
+                <Field label="Subject">
+                  <input name="subject" defaultValue={`${(emailLog ?? []).length ? "Reminder: " : ""}Purchase order ${po.number} from ${company}`} required className={inputClass} />
+                </Field>
+                <Field label="Message" hint="The order lines, delivery address and needed-by date are added automatically.">
+                  <textarea name="message" rows={8} defaultValue={supplierMessage} required className={inputClass} />
+                </Field>
+                <div>
+                  <button type="submit" className={`${primaryButton} inline-flex items-center gap-2`}>
+                    <Mail size={14} aria-hidden /> {(emailLog ?? []).length ? "Resend order to supplier" : "Email order to supplier"}
+                  </button>
+                </div>
+              </form>
+            )}
+            {(emailLog ?? []).length > 0 && (
+              <ul className="mt-5 grid gap-2 border-t border-fp-border pt-4 text-sm">
+                {(emailLog ?? []).map((e) => (
+                  <li key={e.id}>
+                    <span className="mr-2">
+                      <Badge tone={e.status === "failed" ? "red" : e.status === "test" ? "amber" : "teal"}>
+                        {e.status === "test" ? "Test" : e.status === "failed" ? "Failed" : "Sent"}
+                      </Badge>
+                    </span>
+                    {shortDateTime(e.sent_at)} to {e.to_addresses}
+                    {e.error && <span className="block text-xs text-fp-error">{e.error}</span>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </div>
       )}
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">

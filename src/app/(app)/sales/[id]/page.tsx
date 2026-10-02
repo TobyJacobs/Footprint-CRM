@@ -15,6 +15,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { convertDocument, deleteDocument, setDocumentStatus } from "../actions";
 import { raisePurchaseOrders } from "../purchase-orders/actions";
+import EmailCard from "../EmailCard";
 
 export async function generateMetadata(props: PageProps<"/sales/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -49,7 +50,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
   if (!doc || !isDocType(doc.doc_type)) notFound();
   const type = doc.doc_type as DocType;
 
-  const [lines, { data: source }, { data: children }, { data: pos }] = await Promise.all([
+  const [lines, { data: source }, { data: children }, { data: pos }, { data: emailLog }, { data: settings }] = await Promise.all([
     getDocumentLines(id),
     doc.source_document_id
       ? supabase.from("sales_documents").select("id, number, doc_type").eq("id", doc.source_document_id).maybeSingle()
@@ -58,6 +59,13 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
     type === "sales_order"
       ? supabase.from("purchase_orders").select("id, number, status, total, suppliers(name)").eq("sales_document_id", id)
       : Promise.resolve({ data: [] }),
+    supabase
+      .from("email_log")
+      .select("id, to_addresses, subject, status, error, sent_at")
+      .eq("sales_document_id", id)
+      .order("sent_at", { ascending: false })
+      .limit(10),
+    supabase.from("company_settings").select("company_name").single(),
   ]);
 
   const customer = doc.customers as unknown as { id: string; name: string; credit_status: string | null };
@@ -69,12 +77,13 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
   const credits = (children ?? []).filter((c) => c.doc_type === "credit_note" && c.status === "issued");
   const credited = credits.reduce((sum, c) => sum + Number(c.total), 0);
   const balance = Number(doc.total) - credited;
-  const gp = Number(doc.subtotal) - Number(doc.cost_total);
   const margin = marginPercent(Number(doc.subtotal), Number(doc.cost_total));
 
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
   const approvalLink = `${origin}/q/${doc.public_token}`;
+  const viewLink = `${origin}/d/${doc.public_token}`;
+  const emailed = typeof sp.emailed === "string" ? sp.emailed : null;
 
   return (
     <>
@@ -140,7 +149,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
               </ActionButton>
             )}
             {type === "sales_order" && ["open", "completed", "invoiced"].includes(doc.status) && (
-              <ActionButton action={raisePurchaseOrders.bind(null, id)}>Raise purchase orders</ActionButton>
+              <ActionButton action={raisePurchaseOrders.bind(null, id)}>Order from suppliers (raise POs)</ActionButton>
             )}
             {type === "sales_order" && doc.status === "open" && (
               <>
@@ -197,7 +206,40 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
               </div>
             </div>
           )}
+          {type !== "quote" && doc.status !== "draft" && (
+            <div className="mt-5 rounded-md bg-fp-offwhite p-4 text-sm">
+              <p className="font-semibold">Customer view link</p>
+              <p className="mb-2 text-fp-dark/75">A private, read-only link the customer can open and print — no login needed.</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <code className="break-all rounded bg-white px-2 py-1 text-xs">{viewLink}</code>
+                <CopyButton text={viewLink} label="Copy link" />
+              </div>
+            </div>
+          )}
         </Card>
+      )}
+
+      {emailed && (
+        <p role="status" className="mt-6 rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-4 py-3 text-sm text-fp-teal-deep">
+          {emailed === "test" ? "Email accepted in test mode (not actually delivered)." : "Email sent."}
+        </p>
+      )}
+
+      {canEdit && !["void", "cancelled"].includes(doc.status) && (
+        <div className="mt-6">
+          <EmailCard
+            documentId={id}
+            type={type}
+            number={doc.number}
+            total={gbp(Number(doc.total)) ?? ""}
+            dueDate={type === "invoice" ? longDate(doc.due_date) : null}
+            contactEmail={contact?.email ?? null}
+            contactFirstName={contact?.first_name ?? null}
+            senderName={user.fullName ?? user.email}
+            companyName={settings?.company_name ?? "Footprint Group"}
+            log={emailLog ?? []}
+          />
+        </div>
       )}
 
       {doc.responded_at && (
@@ -261,14 +303,12 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         </Card>
 
         <div className="grid content-start gap-6">
-          <Card title="Profit">
+          <Card title="Margin">
+            <p className="text-3xl font-black text-fp-teal-deep">{margin === null ? "—" : `${margin}%`}</p>
+            <p className="mb-3 text-xs text-fp-mid">Staff only — customers never see cost or margin.</p>
             <dl className="grid grid-cols-2 gap-y-1 text-sm">
               <dt className="text-fp-dark/75">Cost</dt>
               <dd className="text-right">{gbp(Number(doc.cost_total))}</dd>
-              <dt className="text-fp-dark/75">Gross profit</dt>
-              <dd className="text-right font-semibold">{gbp(gp)}</dd>
-              <dt className="text-fp-dark/75">Margin</dt>
-              <dd className="text-right">{margin === null ? "—" : `${margin}%`}</dd>
               {doc.labour_cost !== null && (
                 <>
                   <dt className="text-fp-dark/75">Labour cost</dt>

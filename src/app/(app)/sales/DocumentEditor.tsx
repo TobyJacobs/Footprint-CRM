@@ -359,11 +359,8 @@ export default function DocumentEditor({
           <dd className="text-right font-bold">{money.format(t.total)}</dd>
           <dt className="mt-2 text-fp-mid">Cost</dt>
           <dd className="mt-2 text-right text-fp-mid">{money.format(t.cost)}</dd>
-          <dt className="text-fp-mid">Gross profit</dt>
-          <dd className="text-right text-fp-mid">
-            {money.format(t.profit)}
-            {margin !== null && ` (${margin}%)`}
-          </dd>
+          <dt className="font-semibold text-fp-teal-deep">Margin</dt>
+          <dd className="text-right font-semibold text-fp-teal-deep">{margin === null ? "—" : `${margin}%`}</dd>
         </dl>
       </div>
     </div>

@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
+import { ruleRole, type JobRoleRule } from "@/lib/entra/rules";
 import { saveUser } from "../../actions";
+import DirectoryRoleCard, { type DirectoryEntry } from "../../directory/DirectoryRoleCard";
 import { Card, Notice, primaryButton } from "../../ui";
 
 export default async function EditUserPage(props: PageProps<"/admin/users/[id]">) {
@@ -11,17 +13,24 @@ export default async function EditUserPage(props: PageProps<"/admin/users/[id]">
   const searchParams = await props.searchParams;
   const supabase = await createClient();
 
-  const [{ data: user }, { data: roles }, { data: teams }, { data: userRoles }, { data: memberships }] =
+  const [{ data: user }, { data: roles }, { data: teams }, { data: userRoles }, { data: memberships }, { data: entry }, { data: rules }] =
     await Promise.all([
       supabase.from("profiles").select("id, email, full_name, is_admin, is_active").eq("id", id).maybeSingle(),
       supabase.from("roles").select("id, name, description").order("name"),
       supabase.from("teams").select("id, name").order("name"),
-      supabase.from("user_roles").select("role_id").eq("user_id", id),
+      supabase.from("user_roles").select("role_id, source").eq("user_id", id),
       supabase.from("team_members").select("team_id").eq("user_id", id),
+      supabase
+        .from("staff_directory")
+        .select("id, email, display_name, job_title, department, office_location, account_enabled, in_entra, role_id, last_synced_at")
+        .eq("profile_id", id)
+        .maybeSingle(),
+      supabase.from("job_role_rules").select("match_text, role_id, priority"),
     ]);
   if (!user) notFound();
 
   const hasRole = new Set((userRoles ?? []).map((r) => r.role_id));
+  const fromDirectory = new Set((userRoles ?? []).filter((r) => r.source === "directory").map((r) => r.role_id));
   const inTeam = new Set((memberships ?? []).map((m) => m.team_id));
   const isMe = user.id === me.id;
 
@@ -32,6 +41,22 @@ export default async function EditUserPage(props: PageProps<"/admin/users/[id]">
       </Link>
       <h2 className="mb-6 mt-3 text-xl font-black">{user.full_name ?? user.email}</h2>
       <Notice searchParams={searchParams} />
+
+      {entry ? (
+        <div className="mb-6 max-w-3xl">
+          <DirectoryRoleCard
+            entry={entry as DirectoryEntry}
+            roles={roles ?? []}
+            ruleRoleId={ruleRole(entry.job_title, (rules ?? []) as JobRoleRule[])}
+            back={`/admin/users/${user.id}`}
+          />
+        </div>
+      ) : (
+        <p className="mb-6 max-w-3xl rounded-md bg-fp-offwhite px-4 py-3 text-sm text-fp-dark/75">
+          Not matched to anyone in Microsoft 365 yet, so roles here are set by hand. A sync in Admin → Microsoft 365 links
+          people automatically by email.
+        </p>
+      )}
 
       <form action={saveUser.bind(null, user.id)} className="grid max-w-3xl gap-6">
         <Card title="Access">
@@ -60,7 +85,7 @@ export default async function EditUserPage(props: PageProps<"/admin/users/[id]">
           )}
         </Card>
 
-        <Card title="Roles">
+        <Card title="Extra roles (added by hand)">
           {(roles ?? []).length === 0 ? (
             <p className="text-sm text-fp-dark/75">
               No roles yet. <Link href="/admin/roles" className="font-semibold text-fp-teal-deep hover:underline">Create one</Link>.
@@ -69,9 +94,21 @@ export default async function EditUserPage(props: PageProps<"/admin/users/[id]">
             <div className="grid gap-3 text-sm sm:grid-cols-2">
               {(roles ?? []).map((r) => (
                 <label key={r.id} className="flex items-start gap-3">
-                  <input type="checkbox" name="roles" value={r.id} defaultChecked={hasRole.has(r.id)} className="mt-0.5 accent-fp-pink" />
+                  <input
+                    type="checkbox"
+                    name="roles"
+                    value={r.id}
+                    defaultChecked={hasRole.has(r.id)}
+                    disabled={fromDirectory.has(r.id)}
+                    className="mt-0.5 accent-fp-pink"
+                  />
                   <span>
                     <span className="font-semibold">{r.name}</span>
+                    {fromDirectory.has(r.id) && (
+                      <span className="ml-2 rounded-full bg-fp-teal/15 px-2 py-0.5 text-xs font-semibold text-fp-teal-deep">
+                        From Microsoft 365
+                      </span>
+                    )}
                     {r.description && <span className="block text-fp-dark/70">{r.description}</span>}
                   </span>
                 </label>

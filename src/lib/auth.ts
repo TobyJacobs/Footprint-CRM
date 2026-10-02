@@ -15,6 +15,10 @@ export type CurrentUser = {
   isAdmin: boolean;
   can: (feature: string, action: Action) => boolean;
   visibleFeatureKeys: string[];
+  // Home page dashboard types from the person's roles (see lib/dashboards).
+  dashboards: string[];
+  // False for people who may only see their own quotes, orders and invoices.
+  seesAllSales: boolean;
 };
 
 // The one place that works out who is signed in and what they may do.
@@ -28,13 +32,15 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
 
-  const [{ data: profile }, { data: perms }] = await Promise.all([
+  const [{ data: profile }, { data: perms }, { data: dashboards }, { data: seesAll }] = await Promise.all([
     supabase
       .from("profiles")
       .select("email, full_name, is_admin, is_active")
       .eq("id", auth.user.id)
       .single(),
     supabase.rpc("my_permissions"),
+    supabase.rpc("my_dashboards"),
+    supabase.rpc("sees_all_sales"),
   ]);
 
   if (!profile || !profile.is_active) redirect("/login?error=inactive");
@@ -55,6 +61,8 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
     visibleFeatureKeys: features
       .filter((f) => (f.key === "admin" ? isAdmin : can(f.key, "view")))
       .map((f) => f.key),
+    dashboards: (dashboards as string[] | null) ?? [],
+    seesAllSales: isAdmin || seesAll === true,
   };
 });
 

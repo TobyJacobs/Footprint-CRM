@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
-import { getStaffOptions } from "@/lib/customers/staff";
+import { getSalespersonOptions } from "@/lib/customers/staff";
 import { getCustomerWithContacts, getDocumentLines, getTaxRates } from "@/lib/sales/data";
 import { docTypes, isDocType, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
@@ -23,7 +23,7 @@ export default async function EditDocumentPage(props: PageProps<"/sales/[id]/edi
 
   const [taxRates, staff, lines, picked] = await Promise.all([
     getTaxRates(),
-    getStaffOptions(),
+    getSalespersonOptions(),
     getDocumentLines(id),
     getCustomerWithContacts(doc.customer_id),
   ]);

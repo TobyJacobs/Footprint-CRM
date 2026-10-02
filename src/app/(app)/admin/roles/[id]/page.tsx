@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
 import { deleteRole, saveRole } from "../../actions";
+import DashboardSelect from "../DashboardSelect";
 import { ACTIONS, actionLabels, permissionFeatures } from "../../permissions";
 import { Card, Notice, dangerButton, inputClass, primaryButton } from "../../ui";
 
@@ -13,7 +14,7 @@ export default async function EditRolePage(props: PageProps<"/admin/roles/[id]">
   const supabase = await createClient();
 
   const [{ data: role }, { data: perms }] = await Promise.all([
-    supabase.from("roles").select("id, name, description").eq("id", id).maybeSingle(),
+    supabase.from("roles").select("id, name, description, dashboard, own_records_only").eq("id", id).maybeSingle(),
     supabase.from("role_permissions").select("feature, action").eq("role_id", id),
   ]);
   if (!role) notFound();
@@ -38,6 +39,7 @@ export default async function EditRolePage(props: PageProps<"/admin/roles/[id]">
               <span className="font-semibold">Description (optional)</span>
               <input name="description" defaultValue={role.description ?? ""} className={inputClass} />
             </label>
+            <DashboardSelect value={role.dashboard} ownOnly={role.own_records_only} />
           </div>
         </Card>
 
