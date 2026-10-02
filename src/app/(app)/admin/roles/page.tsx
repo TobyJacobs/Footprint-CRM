@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
+import { dashboardTypes } from "@/lib/dashboards/data";
 import { createRole } from "../actions";
+import DashboardSelect from "./DashboardSelect";
 import { Card, Notice, inputClass, primaryButton } from "../ui";
 
 export default async function RolesPage(props: PageProps<"/admin/roles">) {
@@ -9,7 +11,7 @@ export default async function RolesPage(props: PageProps<"/admin/roles">) {
   const searchParams = await props.searchParams;
   const supabase = await createClient();
   const [{ data: roles }, { data: userRoles }] = await Promise.all([
-    supabase.from("roles").select("id, name, description").order("name"),
+    supabase.from("roles").select("id, name, description, dashboard").order("name"),
     supabase.from("user_roles").select("role_id"),
   ]);
   const count = (id: string) => (userRoles ?? []).filter((r) => r.role_id === id).length;
@@ -33,7 +35,8 @@ export default async function RolesPage(props: PageProps<"/admin/roles">) {
                     {r.name}
                   </Link>
                   <span className="ml-2 text-xs text-fp-mid">
-                    {count(r.id)} {count(r.id) === 1 ? "person" : "people"}
+                    {count(r.id)} {count(r.id) === 1 ? "person" : "people"} ·{" "}
+                    {dashboardTypes.find((d) => d.value === r.dashboard)?.label ?? "General"} home page
                   </span>
                   {r.description && <p className="text-sm text-fp-dark/70">{r.description}</p>}
                 </li>
@@ -51,6 +54,7 @@ export default async function RolesPage(props: PageProps<"/admin/roles">) {
               <span className="font-semibold">Description (optional)</span>
               <input name="description" className={inputClass} />
             </label>
+            <DashboardSelect />
             <div>
               <button type="submit" className={primaryButton}>Create role</button>
             </div>

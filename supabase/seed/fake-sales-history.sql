@@ -91,3 +91,52 @@ begin
     end loop;
   end loop;
 end $$;
+
+-- After migration 20261007120000 (paid dates): give the made-up paid invoices
+-- a believable paid date, 5 to 40 days after they were issued.
+update public.sales_documents
+   set paid_at = least(now(), (issue_date + (5 + floor(random() * 36))::int)::timestamptz)
+ where internal_notes = 'DEMO DATA' and doc_type = 'invoice' and status = 'paid';
+
+-- Made-up open sales orders and purchase orders, so the Operations home page
+-- has something to show. Also marked DEMO DATA.
+do $$
+declare
+  i int; so uuid; po uuid; cust uuid; sup uuid; owner uuid; p record;
+  steps text[] := array['New Sales Order', 'Artwork', 'Proofing', 'Printing', 'Finishing', 'Ready for delivery'];
+begin
+  select id into owner from public.profiles where is_admin order by created_at limit 1;
+  for i in 1..14 loop
+    select id into cust from public.customers where erased_at is null order by random() limit 1;
+    insert into public.sales_documents
+      (doc_type, number, status, customer_id, owner_id, title, issue_date, deadline_date, production_step, internal_notes)
+    values
+      ('sales_order', public._take_document_number('sales_order'), 'open', cust, owner, 'Demo order',
+       current_date - (1 + floor(random() * 20))::int, current_date + (floor(random() * 26) - 5)::int,
+       steps[1 + floor(random() * 6)::int], 'DEMO DATA')
+    returning id into so;
+    for p in select pr.id, pr.name, pr.sale_price, pr.cost_price, pr.tax_rate_id, pr.supplier_id, coalesce(t.rate, 20) as rate
+               from public.products pr left join public.tax_rates t on t.id = pr.tax_rate_id
+              where pr.active order by random() limit (1 + floor(random() * 2))::int loop
+      insert into public.sales_document_lines
+        (document_id, position, product_id, description, quantity, unit_price, unit_cost, tax_rate_id, tax_rate)
+      values (so, 0, p.id, p.name, 1 + floor(random() * 4), p.sale_price, coalesce(p.cost_price, 0), p.tax_rate_id, p.rate);
+    end loop;
+  end loop;
+
+  for i in 1..9 loop
+    select id into sup from public.suppliers order by random() limit 1;
+    insert into public.purchase_orders
+      (number, status, supplier_id, owner_id, issue_date, expected_date, deliver_to, internal_notes, sent_at, received_at)
+    values
+      (public._take_document_number('purchase_order'),
+       case when i <= 2 then 'draft' when i <= 7 then 'sent' else 'received' end,
+       sup, owner, current_date - (floor(random() * 15))::int,
+       current_date + (floor(random() * 14) - 6)::int, 'Footprint Group', 'DEMO DATA',
+       case when i > 2 then now() end, case when i > 7 then now() end)
+    returning id into po;
+    insert into public.purchase_order_lines (purchase_order_id, position, description, quantity, unit_cost, tax_rate, tax_rate_id)
+    values (po, 0, 'Demo supplies', 1 + floor(random() * 5), 20 + floor(random() * 150),
+            20, (select id from public.tax_rates where is_default limit 1));
+  end loop;
+end $$;

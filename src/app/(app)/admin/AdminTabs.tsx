@@ -8,6 +8,7 @@ const tabs = [
   { href: "/admin/directory", label: "Microsoft 365" },
   { href: "/admin/teams", label: "Teams" },
   { href: "/admin/roles", label: "Roles & permissions" },
+  { href: "/admin/targets", label: "Targets & commission" },
   { href: "/admin/company", label: "Company" },
   { href: "/admin/audit", label: "Audit log" },
   { href: "/admin/system", label: "System" },

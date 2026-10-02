@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { isDirectoryConfigured } from "@/lib/entra/graph";
 import { runDirectorySync } from "@/lib/entra/sync";
+import { dashboardTypes } from "@/lib/dashboards/data";
 import { createClient } from "@/lib/supabase/server";
 import { permissionFeatures, ACTIONS } from "./permissions";
 
@@ -196,6 +197,12 @@ export async function deleteTeam(teamId: string) {
 
 // ─── Roles ──────────────────────────────────────────────────────────────────
 
+// Which home page dashboard a role gets (see lib/dashboards/data.ts).
+function dashboardValue(formData: FormData) {
+  const value = text(formData, "dashboard");
+  return dashboardTypes.some((d) => d.value === value) ? value : "general";
+}
+
 export async function createRole(formData: FormData) {
   await requireAdmin();
   const name = text(formData, "name");
@@ -204,7 +211,7 @@ export async function createRole(formData: FormData) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("roles")
-    .insert({ name, description: text(formData, "description") || null })
+    .insert({ name, description: text(formData, "description") || null, dashboard: dashboardValue(formData) })
     .select("id")
     .single();
   if (error) fail("/admin/roles", error.code === "23505" ? "A role with that name already exists" : error.message);
@@ -222,7 +229,7 @@ export async function saveRole(roleId: string, formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("roles")
-    .update({ name, description: text(formData, "description") || null })
+    .update({ name, description: text(formData, "description") || null, dashboard: dashboardValue(formData) })
     .eq("id", roleId);
   if (error) fail(path, error.code === "23505" ? "A role with that name already exists" : error.message);
 
@@ -342,4 +349,119 @@ export async function createDirectorySyncKey(): Promise<{ key?: string; error?: 
   const { error } = await supabase.rpc("set_directory_sync_key_hash", { p_hash: hash });
   if (error) return { error: error.message };
   return { key };
+}
+
+// ─── Targets & commission ───────────────────────────────────────────────────
+
+function amount(formData: FormData, name: string): number | null {
+  const raw = text(formData, name).replace(/[£,%\s]/g, "");
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : NaN;
+}
+
+// Set (or clear, when empty) one "every month" target.
+async function upsertTarget(userId: string | null, metric: string, value: number | null, month: string | null = null) {
+  const supabase = await createClient();
+  let existing = supabase.from("monthly_targets").select("id").eq("metric", metric);
+  existing = userId ? existing.eq("user_id", userId) : existing.is("user_id", null);
+  existing = month ? existing.eq("month", month) : existing.is("month", null);
+  const { data: row } = await existing.maybeSingle();
+  if (value === null) {
+    if (row) await supabase.from("monthly_targets").delete().eq("id", row.id);
+    return null;
+  }
+  const { error } = row
+    ? await supabase.from("monthly_targets").update({ amount: value, is_example: false }).eq("id", row.id)
+    : await supabase.from("monthly_targets").insert({ user_id: userId, metric, month, amount: value, is_example: false });
+  return error;
+}
+
+export async function saveGroupTargets(formData: FormData) {
+  await requireAdmin();
+  const path = "/admin/targets";
+  const values = {
+    invoiced: amount(formData, "invoiced"),
+    gross_profit: amount(formData, "gross_profit"),
+    margin_pct: amount(formData, "margin_pct"),
+  };
+  if (Object.values(values).some((v) => Number.isNaN(v))) fail(path, "Please enter numbers only");
+  if (values.margin_pct !== null && values.margin_pct > 100) fail(path, "Margin must be 100% or less");
+  for (const [metric, value] of Object.entries(values)) {
+    const error = await upsertTarget(null, metric, value);
+    if (error) fail(path, error.message);
+  }
+  revalidatePath("/", "layout");
+  redirect(`${path}?saved=1`);
+}
+
+export async function saveMonthTarget(formData: FormData) {
+  await requireAdmin();
+  const path = "/admin/targets";
+  const month = text(formData, "month");
+  const value = amount(formData, "amount");
+  if (!/^\d{4}-\d{2}$/.test(month)) fail(path, "Please pick a month");
+  if (value === null || Number.isNaN(value)) fail(path, "Please enter the goal for that month");
+  const error = await upsertTarget(null, "invoiced", value, `${month}-01`);
+  if (error) fail(path, error.message);
+  revalidatePath("/", "layout");
+  redirect(`${path}?saved=1`);
+}
+
+export async function deleteTarget(targetId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("monthly_targets").delete().eq("id", targetId);
+  if (error) fail("/admin/targets", error.message);
+  revalidatePath("/", "layout");
+  redirect("/admin/targets?deleted=1");
+}
+
+// Every person's monthly sales target in one go (empty = no target).
+export async function savePersonTargets(formData: FormData) {
+  await requireAdmin();
+  const path = "/admin/targets";
+  for (const [key] of formData.entries()) {
+    if (!key.startsWith("target_")) continue;
+    const userId = key.slice("target_".length);
+    if (!/^[0-9a-f-]{36}$/i.test(userId)) continue;
+    const value = amount(formData, key);
+    if (Number.isNaN(value)) fail(path, "Please enter numbers only");
+    const error = await upsertTarget(userId, "invoiced", value);
+    if (error) fail(path, error.message);
+  }
+  revalidatePath("/", "layout");
+  redirect(`${path}?saved=1`);
+}
+
+// The default commission rule (userId null) or one person's own rule.
+export async function saveCommissionRule(userId: string | null, formData: FormData) {
+  await requireAdmin();
+  const path = "/admin/targets";
+  const targetUser = userId ?? (text(formData, "user_id") || null);
+  const rate = amount(formData, "rate");
+  const basis = text(formData, "basis") === "invoiced" ? "invoiced" : "gross_profit";
+  const countedWhen = text(formData, "counted_when") === "invoiced" ? "invoiced" : "paid";
+  if (rate === null || Number.isNaN(rate) || rate > 100) fail(path, "Please enter a commission rate between 0 and 100%");
+
+  const supabase = await createClient();
+  let existing = supabase.from("commission_rules").select("id");
+  existing = targetUser ? existing.eq("user_id", targetUser) : existing.is("user_id", null);
+  const { data: row } = await existing.maybeSingle();
+  const fields = { basis, rate, counted_when: countedWhen, is_example: false };
+  const { error } = row
+    ? await supabase.from("commission_rules").update(fields).eq("id", row.id)
+    : await supabase.from("commission_rules").insert({ ...fields, user_id: targetUser });
+  if (error) fail(path, error.message);
+  revalidatePath("/", "layout");
+  redirect(`${path}?saved=1`);
+}
+
+export async function deleteCommissionRule(ruleId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("commission_rules").delete().eq("id", ruleId).not("user_id", "is", null);
+  if (error) fail("/admin/targets", error.message);
+  revalidatePath("/", "layout");
+  redirect("/admin/targets?deleted=1");
 }

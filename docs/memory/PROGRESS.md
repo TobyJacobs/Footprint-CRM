@@ -228,3 +228,28 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - A 6-month chart strip sits above the Quotes and Invoices lists.
 - Made-up history `supabase/seed/fake-sales-history.sql` was run on TEST: about 200 quotes over 12 months, marked internal_notes = 'DEMO DATA'.
 - The Microsoft 365 admin consent is paused at the owner's request (2 October 2026). Only the @footprintgroup.uk domain is used, as confirmed.
+
+## Director's improvements: items 6, 7 and 10, role home pages, Staff hub, targets and commission (2 October 2026), done and tested
+- Roles from the owner: **Directors, Sales team, Finance team, Operations team**. More will be added later, which is why each role has a **dashboard type** (`roles.dashboard`: director / sales / finance / operations / general), picked in Admin → Roles. New roles need no code.
+- Migration `20261007120000_dashboards_targets_commission.sql` (applied to test) adds:
+  - `roles.dashboard`, `my_dashboards()`
+  - `sales_documents.paid_at` plus a `set_paid_at` trigger
+  - `monthly_targets` (group or person; every month or one month; invoiced / gross_profit / margin_pct)
+  - `commission_rules` (standard plus personal; % of GP or sales; when paid or raised)
+  - `team_month_stats(from, to)` (security invoker)
+  - the 4 roles with permissions, and starting job-title rules (Director, Sales, Account Manager, Business Development, Finance, Accounts, Bookkeep, Operations, Production, Print)
+  - seeds: group goal £300,000/month (example), target margin 45% (example), commission 10% of GP on paid invoices (example)
+  - RLS on targets and commission: read your own, group or default ones; directors, finance and admins read all; admins write
+- New `hub` feature ("Staff hub", `/hub`). "Reports & Intranet" is renamed "Reports".
+- Home page `/` shows dashboards by role, with tabs if someone has several. Admins with no role get the Directors view. Feature tiles move under "Your sections".
+  - Directors: goal bar with pace marker, GP, margin against target, pipeline, owed, cash in, recurring, quotes, credit notes, team table (target %, GP, margin, won, commission), 12-month chart, owed chart.
+  - Sales: own goal bar, commission, GP, win rate, leaderboard rank, open quotes (expiring ones flagged), latest invoices.
+  - Finance: invoiced against budget, margin against target (in points), cash in, GP, owed, credit notes, recurring, draft invoices, owed chart, oldest overdue.
+  - Operations: open orders, past deadline, POs to send, late deliveries, supplier spend, orders due soonest, orders by production step, unsent POs, late POs.
+- Staff hub: month picker (6 months), own and group goal bars, commission / GP / quotes tiles, commission history (with "based on" column), own documents.
+- Admin → **Targets & commission** (`/admin/targets`): group goals, one-month overrides, personal targets (people with Sales or Directors roles), standard and personal commission rules.
+- Test data:
+  - Toby's test account was given all 4 roles so the demo can switch views
+  - Toby has a test personal target of £25,000
+  - made-up open orders and POs were added (DEMO DATA)
+- Every made-up document is owned by Toby, so the team table has one row until other staff exist.
