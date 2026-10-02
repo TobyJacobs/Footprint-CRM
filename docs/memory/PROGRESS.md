@@ -113,7 +113,8 @@ Still to do for Wave 1: the Zoho import tool (built against made-up Zoho-format 
   - To send real email later, the owner needs to:
     - sign up to Postmark and add its DNS records for footprintgroup.uk
     - put `POSTMARK_SERVER_TOKEN` (secret) and `EMAIL_FROM` in Netlify
-  - Next: steps 3 and 4 (card payments and Direct Debit; waiting on the provider choice), then step 5 (Xero sync).
+  - Next: steps 3 and 4 (GoCardless only, see DECISIONS), then step 5 (Xero sync).
+  - **ON HOLD from 2 October 2026** while we work through the director's list of improvements. To resume, the owner signs up for a GoCardless sandbox account and pastes the access token themselves.
 - **Wave 2b LIVE for the demo**: PR [TobyJacobs/Footprint-CRM#5](https://github.com/TobyJacobs/Footprint-CRM/pull/5) merged as `1ae79cf` on 1 October 2026 (test data only).
 - **Wave 2b details** (branch `wave-2b/purchase-orders-credit-notes`):
   - Migration `20261002130000_purchase_orders_credit_notes.sql`, applied to test:
