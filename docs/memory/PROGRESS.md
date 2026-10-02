@@ -176,3 +176,15 @@ Git Credential Manager holds the owner's GitHub sign-in, so **Claude pushes auto
 
 ## Local running
 The dev server runs from the Claude desktop preview (`.claude/launch.json` in `Documents\claude`) at http://localhost:3000.
+
+## Director's improvements list (received 2 October 2026, not yet started)
+1. New staff with a Footprint email get access automatically.
+2. Staff roles assigned automatically from their job role in Microsoft Entra.
+3. "Resend" buttons on quotes and invoices.
+4. Live charts in the Quotes & Invoices section.
+5. Customer approves a quote online, and it then moves to sales orders automatically.
+6. Split "Reports & Intranet" into a Staff hub (personal monthly progress, by role) and Reports.
+7. Commission calculated per staff member per month.
+8. Raise a purchase order or order from a supplier inside a sales order.
+9. Margin shown as a percentage; customers only ever see their price, never cost or GP.
+10. Home page that changes by role: directors see group GP and monthly goals, the sales team sees their own stats, and so on.
