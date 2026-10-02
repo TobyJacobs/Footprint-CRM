@@ -268,3 +268,14 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - save actions force owner = self when restricted
   - a role tick-box "Only their own quotes, orders and invoices"
 - Tested with a rolled-back dry run (a test account set non-admin with Sales team only): saw 1 of 356 documents and 0 POs; inserting for someone else was blocked; inserting for self was allowed; reassigning was blocked.
+
+## LIVE for the demo, 2 October 2026
+- PR [TobyJacobs/Footprint-CRM#6](https://github.com/TobyJacobs/Footprint-CRM/pull/6) merged as `fb862d0`. It contains Wave 2c (recurring billing, email) plus all the director's improvements (1–10, apart from the Microsoft 365 consent) and sales-only-own-documents.
+- Checked on https://footprinthub.netlify.app: the Directors home page loads with figures (test database, made-up data).
+- Not set on Netlify yet (so these show as "not switched on" on live):
+  - `POSTMARK_SERVER_TOKEN`, `EMAIL_FROM`
+  - `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET`, `STAFF_EMAIL_DOMAINS`, `DIRECTORY_SYNC_KEY`
+- Still waiting:
+  - Global Administrator consent for User.Read.All
+  - GoCardless sandbox account (Wave 2c steps 3 and 4)
+  - Xero (step 5)
