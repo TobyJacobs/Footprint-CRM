@@ -112,32 +112,34 @@ export default async function StaffHubPage(props: PageProps<"/hub">) {
               {isSales && (
                 <section className="rounded-lg border border-fp-border bg-white p-5">
                   <h2 className="mb-3 font-bold">Your commission, last 6 months</h2>
-                  <table className="w-full text-left text-sm">
-                    <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
-                      <tr>
-                        <th className="py-2 pr-3 font-semibold">Month</th>
-                        <th className="py-2 pr-3 text-right font-semibold">Invoiced</th>
-                        <th className="py-2 pr-3 text-right font-semibold">Gross profit</th>
-                        <th className="py-2 pr-3 text-right font-semibold">Commission based on</th>
-                        <th className="py-2 text-right font-semibold">Commission</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {history.map((m, i) => {
-                        const s = historyStats[i]?.find((t) => t.owner_id === user.id) ?? sumStats([]);
-                        const c = commissionFor(s, rule);
-                        return (
-                          <tr key={m.key} className="border-b border-fp-border last:border-0">
-                            <td className="py-2 pr-3">{m.label}</td>
-                            <td className="py-2 pr-3 text-right">{money(s.invoiced)}</td>
-                            <td className="py-2 pr-3 text-right">{money(grossProfit(s))}</td>
-                            <td className="py-2 pr-3 text-right">{money(c.base)}</td>
-                            <td className="py-2 text-right font-semibold">{moneyExact(c.amount)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
+                        <tr>
+                          <th className="py-2 pr-3 font-semibold">Month</th>
+                          <th className="py-2 pr-3 text-right font-semibold">Invoiced</th>
+                          <th className="py-2 pr-3 text-right font-semibold">Gross profit</th>
+                          <th className="py-2 pr-3 text-right font-semibold">Commission based on</th>
+                          <th className="py-2 text-right font-semibold">Commission</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {history.map((m, i) => {
+                          const s = historyStats[i]?.find((t) => t.owner_id === user.id) ?? sumStats([]);
+                          const c = commissionFor(s, rule);
+                          return (
+                            <tr key={m.key} className="border-b border-fp-border last:border-0">
+                              <td className="py-2 pr-3">{m.label}</td>
+                              <td className="py-2 pr-3 text-right">{money(s.invoiced)}</td>
+                              <td className="py-2 pr-3 text-right">{money(grossProfit(s))}</td>
+                              <td className="py-2 pr-3 text-right">{money(c.base)}</td>
+                              <td className="py-2 text-right font-semibold">{moneyExact(c.amount)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                   {rule && (
                     <p className="mt-3 text-xs text-fp-dark/70">
                       &ldquo;Commission based on&rdquo; is the {rule.basis === "gross_profit" ? "gross profit" : "sales"} on invoices{" "}

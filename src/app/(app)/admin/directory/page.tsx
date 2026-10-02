@@ -86,32 +86,34 @@ export default async function DirectoryPage(props: PageProps<"/admin/directory">
           which overrides these rules. Admin rights are never given automatically.
         </p>
         {(rules ?? []).length > 0 && (
-          <table className="mb-5 w-full text-left text-sm">
-            <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
-              <tr>
-                <th className="py-2 pr-3 font-semibold">Job title contains</th>
-                <th className="py-2 pr-3 font-semibold">Role</th>
-                <th className="py-2 pr-3 font-semibold">Priority</th>
-                <th className="py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {(rules ?? []).map((r) => (
-                <tr key={r.id} className="border-b border-fp-border last:border-0">
-                  <td className="py-2 pr-3 font-semibold">&ldquo;{r.match_text}&rdquo;</td>
-                  <td className="py-2 pr-3">{roleName.get(r.role_id)}</td>
-                  <td className="py-2 pr-3">{r.priority}</td>
-                  <td className="py-2 text-right">
-                    <form action={deleteJobRoleRule.bind(null, r.id)}>
-                      <button type="submit" className="inline-flex items-center gap-1 text-xs font-semibold text-fp-error hover:underline">
-                        <Trash2 size={12} aria-hidden /> Remove
-                      </button>
-                    </form>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="mb-5 w-full text-left text-sm">
+              <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
+                <tr>
+                  <th className="py-2 pr-3 font-semibold">Job title contains</th>
+                  <th className="py-2 pr-3 font-semibold">Role</th>
+                  <th className="py-2 pr-3 font-semibold">Priority</th>
+                  <th className="py-2" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {(rules ?? []).map((r) => (
+                  <tr key={r.id} className="border-b border-fp-border last:border-0">
+                    <td className="py-2 pr-3 font-semibold">&ldquo;{r.match_text}&rdquo;</td>
+                    <td className="py-2 pr-3">{roleName.get(r.role_id)}</td>
+                    <td className="py-2 pr-3">{r.priority}</td>
+                    <td className="py-2 text-right">
+                      <form action={deleteJobRoleRule.bind(null, r.id)}>
+                        <button type="submit" className="inline-flex items-center gap-1 text-xs font-semibold text-fp-error hover:underline">
+                          <Trash2 size={12} aria-hidden /> Remove
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
         {(roles ?? []).length === 0 ? (
           <p className="text-sm">
@@ -142,26 +144,28 @@ export default async function DirectoryPage(props: PageProps<"/admin/directory">
         {titleRows.length === 0 ? (
           <p className="text-sm text-fp-dark/75">Nothing yet — run a sync to bring in the staff list.</p>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
-              <tr>
-                <th className="py-2 pr-3 font-semibold">Job title</th>
-                <th className="py-2 pr-3 font-semibold">People</th>
-                <th className="py-2 font-semibold">Role from rules</th>
-              </tr>
-            </thead>
-            <tbody>
-              {titleRows.map((t) => (
-                <tr key={t.title} className="border-b border-fp-border last:border-0">
-                  <td className="py-2 pr-3">{t.title || <span className="text-fp-mid">(no job title)</span>}</td>
-                  <td className="py-2 pr-3">{t.count}</td>
-                  <td className="py-2">
-                    {t.role ? roleName.get(t.role) : <Badge tone="amber">No rule — no access yet</Badge>}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
+                <tr>
+                  <th className="py-2 pr-3 font-semibold">Job title</th>
+                  <th className="py-2 pr-3 font-semibold">People</th>
+                  <th className="py-2 font-semibold">Role from rules</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {titleRows.map((t) => (
+                  <tr key={t.title} className="border-b border-fp-border last:border-0">
+                    <td className="py-2 pr-3">{t.title || <span className="text-fp-mid">(no job title)</span>}</td>
+                    <td className="py-2 pr-3">{t.count}</td>
+                    <td className="py-2">
+                      {t.role ? roleName.get(t.role) : <Badge tone="amber">No rule — no access yet</Badge>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
 

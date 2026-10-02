@@ -30,3 +30,28 @@ body {
   background: var(--color-fp-offwhite);
   color: var(--color-fp-black);
 }
+
+/* Small screens: keep every page exactly as wide as the screen. */
+@layer base {
+  /* Grid boxes may shrink below their content's width, so wide tables
+     scroll inside their own box instead of stretching the page. */
+  .grid > * {
+    min-width: 0;
+  }
+
+  /* Long words, codes, email addresses and links wrap instead of overflowing. */
+  body {
+    overflow-wrap: break-word;
+  }
+  code {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Tab strips scroll sideways on small screens without showing a scrollbar. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
