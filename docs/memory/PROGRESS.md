@@ -217,3 +217,14 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Tested: with the secret, "Sync now" reaches Microsoft and gets "needs admin consent" (so the secret works).
 - The test database has **no roles yet**. They need creating (e.g. Director, Sales, Studio, Accounts) before job title rules can be added.
 - Still to do at go-live: add `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET` (secret), `STAFF_EMAIL_DOMAINS` and `DIRECTORY_SYNC_KEY` (secret, from Admin → Microsoft 365) to Netlify.
+
+## Director's improvements: item 4, charts (2 October 2026), done and tested
+- Migration `20261006120000_sales_stats.sql` (applied to test): `sales_stats(p_from, p_owner)`, a security-invoker function so RLS applies. It adds everything up in the database, so it isn't affected by the 1,000-row API limit.
+- `src/lib/sales/stats.ts`, Recharts components in `src/components/charts/` (SalesCharts, ChartFilters), brand colours.
+- New **Overview** tab (first tab; `/sales` now opens it):
+  - tiles: invoiced, margin %, win rate, open quotes, owed / overdue
+  - charts: invoiced per month (paid / unpaid plus margin line), quotes won / lost / quoted, money owed by lateness, top customers
+  - filters: period (3/6/12/24 months), salesperson
+- A 6-month chart strip sits above the Quotes and Invoices lists.
+- Made-up history `supabase/seed/fake-sales-history.sql` was run on TEST: about 200 quotes over 12 months, marked internal_notes = 'DEMO DATA'.
+- The Microsoft 365 admin consent is paused at the owner's request (2 October 2026). Only the @footprintgroup.uk domain is used, as confirmed.

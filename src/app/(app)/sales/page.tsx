@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function SalesHome() {
-  redirect("/sales/quotes");
+  redirect("/sales/overview");
 }
