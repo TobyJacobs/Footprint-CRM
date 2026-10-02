@@ -195,3 +195,25 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - **Item 5:** migration `20261004120000_auto_order_on_accept.sql` (applied to test) adds `_convert_quote_to_order`. Accepting online now creates the sales order at once (customer PO goes into the reference) and marks the quote converted. Tested: made-up quote QT-009973 accepted on `/q/` → SO-010914.
 - **Item 8:** the sales order button is now "Order from suppliers (raise POs)". The PO page has a "Place order with supplier" email box: the email includes a lines table, needed-by date and delivery address, and moves a draft PO to "sent". Migration `20261004130000_po_email.sql` (applied) adds `email_log.purchase_order_id`. Tested on PO-03273 (to a made-up address).
 - Next: items 1 and 2 plus pre-listing staff from Microsoft 365 (needs an Entra permission the owner approves).
+
+## Director's improvements: batch 2, staff from Microsoft 365 (items 1 and 2), built and waiting on admin consent (2 October 2026)
+- Migration `20261005120000_staff_directory.sql` (applied to test) adds:
+  - tables `staff_directory`, `job_role_rules`, `directory_sync_runs`, `directory_sync_settings`
+  - `user_roles.source` ('manual' / 'directory')
+  - functions `suggested_role`, `_apply_directory_access`, `reapply_directory_roles`, `directory_sync_apply` (admin, or the daily job with a key whose sha256 is stored), `set_directory_sync_key_hash`
+  - `handle_new_user` now links the directory entry and gives the role at first sign-in
+  - `protect_profile_flags` lets the sync switch leavers off
+- App:
+  - `src/lib/entra/` (Graph client-credentials, rules)
+  - new tab Admin → Microsoft 365 (`/admin/directory`): Sync now, run history, job title rules, list of job titles, daily sync key
+  - `/admin/directory/[dirId]` for people who haven't signed in yet
+  - Users list shows everyone with job title and sort options
+  - the user page has a "From Microsoft 365" role picker; directory roles are locked in the "Extra roles" list
+  - `/api/cron/directory-sync` plus Netlify scheduled function `netlify/functions/directory-sync.mts` (05:00 UTC daily)
+- Entra:
+  - app "Footprint Platform" now has the **User.Read.All (Application)** permission
+  - client secret "Staff sync" created by the owner, held in `.env.local` only
+  - **Admin consent FAILED**: Toby's account isn't Global Admin. The tenant is "Footprint Copy & Design", and a Global Administrator must click "Grant admin consent".
+- Tested: with the secret, "Sync now" reaches Microsoft and gets "needs admin consent" (so the secret works).
+- The test database has **no roles yet**. They need creating (e.g. Director, Sales, Studio, Accounts) before job title rules can be added.
+- Still to do at go-live: add `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET` (secret), `STAFF_EMAIL_DOMAINS` and `DIRECTORY_SYNC_KEY` (secret, from Admin → Microsoft 365) to Netlify.
