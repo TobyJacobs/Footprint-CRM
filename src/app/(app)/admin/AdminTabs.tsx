@@ -17,7 +17,7 @@ const tabs = [
 export default function AdminTabs() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Admin" className="flex gap-1 overflow-x-auto border-b border-fp-border bg-white px-6 lg:px-10">
+    <nav aria-label="Admin" className="no-scrollbar flex gap-1 overflow-x-auto border-b border-fp-border bg-white px-6 lg:px-10">
       {tabs.map((t) => {
         const active = pathname.startsWith(t.href);
         return (

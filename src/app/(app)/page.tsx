@@ -43,7 +43,7 @@ export default async function Home(props: PageProps<"/">) {
       )}
 
       {mine.length > 1 && (
-        <nav aria-label="Dashboards" className="flex gap-1 overflow-x-auto border-b border-fp-border bg-white px-6 lg:px-10">
+        <nav aria-label="Dashboards" className="no-scrollbar flex gap-1 overflow-x-auto border-b border-fp-border bg-white px-6 lg:px-10">
           {mine.map((d) => (
             <Link
               key={d}

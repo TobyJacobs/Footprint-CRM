@@ -279,3 +279,12 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - Global Administrator consent for User.Read.All
   - GoCardless sandbox account (Wave 2c steps 3 and 4)
   - Xero (step 5)
+
+## Mobile fit (2 October 2026)
+- Problem: on phones some pages were wider than the screen (Directors team table, document lines, Staff hub table, Microsoft 365 tables, long codes), so the black top bar looked too short.
+- Fixes in `globals.css`:
+  - `.grid > * { min-width: 0 }`, so wide tables scroll inside their box
+  - `overflow-wrap` for long words and codes
+  - a `no-scrollbar` utility on tab strips
+- Wrapped 4 tables in `overflow-x-auto`: hub commission, directory rules and titles, recurring detail.
+- Measured at 320, 375, 414 and 768 px across about 30 pages (via a same-origin iframe, with a temporary dev-only X-Frame-Options change that was reverted). Every page's width now equals the screen width. The black bar spans the full width with the logo and menu inside.

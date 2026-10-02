@@ -121,18 +121,20 @@ export default async function RecurringInvoicePage(props: PageProps<"/sales/recu
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_380px]">
         <Card title="Billed each time">
-          <table className="w-full text-left text-sm">
-            <tbody>
-              {lines.map((l) => (
-                <tr key={l.key} className="border-b border-fp-border align-top last:border-0">
-                  <td className="whitespace-pre-line py-2 pr-3">{l.description}</td>
-                  <td className="py-2 pr-3 text-right">{l.quantity} × {gbp(l.unit_price)}</td>
-                  <td className="py-2 pr-3 text-right">{l.tax_rate}%</td>
-                  <td className="py-2 text-right font-semibold">{gbp(l.line_net)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <tbody>
+                {lines.map((l) => (
+                  <tr key={l.key} className="border-b border-fp-border align-top last:border-0">
+                    <td className="whitespace-pre-line py-2 pr-3">{l.description}</td>
+                    <td className="py-2 pr-3 text-right">{l.quantity} × {gbp(l.unit_price)}</td>
+                    <td className="py-2 pr-3 text-right">{l.tax_rate}%</td>
+                    <td className="py-2 text-right font-semibold">{gbp(l.line_net)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <dl className="ml-auto mt-4 grid max-w-xs grid-cols-2 gap-x-6 gap-y-1 text-sm">
             <dt className="text-fp-dark/75">Subtotal</dt>
             <dd className="text-right">{gbp(Number(r.subtotal))}</dd>
