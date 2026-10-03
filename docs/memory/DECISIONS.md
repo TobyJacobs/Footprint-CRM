@@ -213,3 +213,13 @@ This refines the "Supabase, London region" part of the technical foundations dec
 **Order:** quick wins (3, 5, 8, 9) → automatic access from Microsoft (1, 2 plus pre-listing) → charts (4) → targets, commission, Staff hub and role home pages (6, 7, 10).
 
 **Why:** The owner's and director's answers, 2 October 2026.
+
+## 3 October 2026 — Wave 3: how projects and time work
+**Decision:**
+- **Projects are created automatically from sales orders**: every new sales order gets a project, linked to the customer, quote and order, from the template matching the order's business unit. Ongoing projects (retainers, internal work) can also be created by hand.
+- Numbering continues Zoho's **FO-** series (next FO-1498).
+- Tasks are grouped into **stages** (Zoho's "task lists") and come from editable **templates**. The starting templates are based on how Zoho is used today: Production, Studio, Web project, Marketing retainer.
+- **Time**: start/stop timer or manual entry, billable or not, weekly timesheet per person.
+- **Staff cost rates**: hourly cost per person (example £25/hr until real rates are set), so each job shows profit after staff time. Only directors, finance and admins can see rates and £ cost of time.
+
+**Why:** The owner's answers, 3 October 2026, and `docs/discovery/ZOHO-PROJECTS.md`.
