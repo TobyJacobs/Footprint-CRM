@@ -46,6 +46,7 @@ export function RequestCard({
   me,
   isAdmin,
   showActions,
+  returnTo,
 }: {
   r: RoadmapRequest;
   waves: Wave[];
@@ -54,7 +55,9 @@ export function RequestCard({
   me: string;
   isAdmin: boolean;
   showActions: boolean;
+  returnTo?: string;
 }) {
+  void returnTo;
   const wave = waves.find((w) => w.id === r.wave_id);
   const mine = r.submitted_by === me;
   return (

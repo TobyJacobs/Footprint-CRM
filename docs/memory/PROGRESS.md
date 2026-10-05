@@ -401,3 +401,11 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - `/roadmap/requests` ("See old requests"): approved, done and denied, with filters
 - Tested end to end with test requests (since deleted): send → query → reply → approve → task appears on Wave 2 → tick → request becomes Done in old requests; deny → shows under Not going ahead.
 - For Claude: to see what to build next, read approved requests and un-ticked tasks (`roadmap_tasks where not done`, especially `request_id is not null`), and tick tasks off as work finishes.
+
+## Requests moved to their own page inside Roadmap (5 October 2026), built and tested, NOT live yet
+- Branch `feature/requests-tab`. Owner request: keep the Roadmap page tidy by moving received requests to a separate page.
+- Roadmap now has tabs (`RoadmapTabs`): Roadmap | Requests to review (admins only, with a count badge) | Old requests.
+- New `/roadmap/review` (admin only): "Waiting for a decision" and "Waiting for the sender's answer" lists, with Approve / Query / Deny. These actions now return to this page.
+- The Roadmap page keeps the checklist, the send box and "Your requests", plus a yellow banner for admins: "N requests waiting for your decision → Review".
+- Tested: tabs and badge, banner, the review list, deny returning to the review page; test request deleted. Two "i want beers" requests on the test database were sent by the owner; left alone.
+- Also on `feature/requests-tab`: admins get a delete (bin) button on every roadmap task, with an "Are you sure?" check (`deleteRoadmapTask`). Tested by adding and deleting a throwaway task. The owner had approved the test request "i want beers" on the live site, which became a Wave 5 task (the live approve flow works); the owner can delete it with the new button.

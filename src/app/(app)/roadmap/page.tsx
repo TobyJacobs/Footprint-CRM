@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckSquare, History, Square } from "lucide-react";
+import { CheckSquare, History, Square, Trash2 } from "lucide-react";
 import NoAccess from "@/components/NoAccess";
 import PageHeader from "@/components/PageHeader";
 import { Badge, Card, Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { addRoadmapTask, setWaveOnHold, submitRequest, toggleRoadmapTask } from "./actions";
+import RoadmapTabs from "./RoadmapTabs";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
+import { addRoadmapTask, deleteRoadmapTask, setWaveOnHold, submitRequest, toggleRoadmapTask } from "./actions";
 import { RequestCard, pageOptions, waveLabel, type Comment, type RoadmapRequest, type Wave } from "./parts";
 
 export const metadata: Metadata = { title: "Roadmap" };
@@ -51,7 +53,6 @@ export default async function RoadmapPage(props: PageProps<"/roadmap">) {
   const commentsFor = (id: string) => ((comments ?? []) as Comment[]).filter((c) => c.request_id === id);
   const totalDone = allTasks.filter((t) => t.done).length;
   const mineOpen = open.filter((r) => r.submitted_by === user.id);
-  const toReview = user.isAdmin ? open : [];
 
   return (
     <>
@@ -59,8 +60,21 @@ export default async function RoadmapPage(props: PageProps<"/roadmap">) {
         title="Roadmap"
         intro="Where the platform is up to, wave by wave. Tasks are ticked off as they're finished. Spotted a bug or have an idea? Send it using the box on the right."
       />
+      <RoadmapTabs current="roadmap" isAdmin={user.isAdmin} />
       <div className="px-6 py-8 lg:px-10">
         <Notice searchParams={sp} />
+        {user.isAdmin && open.some((r) => r.status === "pending") && (
+          <Link
+            href="/roadmap/review"
+            className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-fp-amber bg-fp-amber/10 px-4 py-3 text-sm font-semibold"
+          >
+            <span>
+              {open.filter((r) => r.status === "pending").length} request
+              {open.filter((r) => r.status === "pending").length === 1 ? "" : "s"} waiting for your decision
+            </span>
+            <span className="text-fp-teal-deep">Review →</span>
+          </Link>
+        )}
         {sp.sent && (
           <p role="status" className="mb-4 rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-4 py-3 text-sm text-fp-teal-deep">
             Thanks: your request has been sent to the admins. You&apos;ll see its progress under &ldquo;Your requests&rdquo;.
@@ -81,28 +95,6 @@ export default async function RoadmapPage(props: PageProps<"/roadmap">) {
 
         <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
           <div className="grid content-start gap-6">
-            {toReview.length > 0 && (
-              <section>
-                <h2 className="mb-3 text-lg font-black">
-                  Requests to review <span className="text-sm font-semibold text-fp-mid">({toReview.length})</span>
-                </h2>
-                <div className="grid gap-3">
-                  {toReview.map((r) => (
-                    <RequestCard
-                      key={r.id}
-                      r={r}
-                      waves={allWaves}
-                      comments={commentsFor(r.id)}
-                      names={names}
-                      me={user.id}
-                      isAdmin={user.isAdmin}
-                      showActions
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
             {allWaves.map((w) => {
               const waveTasks = allTasks.filter((t) => t.wave_id === w.id);
               const st = waveStatus(w, waveTasks);
@@ -139,15 +131,26 @@ export default async function RoadmapPage(props: PageProps<"/roadmap">) {
                       return (
                         <li key={t.id} id={`task-${t.id}`}>
                           {user.isAdmin ? (
-                            <form action={toggleRoadmapTask.bind(null, t.id, !t.done)}>
-                              <button
-                                type="submit"
-                                className="flex w-full items-start gap-2 rounded px-1 py-1 text-left hover:bg-fp-offwhite"
-                                title={t.done ? "Mark as not done" : "Tick off"}
-                              >
-                                {label}
-                              </button>
-                            </form>
+                            <div className="flex items-start gap-1">
+                              <form action={toggleRoadmapTask.bind(null, t.id, !t.done)} className="min-w-0 flex-1">
+                                <button
+                                  type="submit"
+                                  className="flex w-full items-start gap-2 rounded px-1 py-1 text-left hover:bg-fp-offwhite"
+                                  title={t.done ? "Mark as not done" : "Tick off"}
+                                >
+                                  {label}
+                                </button>
+                              </form>
+                              <form action={deleteRoadmapTask.bind(null, t.id)}>
+                                <ConfirmSubmit
+                                  className="rounded p-1.5 text-fp-mid hover:bg-fp-light hover:text-fp-error"
+                                  message={`Delete the task "${t.title}"? This can't be undone.`}
+                                >
+                                  <Trash2 size={15} aria-hidden />
+                                  <span className="sr-only">Delete task</span>
+                                </ConfirmSubmit>
+                              </form>
+                            </div>
                           ) : (
                             <div className="flex items-start gap-2 px-1 py-1">{label}</div>
                           )}

@@ -14,6 +14,7 @@ function fail(path: string, message: string): never {
   redirect(`${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}`);
 }
 
+const REVIEW = "/roadmap/review";
 const done = (path = "/roadmap") => {
   revalidatePath("/roadmap", "layout");
   redirect(`${path}${path.includes("?") ? "&" : "?"}saved=1`);
@@ -28,6 +29,16 @@ export async function toggleRoadmapTask(taskId: string, isDone: boolean) {
   if (error) fail("/roadmap", error.message);
   revalidatePath("/roadmap", "layout");
   redirect(`/roadmap#task-${taskId}`);
+}
+
+// Remove a task from the roadmap (admins only). If it came from an approved
+// request, the request stays on record as approved.
+export async function deleteRoadmapTask(taskId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("roadmap_tasks").delete().eq("id", taskId);
+  if (error) fail("/roadmap", error.message);
+  done();
 }
 
 export async function addRoadmapTask(waveId: string, fd: FormData) {
@@ -82,8 +93,8 @@ export async function approveRequest(requestId: string, fd: FormData) {
   await requireAdmin();
   const waveId = str(fd, "wave_id");
   const title = str(fd, "task_title");
-  if (!waveId) fail("/roadmap", "Choose which wave it goes on");
-  if (!title) fail("/roadmap", "Give the roadmap task a name");
+  if (!waveId) fail(REVIEW, "Choose which wave it goes on");
+  if (!title) fail(REVIEW, "Give the roadmap task a name");
   const supabase = await createClient();
   const { data: last } = await supabase
     .from("roadmap_tasks")
@@ -97,7 +108,7 @@ export async function approveRequest(requestId: string, fd: FormData) {
     .insert({ wave_id: waveId, title, request_id: requestId, position: (last?.position ?? 0) + 1 })
     .select("id")
     .single();
-  if (error) fail("/roadmap", error.message);
+  if (error) fail(REVIEW, error.message);
   const { error: updError } = await supabase
     .from("feedback_requests")
     .update({
@@ -109,14 +120,14 @@ export async function approveRequest(requestId: string, fd: FormData) {
       decided_by: (await supabase.auth.getUser()).data.user?.id,
     })
     .eq("id", requestId);
-  if (updError) fail("/roadmap", updError.message);
-  done();
+  if (updError) fail(REVIEW, updError.message);
+  done(REVIEW);
 }
 
 export async function denyRequest(requestId: string, fd: FormData) {
   await requireAdmin();
   const note = str(fd, "note");
-  if (!note) fail("/roadmap", "Please give a short reason, so they know why");
+  if (!note) fail(REVIEW, "Please give a short reason, so they know why");
   const supabase = await createClient();
   const { error } = await supabase
     .from("feedback_requests")
@@ -127,20 +138,20 @@ export async function denyRequest(requestId: string, fd: FormData) {
       decided_by: (await supabase.auth.getUser()).data.user?.id,
     })
     .eq("id", requestId);
-  if (error) fail("/roadmap", error.message);
-  done();
+  if (error) fail(REVIEW, error.message);
+  done(REVIEW);
 }
 
 // Query: ask the sender a question. Their reply sends it back for review.
 export async function queryRequest(requestId: string, fd: FormData) {
   await requireAdmin();
   const question = str(fd, "question");
-  if (!question) fail("/roadmap", "Please write your question");
+  if (!question) fail(REVIEW, "Please write your question");
   const supabase = await createClient();
   const { error } = await supabase.from("feedback_comments").insert({ request_id: requestId, body: question });
-  if (error) fail("/roadmap", error.message);
+  if (error) fail(REVIEW, error.message);
   await supabase.from("feedback_requests").update({ status: "query" }).eq("id", requestId);
-  done();
+  done(REVIEW);
 }
 
 export async function replyToRequest(requestId: string, fd: FormData) {
