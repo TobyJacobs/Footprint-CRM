@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
-import { getTaxRates } from "@/lib/sales/data";
+import { getSalesAccounts, getTaxRates } from "@/lib/sales/data";
 import { createClient } from "@/lib/supabase/server";
 import { saveProduct } from "../../actions";
 import ProductForm from "../ProductForm";
@@ -13,9 +13,10 @@ export default async function NewProductPage(props: PageProps<"/sales/products/n
   await requirePermission("quotes", "edit");
   const sp = await props.searchParams;
   const supabase = await createClient();
-  const [{ data: suppliers }, taxRates] = await Promise.all([
+  const [{ data: suppliers }, taxRates, salesAccounts] = await Promise.all([
     supabase.from("suppliers").select("id, name").eq("active", true).order("name"),
     getTaxRates(),
+    getSalesAccounts(),
   ]);
   return (
     <>
@@ -24,7 +25,8 @@ export default async function NewProductPage(props: PageProps<"/sales/products/n
       </Link>
       <h2 className="mb-6 mt-3 text-xl font-black">New product</h2>
       <Notice searchParams={sp} />
-      <ProductForm suppliers={suppliers ?? []} taxRates={taxRates} action={saveProduct.bind(null, null)} />
+      <ProductForm suppliers={suppliers ?? []} taxRates={taxRates}
+        salesAccounts={salesAccounts} action={saveProduct.bind(null, null)} />
     </>
   );
 }

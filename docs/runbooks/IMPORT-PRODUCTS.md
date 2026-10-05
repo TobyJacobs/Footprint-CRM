@@ -6,7 +6,8 @@ The product list is business data, not personal data. It is still **never saved 
 
 1. Sign in to Zoho Books (business.footprintsouth.co.uk) in Chrome.
 2. On any Zoho Books page, read every item (active and inactive) through Zoho Books' own `/api/v3/items` list, using the signed-in session.
-3. Turn each item into `{ z: item_id, n: name, s: sku, d: description, u: unit, r: rate, c: purchase_rate, t: tax_percentage, sup: cf_suppliers or vendor_name, a: active }`.
+3. Also read `/api/v3/chartofaccounts` and look up each item's `account_id` to get its account code. Then turn each item into `{ z: item_id, n: name, s: sku, d: description, u: unit, r: rate, c: purchase_rate, t: tax_percentage, sup: cf_suppliers or vendor_name, a: active, ac: sales account code }`.
+   - If Zoho has new income accounts, add them to `sales_accounts` first (code and name), or the product's account will be left blank.
 4. Put that list (as JSON, with `'` doubled) in place of `__PRODUCTS_JSON__` in `supabase/seed/import-zoho-products.sql`.
 5. Run the result in the Supabase SQL editor of the right project (test, or live at go-live).
 6. Check:

@@ -6,11 +6,13 @@ export default function ProductForm({
   product,
   suppliers,
   taxRates,
+  salesAccounts,
   action,
 }: {
   product?: Record<string, unknown>;
   suppliers: { id: string; name: string }[];
   taxRates: { id: string; name: string; rate: number }[];
+  salesAccounts: { code: string; name: string }[];
   action: (fd: FormData) => Promise<void>;
 }) {
   const v = (k: string) => (product?.[k] as string | number | null | undefined) ?? null;
@@ -47,8 +49,15 @@ export default function ProductForm({
           <Field label="Business unit">
             <Select name="business_unit" options={businessUnits} defaultValue={v("business_unit") as string} />
           </Field>
-          <Field label="SKU / code">
+          <Field label="Product number" hint="From Zoho. Goes on quote lines and to Xero.">
             <TextInput name="sku" defaultValue={v("sku")} />
+          </Field>
+          <Field label="Sales account" hint="The income account Xero posts this product's sales to.">
+            <Select
+              name="sales_account_code"
+              options={salesAccounts.map((a) => ({ value: a.code, label: `${a.code} – ${a.name}` }))}
+              defaultValue={v("sales_account_code") as string}
+            />
           </Field>
           <div className="flex items-end pb-2">
             <Checkbox name="active" label="Available to sell" defaultChecked={product ? (product.active as boolean) : true} />

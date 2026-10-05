@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
-import { getTaxRates } from "@/lib/sales/data";
+import { getSalesAccounts, getTaxRates } from "@/lib/sales/data";
 import { createClient } from "@/lib/supabase/server";
 import { saveProduct } from "../../actions";
 import ProductForm from "../ProductForm";
@@ -15,10 +15,11 @@ export default async function EditProductPage(props: PageProps<"/sales/products/
   const { productId } = await props.params;
   const sp = await props.searchParams;
   const supabase = await createClient();
-  const [{ data: product }, { data: suppliers }, taxRates] = await Promise.all([
+  const [{ data: product }, { data: suppliers }, taxRates, salesAccounts] = await Promise.all([
     supabase.from("products").select("*").eq("id", productId).maybeSingle(),
     supabase.from("suppliers").select("id, name").order("name"),
     getTaxRates(),
+    getSalesAccounts(),
   ]);
   if (!product) notFound();
   return (
@@ -32,6 +33,7 @@ export default async function EditProductPage(props: PageProps<"/sales/products/
         product={product}
         suppliers={suppliers ?? []}
         taxRates={taxRates}
+        salesAccounts={salesAccounts}
         action={saveProduct.bind(null, productId)}
       />
     </>

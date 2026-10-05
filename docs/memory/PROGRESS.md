@@ -341,3 +341,16 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Quote quick-add box: the same check; picking a match puts that customer on the quote.
 - Tested: "cop" → 5; "Copse Joinry" → 4; "Seaveiw Test Bakery" → 1; a new name → none; picking "Copse Joinery Ltd" opened its page; from a quote, picking a match set the quote's customer.
 - Note: the test database has a customer literally named "cop" (probably the owner testing on live).
+
+## Sales accounts on products (5 October 2026), done and tested
+- Zoho Books item → sales account (`account_id` → chart of accounts). In Zoho the account *names* are the codes (4010…); the descriptions give the meaning (Print Outsource…). These are the Xero account codes.
+- Migration `20261013120000_sales_accounts.sql` (applied):
+  - `sales_accounts` (28 income accounts from Zoho's chart of accounts: code and cleaned name)
+  - `products.sales_account_code` (FK)
+  - `account_code` on sales_document_lines and recurring_invoice_lines, filled by the `set_line_account_code` trigger from the product (typed-in lines left blank; Xero sync will fall back to the customer's or default account)
+- All 135 Zoho products were given their account through a zoho_id → code update (data via clipboard, not in the repo). Split: 4010:50, 4005:29, 4006:24, 4008:12, 4011:9, 4009:6, 4004:2, 4002:1, 4012:1, 200:1. Existing product lines back-filled.
+- UI:
+  - the Products list has a "Sales account" column
+  - the product form has a Sales account select ("code – name"); "SKU / code" is renamed "Product number"
+  - `saveProduct` saves `sales_account_code`
+- The import template and runbook now include `ac` (account code).
