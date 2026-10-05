@@ -1,6 +1,13 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 
+// Income accounts (same codes as Zoho Books / Xero) for a product's sales account.
+export async function getSalesAccounts() {
+  const supabase = await createClient();
+  const { data } = await supabase.from("sales_accounts").select("code, name").eq("active", true).order("code");
+  return (data ?? []).map((a) => ({ code: a.code as string, name: a.name as string }));
+}
+
 export async function getTaxRates() {
   const supabase = await createClient();
   const { data } = await supabase

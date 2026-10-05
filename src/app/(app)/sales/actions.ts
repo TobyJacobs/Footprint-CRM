@@ -279,6 +279,7 @@ export async function saveProduct(productId: string | null, fd: FormData) {
     supplier_id: str(fd, "supplier_id"),
     tax_rate_id: str(fd, "tax_rate_id"),
     business_unit: str(fd, "business_unit"),
+    sales_account_code: str(fd, "sales_account_code"),
     active: bool(fd, "active"),
   };
   if (!fields.name) fail(back, "Please give the product a name");

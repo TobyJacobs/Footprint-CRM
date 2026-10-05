@@ -17,7 +17,7 @@ export default async function ProductsPage(props: PageProps<"/sales/products">) 
 
   let query = supabase
     .from("products")
-    .select("id, name, sku, unit, sale_price, cost_price, active, suppliers(name), tax_rates(name)")
+    .select("id, name, sku, unit, sale_price, cost_price, active, sales_account_code, suppliers(name), tax_rates(name), sales_accounts(name)")
     .order("name")
     .limit(200);
   if (q) {
@@ -47,7 +47,7 @@ export default async function ProductsPage(props: PageProps<"/sales/products">) 
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-fp-border bg-white">
-        <table className="w-full min-w-[720px] text-left text-sm">
+        <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="border-b border-fp-border bg-fp-offwhite text-xs uppercase tracking-wide text-fp-mid">
             <tr>
               <th className="px-4 py-3 font-semibold">Product</th>
@@ -56,6 +56,7 @@ export default async function ProductsPage(props: PageProps<"/sales/products">) 
               <th className="px-4 py-3 text-right font-semibold">Cost</th>
               <th className="px-4 py-3 text-right font-semibold">Margin</th>
               <th className="px-4 py-3 font-semibold">VAT</th>
+              <th className="px-4 py-3 font-semibold">Sales account</th>
             </tr>
           </thead>
           <tbody>
@@ -78,12 +79,22 @@ export default async function ProductsPage(props: PageProps<"/sales/products">) 
                   <td className="px-4 py-3 text-right">{p.cost_price === null ? "—" : gbp(Number(p.cost_price))}</td>
                   <td className="px-4 py-3 text-right">{m === null ? "—" : `${m}%`}</td>
                   <td className="px-4 py-3">{(p.tax_rates as unknown as { name: string } | null)?.name}</td>
+                  <td className="px-4 py-3">
+                    {p.sales_account_code ? (
+                      <>
+                        <span className="font-semibold">{p.sales_account_code}</span>
+                        <div className="text-xs text-fp-mid">{(p.sales_accounts as unknown as { name: string } | null)?.name}</div>
+                      </>
+                    ) : (
+                      <span className="text-fp-mid">—</span>
+                    )}
+                  </td>
                 </tr>
               );
             })}
             {(products ?? []).length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-fp-mid">
+                <td colSpan={7} className="px-4 py-10 text-center text-fp-mid">
                   {q ? "No products match." : "No products yet."}
                 </td>
               </tr>
