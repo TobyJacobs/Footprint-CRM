@@ -213,3 +213,11 @@ This refines the "Supabase, London region" part of the technical foundations dec
 **Order:** quick wins (3, 5, 8, 9) → automatic access from Microsoft (1, 2 plus pre-listing) → charts (4) → targets, commission, Staff hub and role home pages (6, 7, 10).
 
 **Why:** The owner's and director's answers, 2 October 2026.
+
+## 5 October 2026 — Real product list copied from Zoho now; product number on every line
+**Decision:**
+- The **real product list** (names, product numbers, prices, cost prices, suppliers, VAT) is copied from Zoho Books into the platform **now**, ahead of go-live, and copied again at go-live so it's current. This replaces the made-up products. It's an exception to "real data on hold until the final wave": products contain no personal data.
+- Quotes and invoices get a **searchable product dropdown** on each line, showing the **product name**.
+- Choosing a product puts its **Zoho product number** at the start of the line description, and also stores it on the line (`product_code`), because the product number is what Xero uses to match items.
+
+**Why:** The owner's request and answers, 5 October 2026.

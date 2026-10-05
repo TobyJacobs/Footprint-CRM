@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { inputClass } from "@/components/ui";
-import { ProductSearch } from "../DocumentEditor";
+import ProductDropdown, { productLineText } from "../ProductDropdown";
 
 type TaxRate = { id: string; name: string; rate: number };
 export type PoEditorLine = {
@@ -83,11 +83,12 @@ export default function PoLinesEditor({ initialLines, taxRates }: { initialLines
               <tr key={l.key} className="border-b border-fp-border align-top">
                 <td className="py-2 pr-2">
                   <div className="grid gap-1">
-                    <ProductSearch
+                    <ProductDropdown
+                      selectedId={l.product_id}
                       onPick={(p) =>
                         update(l.key, {
                           product_id: p.id,
-                          description: [p.name, p.description].filter(Boolean).join(" — "),
+                          description: productLineText(p),
                           unit_cost: p.cost_price ?? 0,
                           tax_rate_id: p.tax_rate_id ?? l.tax_rate_id,
                           tax_rate: p.tax_rate_id ? p.tax_rate : l.tax_rate,
