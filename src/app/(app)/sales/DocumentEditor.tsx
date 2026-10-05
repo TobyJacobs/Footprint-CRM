@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { Plus, Trash2, UserPlus } from "lucide-react";
 import { inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { quickAddCustomer, type QuickCustomerInput } from "../customers/actions";
+import ProductDropdown, { productLineText } from "./ProductDropdown";
 import { totals, lineNet, marginPercent } from "@/lib/sales/options";
 
 type TaxRate = { id: string; name: string; rate: number };
@@ -12,6 +13,7 @@ type CustomerHit = { id: string; name: string; billing_city: string | null; cred
 export type ProductHit = {
   id: string;
   name: string;
+  sku: string | null;
   description: string | null;
   unit: string | null;
   sale_price: number;
@@ -253,45 +255,6 @@ function CustomerPicker({
   );
 }
 
-export function ProductSearch({ onPick }: { onPick: (p: ProductHit) => void }) {
-  const [text, setText] = useState("");
-  const { results, search, clear } = useSearch<ProductHit>("/api/search/products");
-  return (
-    <div className="relative">
-      <input
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          search(e.target.value);
-        }}
-        placeholder="Find a product…"
-        className={`${inputClass} text-xs`}
-        autoComplete="off"
-      />
-      {results.length > 0 && (
-        <ul className="absolute z-10 mt-1 max-h-64 w-80 overflow-y-auto rounded-md border border-fp-border bg-white shadow-lg">
-          {results.map((p) => (
-            <li key={p.id}>
-              <button
-                type="button"
-                className="block w-full px-3 py-2 text-left text-sm hover:bg-fp-light"
-                onClick={() => {
-                  setText("");
-                  clear();
-                  onPick(p);
-                }}
-              >
-                <span className="font-semibold">{p.name}</span>
-                <span className="text-fp-mid"> · {money.format(p.sale_price)}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
 export default function DocumentEditor({
   initialCustomer,
   initialContacts,
@@ -424,11 +387,12 @@ export default function DocumentEditor({
               <tr key={l.key} className="border-b border-fp-border align-top">
                 <td className="py-2 pr-2">
                   <div className="grid gap-1">
-                    <ProductSearch
+                    <ProductDropdown
+                      selectedId={l.product_id}
                       onPick={(p) =>
                         update(l.key, {
                           product_id: p.id,
-                          description: [p.name, p.description].filter(Boolean).join(" — "),
+                          description: productLineText(p),
                           unit_price: p.sale_price,
                           unit_cost: p.cost_price,
                           tax_rate_id: p.tax_rate_id ?? l.tax_rate_id,

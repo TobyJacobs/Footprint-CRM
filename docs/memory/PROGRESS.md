@@ -313,3 +313,16 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - quick-add: now warns on the same name, phone or email
 - Tested on test data: 59 flagged (the fake data repeats names); "Copse Joinery" matches "Copse Joinery Ltd"; Not-a-duplicate removes the pair; "Seaview Test Bakery Ltd" is caught as an existing customer.
 - Later idea: a "merge these two customers" tool. It needs care (moves quotes, invoices, contacts and so on), so ask the owner first.
+
+## Real products from Zoho, plus a product dropdown on quote lines (5 October 2026), done and tested
+- The owner approved copying the real product list now (decision 5 October 2026). Imported from Zoho Books (`/api/v3/items` via the signed-in session) straight into the TEST database:
+  - **135 products** (134 active), 132 with product numbers; suppliers matched or added (19 suppliers now)
+  - the 12 made-up products (zoho_id FAKE-…) are marked not for sale
+  - the data is not in the repo; the steps are in `docs/runbooks/IMPORT-PRODUCTS.md` and `supabase/seed/import-zoho-products.sql`, and are written as one statement because the Supabase SQL editor drops temp tables between statements
+- Migration `20261011120000_product_codes.sql` (applied): `product_code` on sales_document_lines, recurring_invoice_lines and purchase_order_lines. The `set_line_product_code` trigger fills it from products.sku, so it carries through every copy path (quote → order → invoice, recurring, POs) and is ready for the Xero sync.
+- New `ProductDropdown` on quote, order, invoice, credit note, recurring and PO lines:
+  - lists all products by name (number and price shown small); filter by name or number; arrow keys and Enter (Enter never submits the quote)
+  - picking a product sets the description to "SKU – Name" (plus the product's own description), and the price, cost and VAT
+  - the old `ProductSearch` was removed
+  - `/api/search/products?all=1` returns all products (the API caps at 1,000 rows, fine for 135)
+- Tested: 134 listed; "a-frame" → A-Frame Signs; description "AFFP102 – A-Frame Signs", £47.64 / cost £20; saved QT-010185, and the line's product_code is AFFP102.
