@@ -288,3 +288,18 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - a `no-scrollbar` utility on tab strips
 - Wrapped 4 tables in `overflow-x-auto`: hub commission, directory rules and titles, recurring detail.
 - Measured at 320, 375, 414 and 768 px across about 30 pages (via a same-origin iframe, with a temporary dev-only X-Frame-Options change that was reverted). Every page's width now equals the screen width. The black bar spans the full width with the logo and menu inside.
+
+## Wave 3: projects and time. ON HOLD from 5 October 2026 (owner asked to switch to the Customers page)
+- Branch `wave-3/projects`.
+- Done:
+  - discovery `docs/discovery/ZOHO-PROJECTS.md`
+  - decisions (projects automatic from sales orders, timer plus manual time, example £25/hr cost rates)
+- Migration `20261009120000_projects_time.sql` is **applied to test**. It adds:
+  - projects (FO- numbering from 1498), project_tasks, project_templates and their tasks (4 starter templates)
+  - time_logs (one running timer per person), staff_cost_rates, `company_settings.default_hourly_cost`
+  - `project_time_costs()`
+  - a trigger so every new sales order creates a project
+  - a fix so `_take_document_number` no longer cuts off long numbers
+  - projects back-filled for the existing test sales orders
+- **Not built yet:** all the app pages (projects list and detail, tasks, timer, timesheet, templates, cost rates).
+- The live demo uses the test database, so new sales orders there now quietly get a project. That's harmless.
