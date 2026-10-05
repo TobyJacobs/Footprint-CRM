@@ -57,7 +57,7 @@ export const features: Feature[] = [
   },
   {
     key: "quotes",
-    label: "Quotes & Invoices",
+    label: "Sales & Operations",
     href: "/sales",
     icon: FileText,
     description:

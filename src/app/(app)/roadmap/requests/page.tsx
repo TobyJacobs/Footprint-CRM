@@ -4,6 +4,7 @@ import NoAccess from "@/components/NoAccess";
 import PageHeader from "@/components/PageHeader";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { loadAttachments } from "../attachments";
 import RoadmapTabs from "../RoadmapTabs";
 import { RequestCard, type Comment, type RoadmapRequest, type Wave } from "../parts";
 
@@ -39,6 +40,7 @@ export default async function OldRequestsPage(props: PageProps<"/roadmap/request
   const { data: comments } = ids.length
     ? await supabase.from("feedback_comments").select("*").in("request_id", ids).order("created_at")
     : { data: [] };
+  const filesByRequest = await loadAttachments(supabase, ids);
   const names = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name ?? p.email) as string]));
 
   return (
@@ -77,6 +79,7 @@ export default async function OldRequestsPage(props: PageProps<"/roadmap/request
                 me={user.id}
                 isAdmin={user.isAdmin}
                 showActions={false}
+                files={filesByRequest.get(r.id)}
               />
             ))}
           </div>

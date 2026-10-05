@@ -11,6 +11,9 @@ import { activityKinds } from "@/lib/customers/options";
 import { statusLabel as salesStatus, statusToneFor as salesTone, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 import { addActivity, deleteActivity, markNotDuplicate } from "../actions";
+import EmailComposer from "../EmailComposer";
+import { sendCustomerEmail } from "../email-actions";
+import { isEmailConfigured, isEmailTestMode } from "@/lib/email/postmark";
 
 export async function generateMetadata(props: PageProps<"/customers/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -56,6 +59,20 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
       supabase.from("customer_duplicate_pairs").select("other_id, other_name, other_city, reasons").eq("customer_id", id).limit(10),
     ]);
   if (!c) notFound();
+
+  const [{ data: templates }, { data: companySettings }, { data: sentEmails }] = await Promise.all([
+    supabase.from("email_templates").select("id, name, subject, body").eq("active", true).order("position").order("name"),
+    supabase.from("company_settings").select("company_name").single(),
+    supabase
+      .from("email_log")
+      .select("id, to_addresses, subject, status, sent_at")
+      .eq("customer_id", id)
+      .is("sales_document_id", null)
+      .is("purchase_order_id", null)
+      .order("sent_at", { ascending: false })
+      .limit(5),
+  ]);
+  const emailed = typeof searchParams.emailed === "string" ? searchParams.emailed : null;
 
   const canSeeSales = user.can("quotes", "view");
   const { data: salesDocs } = canSeeSales
@@ -395,11 +412,63 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
 
             <Card title="Sales & marketing">
               <dl className="grid gap-4">
+                <Detail label="Services">
+                  {(c.services ?? []).length > 0 && (
+                    <span className="flex flex-wrap gap-1">
+                      {(c.services as string[]).map((s) => (
+                        <Badge key={s}>{s}</Badge>
+                      ))}
+                    </span>
+                  )}
+                </Detail>
                 <Detail label="Heard about us">{(c.heard_about_us ?? []).join(", ")}</Detail>
                 <Detail label="Brochures sent">{(c.brochures_sent ?? []).join(", ")}</Detail>
                 <Detail label="Last contacted">{longDate(c.last_contacted_on)}</Detail>
                 <Detail label="Follow up">{shortDateTime(c.follow_up_at)}</Detail>
               </dl>
+            </Card>
+
+            <div id="email" className="-mt-4" />
+            <Card title="Email this customer">
+              {emailed && (
+                <p role="status" className="mb-3 rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-3 py-2 text-sm text-fp-teal-deep">
+                  {emailed === "test" ? "Email accepted in test mode (not actually delivered)." : "Email sent."}
+                </p>
+              )}
+              {!canEdit ? (
+                <p className="text-sm text-fp-dark/75">You can view this customer but not email them.</p>
+              ) : (templates ?? []).length === 0 ? (
+                <p className="text-sm text-fp-dark/75">No email templates yet. An admin can add some in Admin → Email templates.</p>
+              ) : (
+                <>
+                  {isEmailConfigured() && isEmailTestMode() && (
+                    <p className="mb-3 rounded-md bg-fp-amber/15 px-3 py-2 text-xs">
+                      Test mode: emails are accepted by Postmark but <strong>not delivered</strong>.
+                    </p>
+                  )}
+                  <EmailComposer
+                    templates={templates ?? []}
+                    contacts={(contacts ?? []).map((p) => ({ id: p.id, first_name: p.first_name, last_name: p.last_name, email: p.email }))}
+                    companyName={c.name}
+                    ourCompany={companySettings?.company_name ?? "Footprint Group"}
+                    senderName={user.fullName ?? user.email}
+                    canSend={isEmailConfigured()}
+                    sendAction={sendCustomerEmail.bind(null, id)}
+                  />
+                  {!isEmailConfigured() && (
+                    <p className="mt-2 text-xs text-fp-dark/70">Sending from the platform isn&apos;t switched on yet; use &ldquo;Open in my email app&rdquo;.</p>
+                  )}
+                </>
+              )}
+              {(sentEmails ?? []).length > 0 && (
+                <ul className="mt-4 grid gap-1 border-t border-fp-border pt-3 text-xs text-fp-dark/75">
+                  {(sentEmails ?? []).map((e) => (
+                    <li key={e.id}>
+                      {shortDateTime(e.sent_at)} · to {e.to_addresses} · &ldquo;{e.subject}&rdquo;
+                    </li>
+                  ))}
+                </ul>
+              )}
             </Card>
 
             <Card title="Timeline">

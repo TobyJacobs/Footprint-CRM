@@ -18,7 +18,7 @@ const tabs = [
 export default function SalesTabs() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Quotes & invoices" className="no-scrollbar flex gap-1 overflow-x-auto border-b border-fp-border bg-white px-6 print:hidden lg:px-10">
+    <nav aria-label="Sales & Operations" className="no-scrollbar flex gap-1 overflow-x-auto border-b border-fp-border bg-white px-6 print:hidden lg:px-10">
       {tabs.map((t) => {
         const active = pathname.startsWith(t.href);
         return (

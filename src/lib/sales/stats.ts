@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 
-// Figures for the charts in Quotes & Invoices. The adding-up happens in the
+// Figures for the charts in Sales & Operations. The adding-up happens in the
 // database (sales_stats), as the signed-in person, so row-level security
 // still decides what they can see. Money is net of VAT except "owed".
 

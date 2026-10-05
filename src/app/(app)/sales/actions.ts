@@ -295,3 +295,35 @@ export async function saveProduct(productId: string | null, fd: FormData) {
   revalidatePath("/sales/products");
   redirect("/sales/products?saved=1");
 }
+
+// Override gross profit when the calculated figure is wrong. The database only
+// lets the operations team and admins do this, and insists on a reason.
+export async function setGpOverride(documentId: string, fd: FormData) {
+  await requirePermission("quotes", "edit");
+  const back = `/sales/${documentId}`;
+  const gp = num(fd, "gp");
+  const reason = str(fd, "reason");
+  if (gp === null) fail(back, "Please enter the gross profit in pounds");
+  if (!reason) fail(back, "Please say why you're overriding it");
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("sales_documents")
+    .update({ gp_override: gp, gp_override_reason: reason })
+    .eq("id", documentId);
+  if (error) fail(back, error.message);
+  revalidatePath("/sales", "layout");
+  redirect(`${back}?saved=1`);
+}
+
+export async function clearGpOverride(documentId: string) {
+  await requirePermission("quotes", "edit");
+  const back = `/sales/${documentId}`;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("sales_documents")
+    .update({ gp_override: null, gp_override_reason: null })
+    .eq("id", documentId);
+  if (error) fail(back, error.message);
+  revalidatePath("/sales", "layout");
+  redirect(`${back}?saved=1`);
+}

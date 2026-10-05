@@ -1,7 +1,9 @@
+import { Paperclip } from "lucide-react";
 import { Badge, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { shortDateTime } from "@/lib/customers/display";
 import { features } from "@/lib/features";
 import { approveRequest, denyRequest, queryRequest, replyToRequest } from "./actions";
+import type { RequestFile } from "./attachments";
 
 export type Wave = { id: string; code: string; title: string; description: string | null; on_hold: boolean; position: number };
 export type RoadmapRequest = {
@@ -47,6 +49,7 @@ export function RequestCard({
   isAdmin,
   showActions,
   returnTo,
+  files = [],
 }: {
   r: RoadmapRequest;
   waves: Wave[];
@@ -56,6 +59,7 @@ export function RequestCard({
   isAdmin: boolean;
   showActions: boolean;
   returnTo?: string;
+  files?: RequestFile[];
 }) {
   void returnTo;
   const wave = waves.find((w) => w.id === r.wave_id);
@@ -74,6 +78,36 @@ export function RequestCard({
         {[wave ? waveLabel(wave) : null, r.page].filter(Boolean).join(" · ") || "No wave or page given"}
       </p>
       {r.details && <p className="mt-2 whitespace-pre-line">{r.details}</p>}
+
+      {files.length > 0 && (
+        <div className="mt-3 grid gap-2">
+          <div className="flex flex-wrap gap-2">
+            {files
+              .filter((f) => f.isImage && f.url)
+              .map((f) => (
+                <a key={f.id} href={f.url!} target="_blank" rel="noopener noreferrer" title={f.name} className="block overflow-hidden rounded-md border border-fp-border">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={f.url!} alt={f.name} className="h-24 w-auto max-w-[10rem] object-cover" />
+                </a>
+              ))}
+          </div>
+          <ul className="grid gap-1 text-xs">
+            {files
+              .filter((f) => !f.isImage)
+              .map((f) => (
+                <li key={f.id}>
+                  {f.url ? (
+                    <a href={f.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-fp-teal-deep hover:underline">
+                      <Paperclip size={12} aria-hidden /> {f.name}
+                    </a>
+                  ) : (
+                    <span>{f.name}</span>
+                  )}
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
 
       {comments.length > 0 && (
         <ul className="mt-3 grid gap-2 border-l-2 border-fp-border pl-3">

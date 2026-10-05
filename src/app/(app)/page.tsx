@@ -16,7 +16,7 @@ export default async function Home(props: PageProps<"/">) {
   const visible = features.filter((f) => user.visibleFeatureKeys.includes(f.key));
   const firstName = (user.fullName ?? "").split(" ")[0];
 
-  // Which dashboards this person gets. Figures need the Quotes & Invoices
+  // Which dashboards this person gets. Figures need the Sales & Operations
   // permission; admins without a role see the Directors' view.
   const canSeeFigures = user.can("quotes", "view");
   let mine = dashboardOrder.filter((d) => d !== "general" && user.dashboards.includes(d));
