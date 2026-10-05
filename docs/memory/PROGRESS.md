@@ -325,4 +325,4 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - picking a product sets the description to "SKU – Name" (plus the product's own description), and the price, cost and VAT
   - the old `ProductSearch` was removed
   - `/api/search/products?all=1` returns all products (the API caps at 1,000 rows, fine for 135)
-- Tested: 134 listed; "a-frame" → A-Frame Signs; description "AFFP102 – A-Frame Signs", £47.64 / cost £20; saved QT-010185, and the line's product_code is AFFP102.
+- Tested: 134 listed; filtering by name works; the description starts with the product number; prices, cost and VAT fill in; a saved test quote (QT-010185) has the product_code on its line.
