@@ -354,3 +354,5 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - the product form has a Sales account select ("code – name"); "SKU / code" is renamed "Product number"
   - `saveProduct` saves `sales_account_code`
 - The import template and runbook now include `ac` (account code).
+- **Not live yet:** PR [TobyJacobs/Footprint-CRM#12](https://github.com/TobyJacobs/Footprint-CRM/pull/12) is open, NOT merged. On 5 October 2026 Netlify said **"Production deploys are paused because your team has used all of its available credits for this billing cycle."** The last live version is c5b5fa8 (PR #11). The database changes are already applied, so the live site keeps working; it just doesn't show the new Sales account fields.
+- Options for the owner: upgrade the Netlify plan, wait for the credits to reset, and/or cut usage (turn off deploy previews and batch changes into fewer releases; each PR currently builds twice).
