@@ -4,6 +4,7 @@ import NoAccess from "@/components/NoAccess";
 import PageHeader from "@/components/PageHeader";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import RoadmapTabs from "../RoadmapTabs";
 import { RequestCard, type Comment, type RoadmapRequest, type Wave } from "../parts";
 
 export const metadata: Metadata = { title: "Old requests" };
@@ -46,11 +47,9 @@ export default async function OldRequestsPage(props: PageProps<"/roadmap/request
         title="Old requests"
         intro={user.isAdmin ? "Every request that's been decided." : "Your requests that have been decided."}
       />
+      <RoadmapTabs current="old" isAdmin={user.isAdmin} />
       <div className="px-6 py-8 lg:px-10">
-        <Link href="/roadmap" className="text-sm font-semibold text-fp-teal-deep hover:underline">
-          ← Roadmap
-        </Link>
-        <nav aria-label="Show" className="my-4 flex flex-wrap gap-2 text-sm">
+        <nav aria-label="Show" className="mb-4 flex flex-wrap gap-2 text-sm">
           {filters.map((f) => (
             <Link
               key={f.key}
