@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
 import { Card, Checkbox, Field, Select, TextArea, TextInput, primaryButton, secondaryButton } from "@/components/ui";
 import { businessUnits, frequencies, recurringStatuses } from "@/lib/sales/options";
 import DocumentEditor, { type EditorLine } from "../DocumentEditor";
 
-export default function RecurringForm({
+export default async function RecurringForm({
   recurring,
   lines,
   customer,
@@ -85,6 +86,7 @@ export default function RecurringForm({
           initialContactId={v("contact_id") ?? contacts.find((p) => p.is_primary)?.id ?? null}
           initialLines={lines}
           taxRates={taxRates}
+          canAddCustomer={(await getCurrentUser()).can("customers", "edit")}
           creditWarning={customer?.credit_status && /ON STOP|Up Front|before we order/i.test(customer.credit_status) ? customer.credit_status : null}
         />
       </Card>

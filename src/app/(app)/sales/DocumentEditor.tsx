@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
-import { inputClass } from "@/components/ui";
+import { useRef, useState, useTransition } from "react";
+import { Plus, Trash2, UserPlus } from "lucide-react";
+import { inputClass, primaryButton, secondaryButton } from "@/components/ui";
+import { quickAddCustomer, type QuickCustomerInput } from "../customers/actions";
 import { totals, lineNet, marginPercent } from "@/lib/sales/options";
 
 type TaxRate = { id: string; name: string; rate: number };
@@ -57,30 +58,140 @@ function num(v: string) {
 // Small "search as you type" box used for customers and products.
 function useSearch<T>(url: string) {
   const [results, setResults] = useState<T[]>([]);
+  // The text the current results are for (null = nothing to show).
+  const [searched, setSearched] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const search = (q: string) => {
     if (timer.current) clearTimeout(timer.current);
     if (q.trim().length < 2) {
       setResults([]);
+      setSearched(null);
       return;
     }
     timer.current = setTimeout(async () => {
       const res = await fetch(`${url}?q=${encodeURIComponent(q.trim())}`);
       setResults(res.ok ? await res.json() : []);
+      setSearched(q.trim());
     }, 250);
   };
-  return { results, search, clear: () => setResults([]) };
+  const clear = () => {
+    setResults([]);
+    setSearched(null);
+  };
+  return { results, searched, search, clear };
+}
+
+// Small form to add a customer (and its main contact) without leaving the
+// quote. Not a <form>: it sits inside the quote's own form.
+function QuickAddCustomer({
+  initialName,
+  onAdded,
+  onUseExisting,
+  onCancel,
+}: {
+  initialName: string;
+  onAdded: (customer: CustomerHit, contact: Contact | null) => void;
+  onUseExisting: (customer: CustomerHit) => void;
+  onCancel: () => void;
+}) {
+  const [v, setV] = useState<QuickCustomerInput>({ name: initialName });
+  const [error, setError] = useState<string | null>(null);
+  const [existing, setExisting] = useState<CustomerHit | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const save = (allowDuplicate = false) =>
+    startTransition(async () => {
+      setError(null);
+      const result = await quickAddCustomer({ ...v, allowDuplicate });
+      if (result.ok) onAdded(result.customer, result.contact);
+      else {
+        setError(result.error);
+        setExisting(result.existing ?? null);
+      }
+    });
+
+  const field = (label: string, k: keyof QuickCustomerInput, type = "text", placeholder?: string) => (
+    <label className="grid gap-1 text-sm">
+      <span className="font-semibold">{label}</span>
+      <input
+        type={type}
+        value={(v[k] as string | undefined) ?? ""}
+        onChange={(e) => setV((old) => ({ ...old, [k]: e.target.value }))}
+        placeholder={placeholder}
+        className={inputClass}
+        autoComplete="off"
+        onKeyDown={(e) => {
+          // Enter would submit the whole quote; save the customer instead.
+          if (e.key === "Enter") {
+            e.preventDefault();
+            save();
+          }
+        }}
+      />
+    </label>
+  );
+
+  return (
+    <div className="rounded-lg border border-fp-teal-deep/40 bg-fp-teal/5 p-4 sm:col-span-2">
+      <p className="mb-3 flex items-center gap-2 font-bold">
+        <UserPlus size={16} className="text-fp-teal-deep" aria-hidden /> New customer
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="sm:col-span-2">{field("Company name", "name")}</div>
+        {field("Phone", "phone", "tel")}
+        {field("Postcode", "postcode")}
+        <div className="sm:col-span-2">{field("Company email", "email", "email", "accounts@company.co.uk")}</div>
+      </div>
+      <p className="mb-2 mt-4 text-sm font-semibold">Main contact (optional)</p>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {field("First name", "contactFirstName")}
+        {field("Last name", "contactLastName")}
+        {field("Email", "contactEmail", "email")}
+        {field("Phone", "contactPhone", "tel")}
+      </div>
+      {error && (
+        <div className="mt-3 rounded-md border border-fp-error/30 bg-fp-error/5 px-3 py-2 text-sm text-fp-error">
+          {error}
+          {existing && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" className={secondaryButton} onClick={() => onUseExisting(existing)}>
+                Use the existing customer
+              </button>
+              <button type="button" className={secondaryButton} onClick={() => save(true)} disabled={pending}>
+                It&apos;s a different company: add anyway
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button type="button" className={primaryButton} onClick={() => save()} disabled={pending}>
+          {pending ? "Adding…" : "Add customer"}
+        </button>
+        <button type="button" className={secondaryButton} onClick={onCancel} disabled={pending}>
+          Cancel
+        </button>
+      </div>
+      <p className="mt-2 text-xs text-fp-dark/70">
+        You can fill in the rest (address, credit terms…) on the customer&apos;s page later.
+      </p>
+    </div>
+  );
 }
 
 function CustomerPicker({
   initial,
   onPick,
+  onAddNew,
+  canAdd,
 }: {
   initial: { id: string; name: string } | null;
   onPick: (c: CustomerHit) => void;
+  onAddNew: (name: string) => void;
+  canAdd: boolean;
 }) {
   const [text, setText] = useState(initial?.name ?? "");
-  const { results, search, clear } = useSearch<CustomerHit>("/api/search/customers");
+  const { results, searched, search, clear } = useSearch<CustomerHit>("/api/search/customers");
   return (
     <div className="relative">
       <input
@@ -94,7 +205,7 @@ function CustomerPicker({
         autoComplete="off"
         required
       />
-      {results.length > 0 && (
+      {searched !== null && (results.length > 0 || canAdd) && (
         <ul className="absolute z-10 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-fp-border bg-white shadow-lg">
           {results.map((c) => (
             <li key={c.id}>
@@ -115,6 +226,24 @@ function CustomerPicker({
               </button>
             </li>
           ))}
+          {results.length === 0 && (
+            <li className="px-3 py-2 text-sm text-fp-dark/70">No customers match &ldquo;{searched}&rdquo;.</li>
+          )}
+          {canAdd && (
+            <li className="border-t border-fp-border">
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-fp-teal-deep hover:bg-fp-light"
+                onClick={() => {
+                  const name = searched ?? text;
+                  clear();
+                  onAddNew(name);
+                }}
+              >
+                <UserPlus size={14} aria-hidden /> Add &ldquo;{searched}&rdquo; as a new customer
+              </button>
+            </li>
+          )}
         </ul>
       )}
     </div>
@@ -167,6 +296,7 @@ export default function DocumentEditor({
   initialLines,
   taxRates,
   creditWarning,
+  canAddCustomer = false,
 }: {
   initialCustomer: { id: string; name: string } | null;
   initialContacts: Contact[];
@@ -174,6 +304,7 @@ export default function DocumentEditor({
   initialLines: EditorLine[];
   taxRates: TaxRate[];
   creditWarning?: string | null;
+  canAddCustomer?: boolean;
 }) {
   const defaultTax = taxRates[0];
   const [customer, setCustomer] = useState(initialCustomer);
@@ -181,6 +312,9 @@ export default function DocumentEditor({
   const [contactId, setContactId] = useState<string>(initialContactId ?? "");
   const [credit, setCredit] = useState<string | null>(creditWarning ?? null);
   const [lines, setLines] = useState<EditorLine[]>(initialLines.length ? initialLines : [blankLine(defaultTax)]);
+  const [adding, setAdding] = useState<string | null>(null);
+  // Bumped to redraw the customer box with the chosen customer's proper name.
+  const [pickerVersion, setPickerVersion] = useState(0);
 
   const pickCustomer = async (c: CustomerHit) => {
     setCustomer({ id: c.id, name: c.name });
@@ -222,7 +356,14 @@ export default function DocumentEditor({
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1 text-sm">
           <span className="font-semibold">Customer</span>
-          <CustomerPicker initial={initialCustomer} onPick={pickCustomer} />
+          {/* Re-created when a new customer is added, so the box shows its name. */}
+          <CustomerPicker
+            key={`${customer?.id ?? "none"}-${pickerVersion}`}
+            initial={customer}
+            onPick={pickCustomer}
+            onAddNew={(name) => setAdding(name)}
+            canAdd={canAddCustomer}
+          />
         </label>
         <label className="grid gap-1 text-sm">
           <span className="font-semibold">For the attention of</span>
@@ -236,6 +377,24 @@ export default function DocumentEditor({
             ))}
           </select>
         </label>
+        {adding !== null && (
+          <QuickAddCustomer
+            initialName={adding}
+            onCancel={() => setAdding(null)}
+            onUseExisting={(c) => {
+              setAdding(null);
+              setPickerVersion((n) => n + 1);
+              pickCustomer(c);
+            }}
+            onAdded={(c, contact) => {
+              setAdding(null);
+              setCustomer({ id: c.id, name: c.name });
+              setCredit(null);
+              setContacts(contact ? [contact] : []);
+              setContactId(contact?.id ?? "");
+            }}
+          />
+        )}
         {credit && (
           <p className="rounded-md border border-fp-error/30 bg-fp-error/5 px-3 py-2 text-sm text-fp-error sm:col-span-2">
             Credit warning for this customer: {credit}

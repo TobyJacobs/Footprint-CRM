@@ -288,3 +288,14 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - a `no-scrollbar` utility on tab strips
 - Wrapped 4 tables in `overflow-x-auto`: hub commission, directory rules and titles, recurring detail.
 - Measured at 320, 375, 414 and 768 px across about 30 pages (via a same-origin iframe, with a temporary dev-only X-Frame-Options change that was reverted). Every page's width now equals the screen width. The black bar spans the full width with the logo and menu inside.
+
+## Quick-add customer from quotes and invoices (5 October 2026), done and tested
+- In the customer search on quotes, orders, invoices, credit notes and recurring invoices: when typing, the list ends with **"+ Add '…' as a new customer"** (also shown when nothing matches). It's only shown to people with Customers edit permission.
+- It opens an inline form inside the quote form (not a nested form): company name (pre-filled), phone, postcode, company email, and an optional main contact (first and last name, email, phone). Enter saves the customer, not the quote.
+- Server action `quickAddCustomer` (customers/actions.ts):
+  - validates the input
+  - warns if the same name already exists (ignoring capitals), offering "Use the existing customer" or "add anyway"
+  - sets the account owner to the person adding
+  - makes the contact primary
+  - logs "Customer added from a quote or invoice by …" on the timeline
+- Tested with made-up "Seaview Test Bakery" (contact Sam Example): the customer was selected, the FAO filled in, the duplicate warning worked, and the customer page shows the details and the timeline entry.

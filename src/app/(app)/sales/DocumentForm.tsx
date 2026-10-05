@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
 import { Card, Checkbox, Field, Select, TextArea, TextInput, primaryButton, secondaryButton } from "@/components/ui";
 import {
   businessUnits, creditReasons, deliveryTypes, docTypes, expectedDates, lossReasons, probabilities, productionSteps,
@@ -8,7 +9,7 @@ import DocumentEditor, { type EditorLine } from "./DocumentEditor";
 
 type Doc = Record<string, unknown>;
 
-export default function DocumentForm({
+export default async function DocumentForm({
   docType,
   doc,
   lines,
@@ -45,6 +46,7 @@ export default function DocumentForm({
           initialContactId={(v("contact_id") as string) ?? contacts.find((p) => p.is_primary)?.id ?? null}
           initialLines={lines}
           taxRates={taxRates}
+          canAddCustomer={(await getCurrentUser()).can("customers", "edit")}
           creditWarning={creditWarning}
         />
       </Card>
