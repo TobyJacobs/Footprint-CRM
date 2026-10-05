@@ -381,3 +381,10 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Tested: activate → Invited, test-mode email, link page "Welcome, Alex"; deactivate → Not activated, link invalid; a fake link is invalid.
 - `netlify.toml` gets an `ignore` rule so docs/seed/markdown-only changes don't build (saves credits).
 - To do at release: put `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET` (owner pastes), `STAFF_EMAIL_DOMAINS` and `DIRECTORY_SYNC_KEY` (created in Admin → Microsoft 365, owner pastes) in Netlify; set up Postmark for real invite emails.
+
+## Microsoft 365 sync live (5 October 2026)
+- PR #13 (staff activation) live as e92dacb.
+- Netlify env vars added: ENTRA_TENANT_ID, ENTRA_CLIENT_ID, STAFF_EMAIL_DOMAINS (by Claude); ENTRA_CLIENT_SECRET (pasted by the owner, marked secret).
+- The first rebuild FAILED on Netlify's secret scanning: the client secret's value was found in Next.js's private Turbopack build cache (`.netlify/.next/cache/turbopack/*.sst`), which is never published. Fixed with `SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache/**"` in netlify.toml (2dae56d, pushed straight to main to save a preview build). Published fine.
+- "Sync now" on the live site: 41 staff found.
+- Still to do: daily sync key (Admin → Microsoft 365 → Create sync key, then the owner pastes it into Netlify as DIRECTORY_SYNC_KEY, secret); Postmark for real invite emails; job titles in Microsoft 365 (38 of 41 blank) or switch to groups.
