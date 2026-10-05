@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { Plus, Trash2, UserPlus } from "lucide-react";
 import { inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { quickAddCustomer, type QuickCustomerInput } from "../customers/actions";
+import { DuplicateCheck } from "../customers/DuplicateCheck";
 import ProductDropdown, { productLineText } from "./ProductDropdown";
 import { totals, lineNet, marginPercent } from "@/lib/sales/options";
 
@@ -144,6 +145,13 @@ function QuickAddCustomer({
         {field("Postcode", "postcode")}
         <div className="sm:col-span-2">{field("Company email", "email", "email", "accounts@company.co.uk")}</div>
       </div>
+      <DuplicateCheck
+        name={v.name ?? ""}
+        phone={v.phone}
+        email={v.email}
+        selectLabel="Use this customer"
+        onSelect={(c) => onUseExisting({ id: c.id, name: c.name, billing_city: c.billing_city, credit_status: null })}
+      />
       <p className="mb-2 mt-4 text-sm font-semibold">Main contact (optional)</p>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {field("First name", "contactFirstName")}
