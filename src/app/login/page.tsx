@@ -11,7 +11,7 @@ const errorMessages: Record<string, string> = {
   signin: "Sign-in didn't work. Please try again.",
   callback: "Microsoft sign-in couldn't be completed. Please try again.",
   inactive:
-    "Your account has been switched off. If you think this is a mistake, speak to an admin.",
+    "Your account isn't switched on yet. An admin needs to activate you; you'll get an invite email when they do. If you think this is a mistake, speak to an admin.",
 };
 
 function MicrosoftLogo() {

@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/auth";
 import { ruleRole, type JobRoleRule } from "@/lib/entra/rules";
 import { createClient } from "@/lib/supabase/server";
 import DirectoryRoleCard, { type DirectoryEntry } from "../DirectoryRoleCard";
+import StaffAccessCard, { type StaffAccess } from "../StaffAccessCard";
 
 // Someone listed from Microsoft 365 who hasn't signed in yet. Their role is
 // ready and waiting; teams and extra roles can be added once they sign in.
@@ -17,7 +18,7 @@ export default async function DirectoryPersonPage(props: PageProps<"/admin/direc
   const [{ data: entry }, { data: roles }, { data: rules }] = await Promise.all([
     supabase
       .from("staff_directory")
-      .select("id, email, display_name, job_title, department, office_location, account_enabled, in_entra, role_id, last_synced_at, profile_id")
+      .select("id, email, display_name, job_title, department, office_location, account_enabled, in_entra, role_id, last_synced_at, profile_id, activated, activated_at, invited_at, joined_at, invite_token")
       .eq("id", dirId)
       .maybeSingle(),
     supabase.from("roles").select("id, name").order("name"),
@@ -34,11 +35,18 @@ export default async function DirectoryPersonPage(props: PageProps<"/admin/direc
         </Link>
         <h2 className="mt-3 text-xl font-black">{entry.display_name ?? entry.email}</h2>
         <p className="mt-1 text-sm text-fp-dark/75">
-          Hasn&apos;t signed in yet. When they do, they&apos;ll get the role below straight away. Teams and admin rights can be
-          added after their first sign-in.
+          Hasn&apos;t signed in yet. Activate them to send an invite; when they sign in they get the role below. Teams and
+          admin rights can be added after their first sign-in.
         </p>
       </div>
       <Notice searchParams={sp} />
+      <StaffAccessCard
+        entry={entry as StaffAccess}
+        back={`/admin/directory/${dirId}`}
+        hasActiveProfile={false}
+        isAdminUser={false}
+        searchParams={sp}
+      />
       <DirectoryRoleCard
         entry={entry as DirectoryEntry}
         roles={roles ?? []}

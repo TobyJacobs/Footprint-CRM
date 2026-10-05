@@ -58,13 +58,15 @@ type GraphUser = {
   officeLocation: string | null;
   accountEnabled: boolean | null;
   userType: string | null;
+  assignedLicenses: { skuId: string }[] | null;
 };
 
-// Everyone in Microsoft 365 with a staff email address (guests are left out).
+// Everyone in Microsoft 365 with a staff email address and a licence
+// (guests and unlicensed accounts are left out).
 export async function listStaff(): Promise<DirectoryUser[]> {
   const token = await getToken();
   const domains = staffDomains();
-  const select = "id,displayName,mail,userPrincipalName,jobTitle,department,officeLocation,accountEnabled,userType";
+  const select = "id,displayName,mail,userPrincipalName,jobTitle,department,officeLocation,accountEnabled,userType,assignedLicenses";
   let url: string | null = `https://graph.microsoft.com/v1.0/users?$select=${select}&$top=999`;
   const out: DirectoryUser[] = [];
 
@@ -85,7 +87,8 @@ export async function listStaff(): Promise<DirectoryUser[]> {
     for (const u of body.value ?? []) {
       const email = (u.mail || u.userPrincipalName || "").trim().toLowerCase();
       const domain = email.split("@")[1] ?? "";
-      if (u.userType === "Guest" || !domains.includes(domain)) continue;
+      // Only licensed staff: leaves out shared mailboxes, rooms and other unlicensed accounts.
+      if (u.userType === "Guest" || !domains.includes(domain) || !(u.assignedLicenses?.length)) continue;
       out.push({
         id: u.id,
         email,

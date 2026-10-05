@@ -2,10 +2,12 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { isDirectoryConfigured } from "@/lib/entra/graph";
 import { runDirectorySync } from "@/lib/entra/sync";
+import { brandedHtml, isEmailConfigured, isEmailTestMode, sendEmail } from "@/lib/email/postmark";
 import { dashboardTypes } from "@/lib/dashboards/data";
 import { createClient } from "@/lib/supabase/server";
 import { permissionFeatures, ACTIONS } from "./permissions";
@@ -474,4 +476,49 @@ export async function deleteCommissionRule(ruleId: string) {
   if (error) fail("/admin/targets", error.message);
   revalidatePath("/", "layout");
   redirect("/admin/targets?deleted=1");
+}
+
+// ─── Activating staff (with an invite) ──────────────────────────────────────
+
+// Switch someone on (with their role) and email them an invite link to sign
+// in. If email isn't set up, the link is shown on their page to send by hand.
+// Also used for "Resend invite".
+export async function activateStaff(directoryId: string, back: string) {
+  const me = await requireAdmin();
+  const safeBack = back.startsWith("/admin/") ? back : "/admin/users";
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("activate_staff", { p_directory_id: directoryId });
+  if (error) fail(safeBack, error.message);
+  const invite = data as { token: string; email: string; name: string | null };
+
+  const h = await headers();
+  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const link = `${origin}/invite/${invite.token}`;
+  let status = "nomail";
+  if (isEmailConfigured()) {
+    const first = (invite.name ?? "").split(" ")[0];
+    const { data: settings } = await supabase.from("company_settings").select("company_name").single();
+    const company = settings?.company_name ?? "Footprint Group";
+    const message = `${first ? `Hi ${first},` : "Hello,"}\n\n${me.fullName ?? "An admin"} has set you up on the ${company} platform, where we run quotes, invoices, customers and more.\n\nUse the button below and sign in with your usual Microsoft work account.`;
+    const result = await sendEmail({
+      to: invite.email,
+      subject: `You're invited to the ${company} platform`,
+      text: `${message}\n\nSign in: ${link}`,
+      html: brandedHtml({ text: message, buttonLabel: "Sign in to the platform", buttonUrl: link, companyName: company }),
+      tag: "staff-invite",
+    });
+    status = result.ok ? (isEmailTestMode() ? "test" : "sent") : "failed";
+  }
+  revalidatePath("/admin", "layout");
+  redirect(`${safeBack}?invited=${status}`);
+}
+
+export async function deactivateStaff(directoryId: string, back: string) {
+  await requireAdmin();
+  const safeBack = back.startsWith("/admin/") ? back : "/admin/users";
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("deactivate_staff", { p_directory_id: directoryId });
+  if (error) fail(safeBack, error.message);
+  revalidatePath("/admin", "layout");
+  redirect(`${safeBack}?saved=1`);
 }
