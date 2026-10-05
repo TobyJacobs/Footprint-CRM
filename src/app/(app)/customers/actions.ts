@@ -403,3 +403,96 @@ export async function deleteActivity(customerId: string, activityId: string) {
   revalidatePath(`/customers/${customerId}`);
   redirect(`/customers/${customerId}#timeline`);
 }
+
+// ─── Quick add (from the quote / invoice customer search) ───────────────────
+
+export type QuickCustomerInput = {
+  name: string;
+  phone?: string;
+  email?: string;
+  postcode?: string;
+  contactFirstName?: string;
+  contactLastName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  allowDuplicate?: boolean;
+};
+
+export type QuickCustomerResult =
+  | {
+      ok: true;
+      customer: { id: string; name: string; billing_city: string | null; credit_status: string | null };
+      contact: { id: string; first_name: string | null; last_name: string; email: string | null; is_primary: boolean } | null;
+    }
+  | { ok: false; error: string; existing?: { id: string; name: string; billing_city: string | null; credit_status: string | null } };
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const clean = (v?: string) => (v ?? "").trim().slice(0, 300) || null;
+
+// Creates a customer (and optionally its main contact) without leaving the
+// quote. Warns first if a customer with the same name already exists.
+export async function quickAddCustomer(input: QuickCustomerInput): Promise<QuickCustomerResult> {
+  const user = await requirePermission("customers", "edit");
+  const name = clean(input.name);
+  if (!name) return { ok: false, error: "Please enter the company name" };
+  const email = clean(input.email);
+  const contactEmail = clean(input.contactEmail);
+  if (email && !EMAIL_RE.test(email)) return { ok: false, error: "The company email doesn't look right" };
+  if (contactEmail && !EMAIL_RE.test(contactEmail)) return { ok: false, error: "The contact's email doesn't look right" };
+  const first = clean(input.contactFirstName);
+  const last = clean(input.contactLastName);
+  if (first && !last) return { ok: false, error: "Please add the contact's last name too" };
+
+  const supabase = await createClient();
+  if (!input.allowDuplicate) {
+    const { data: same } = await supabase
+      .from("customers")
+      .select("id, name, billing_city, credit_status")
+      .is("erased_at", null)
+      // Same name, ignoring capitals (wildcard characters matched literally).
+      .ilike("name", name.replace(/[%_\\]/g, (c) => "\\" + c))
+      .limit(1)
+      .maybeSingle();
+    if (same) return { ok: false, error: `A customer called "${same.name}" already exists.`, existing: same };
+  }
+
+  const { data: customer, error } = await supabase
+    .from("customers")
+    .insert({
+      name,
+      phone: clean(input.phone),
+      email,
+      billing_postcode: clean(input.postcode)?.toUpperCase() ?? null,
+      owner_id: user.id,
+    })
+    .select("id, name, billing_city, credit_status")
+    .single();
+  if (error) return { ok: false, error: error.message };
+
+  let contact = null;
+  if (last) {
+    const { data, error: contactError } = await supabase
+      .from("contacts")
+      .insert({
+        customer_id: customer.id,
+        first_name: first,
+        last_name: last,
+        email: contactEmail,
+        phone: clean(input.contactPhone),
+        is_primary: true,
+      })
+      .select("id, first_name, last_name, email, is_primary")
+      .single();
+    if (contactError) return { ok: false, error: `The customer was added, but not the contact: ${contactError.message}` };
+    contact = data;
+  }
+
+  await supabase.from("customer_activity").insert({
+    customer_id: customer.id,
+    kind: "system",
+    body: `Customer added from a quote or invoice by ${user.fullName ?? user.email}.`,
+  });
+
+  revalidatePath("/customers");
+  return { ok: true, customer, contact };
+}
