@@ -18,12 +18,13 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
   const status = typeof sp.status === "string" ? sp.status : "";
   const service = typeof sp.service === "string" ? sp.service : "";
+  const dupOnly = sp.dup === "1";
   const page = Math.max(1, Number(sp.page) || 1);
 
   const supabase = await createClient();
   let query = supabase
-    .from("customers")
-    .select("id, name, status, services, phone, email, billing_city, contacts(first_name, last_name, is_primary)", {
+    .from("customers_with_flags")
+    .select("id, name, status, services, phone, email, billing_city, has_duplicate, contacts(first_name, last_name, is_primary)", {
       count: "exact",
     })
     .order("name")
@@ -50,6 +51,7 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
   }
   if (status) query = query.eq("status", status);
   if (service) query = query.contains("services", [service]);
+  if (dupOnly) query = query.eq("has_duplicate", true);
 
   const { data: customers, count, error } = await query;
   const total = count ?? 0;
@@ -60,6 +62,7 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
     if (q) params.set("q", q);
     if (status) params.set("status", status);
     if (service) params.set("service", service);
+    if (dupOnly) params.set("dup", "1");
     if (p > 1) params.set("page", String(p));
     const s = params.toString();
     return `/customers${s ? `?${s}` : ""}`;
@@ -100,10 +103,14 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
                 ))}
               </select>
             </label>
+            <label className="flex items-center gap-2 py-2 text-sm">
+              <input type="checkbox" name="dup" value="1" defaultChecked={dupOnly} className="accent-fp-pink" />
+              Possible duplicates only
+            </label>
             <button type="submit" className={secondaryButton}>
               Search
             </button>
-            {(q || status || service) && (
+            {(q || status || service || dupOnly) && (
               <Link href="/customers" className="py-2 text-sm font-semibold text-fp-teal-deep hover:underline">
                 Clear
               </Link>
@@ -138,6 +145,9 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
                       <Link href={`/customers/${c.id}`} className="font-semibold hover:text-fp-pink">
                         {c.name}
                       </Link>
+                      {c.has_duplicate && (
+                        <span className="ml-2 rounded-full bg-fp-amber/20 px-2 py-0.5 text-xs font-semibold">Possible duplicate</span>
+                      )}
                       <div className="text-xs text-fp-mid">
                         {[c.billing_city, c.phone].filter(Boolean).join(" · ")}
                       </div>
@@ -160,7 +170,7 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
               {(customers ?? []).length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-4 py-10 text-center text-fp-mid">
-                    {q || status || service ? "No customers match those filters." : "No customers yet."}
+                    {q || status || service || dupOnly ? "No customers match those filters." : "No customers yet."}
                   </td>
                 </tr>
               )}

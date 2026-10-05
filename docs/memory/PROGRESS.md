@@ -299,3 +299,17 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - makes the contact primary
   - logs "Customer added from a quote or invoice by …" on the timeline
 - Tested with made-up "Seaview Test Bakery" (contact Sam Example): the customer was selected, the FAO filled in, the duplicate warning worked, and the customer page shows the details and the timeline entry.
+
+## Possible duplicate customers flagged (5 October 2026), done and tested
+- Migration `20261010120000_duplicate_customers.sql` (applied to test) adds:
+  - generated `customers.name_key` (lower case, no punctuation or spaces, without ltd/limited/plc/llp/llc/inc/co/company/the/and/uk), `phone_key` (last 10 digits), `email_key`
+  - table `customer_not_duplicates` (pairs checked as different)
+  - views `customer_duplicate_pairs` and `customers_with_flags` (`has_duplicate`), both security invoker
+  - `find_matching_customers(name, phone, email)`
+- Shown in:
+  - the Customers list: "Possible duplicate" tag and a "Possible duplicates only" filter
+  - the customer page: amber warning listing matches and reasons, with a "Not a duplicate" button (customers edit)
+  - quote/invoice customer search: tag
+  - quick-add: now warns on the same name, phone or email
+- Tested on test data: 59 flagged (the fake data repeats names); "Copse Joinery" matches "Copse Joinery Ltd"; Not-a-duplicate removes the pair; "Seaview Test Bakery Ltd" is caught as an existing customer.
+- Later idea: a "merge these two customers" tool. It needs care (moves quotes, invoices, contacts and so on), so ask the owner first.
