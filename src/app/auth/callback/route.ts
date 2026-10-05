@@ -12,7 +12,11 @@ export async function GET(request: NextRequest) {
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(new URL(safeNext, origin));
+    if (!error) {
+      // Record when an invited member of staff first signs in.
+      await supabase.rpc("mark_staff_joined");
+      return NextResponse.redirect(new URL(safeNext, origin));
+    }
   }
 
   return NextResponse.redirect(new URL("/login?error=callback", origin));

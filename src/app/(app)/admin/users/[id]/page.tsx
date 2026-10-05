@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/auth";
 import { ruleRole, type JobRoleRule } from "@/lib/entra/rules";
 import { saveUser } from "../../actions";
 import DirectoryRoleCard, { type DirectoryEntry } from "../../directory/DirectoryRoleCard";
+import StaffAccessCard, { type StaffAccess } from "../../directory/StaffAccessCard";
 import { Card, Notice, primaryButton } from "../../ui";
 
 export default async function EditUserPage(props: PageProps<"/admin/users/[id]">) {
@@ -22,7 +23,7 @@ export default async function EditUserPage(props: PageProps<"/admin/users/[id]">
       supabase.from("team_members").select("team_id").eq("user_id", id),
       supabase
         .from("staff_directory")
-        .select("id, email, display_name, job_title, department, office_location, account_enabled, in_entra, role_id, last_synced_at")
+        .select("id, email, display_name, job_title, department, office_location, account_enabled, in_entra, role_id, last_synced_at, activated, activated_at, invited_at, joined_at, invite_token")
         .eq("profile_id", id)
         .maybeSingle(),
       supabase.from("job_role_rules").select("match_text, role_id, priority"),
@@ -43,7 +44,14 @@ export default async function EditUserPage(props: PageProps<"/admin/users/[id]">
       <Notice searchParams={searchParams} />
 
       {entry ? (
-        <div className="mb-6 max-w-3xl">
+        <div className="mb-6 grid max-w-3xl gap-6">
+          <StaffAccessCard
+            entry={entry as StaffAccess}
+            back={`/admin/users/${user.id}`}
+            hasActiveProfile={user.is_active}
+            isAdminUser={user.is_admin}
+            searchParams={searchParams}
+          />
           <DirectoryRoleCard
             entry={entry as DirectoryEntry}
             roles={roles ?? []}
@@ -67,13 +75,18 @@ export default async function EditUserPage(props: PageProps<"/admin/users/[id]">
             </p>
           ) : (
             <div className="grid gap-3 text-sm">
-              <label className="flex items-start gap-3">
-                <input type="checkbox" name="is_active" defaultChecked={user.is_active} className="mt-0.5 accent-fp-pink" />
-                <span>
-                  <span className="font-semibold">Active</span>
-                  <span className="block text-fp-dark/70">Untick to switch this person off. They won&apos;t be able to use the platform.</span>
-                </span>
-              </label>
+              {entry && !user.is_admin ? (
+                // Staff from Microsoft 365 are switched on and off with Activate / Deactivate above.
+                <input type="hidden" name="is_active" value={user.is_active ? "on" : ""} />
+              ) : (
+                <label className="flex items-start gap-3">
+                  <input type="checkbox" name="is_active" defaultChecked={user.is_active} className="mt-0.5 accent-fp-pink" />
+                  <span>
+                    <span className="font-semibold">Active</span>
+                    <span className="block text-fp-dark/70">Untick to switch this person off. They won&apos;t be able to use the platform.</span>
+                  </span>
+                </label>
+              )}
               <label className="flex items-start gap-3">
                 <input type="checkbox" name="is_admin" defaultChecked={user.is_admin} className="mt-0.5 accent-fp-pink" />
                 <span>

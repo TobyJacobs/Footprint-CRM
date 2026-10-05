@@ -360,3 +360,24 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 ## Netlify usage (5 October 2026)
 - The owner is on Netlify's **Personal plan ($9/month)**. Credits ran out after about 12 releases in one day; the owner added credits.
 - From now on: **bundle several changes into one release** and check them locally first, instead of publishing each small change. Check the usage breakdown before turning off deploy previews.
+
+## Staff activation with invites, licensed users only (5 October 2026), built and tested, NOT live yet (bundling)
+- The admin consent for User.Read.All has been granted. The first sync (5 October 2026) found 50 accounts; 46 had no job title.
+- Owner request: only licensed users; everyone deactivated; admins press Activate, which sends an invite link; staff then sign in themselves.
+- Graph sync now selects `assignedLicenses` and skips unlicensed accounts. Re-sync: **41 licensed staff** (38 with no job title; titles seen: Digital Marketing Manager, Operations Administrator, Operations Manager).
+- Migration `20261014120000_staff_activation.sql` (applied to test):
+  - staff_directory gains activated, activated_at/by, invite_token, invited_at, joined_at
+  - `_apply_directory_access` sets profile.is_active = activated AND enabled AND in Entra (never touches admins)
+  - `handle_new_user` makes new profiles inactive unless they're the first admin or activated
+  - functions: `activate_staff`, `deactivate_staff` (admin only; won't deactivate admins or self), `get_staff_invite` (public, first name only), `mark_staff_joined` (called in /auth/callback)
+  - every directory entry was reset to not activated
+- UI:
+  - Admin → Users: status badges (Not activated / Invited / Active / Off in Microsoft 365) and an inline **Activate** button (not shown for admins)
+  - person pages: `StaffAccessCard` with Activate and send invite, Resend invite, Deactivate, and a copyable invite link
+  - the "Active" checkbox is hidden for directory staff
+  - public `/invite/[token]` welcome page with Sign in with Microsoft
+  - the login message for inactive users explains activation
+- Invite email via Postmark when configured, otherwise the link is shown to copy.
+- Tested: activate → Invited, test-mode email, link page "Welcome, Alex"; deactivate → Not activated, link invalid; a fake link is invalid.
+- `netlify.toml` gets an `ignore` rule so docs/seed/markdown-only changes don't build (saves credits).
+- To do at release: put `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET` (owner pastes), `STAFF_EMAIL_DOMAINS` and `DIRECTORY_SYNC_KEY` (created in Admin → Microsoft 365, owner pastes) in Netlify; set up Postmark for real invite emails.
