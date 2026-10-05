@@ -7,6 +7,7 @@ import {
   Megaphone,
   Newspaper,
   Palette,
+  Map,
   Settings,
   Target,
   Users,
@@ -119,6 +120,14 @@ export const features: Feature[] = [
     description: "Footprint's own email and SMS campaigns and pipelines.",
     wave: 8,
     replaces: "GoHighLevel (internal use)",
+  },
+  {
+    key: "roadmap",
+    label: "Roadmap",
+    href: "/roadmap",
+    icon: Map,
+    description: "Where the platform is up to, wave by wave, and where to send suggestions and bugs.",
+    wave: 0,
   },
   {
     key: "admin",

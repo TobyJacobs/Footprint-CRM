@@ -11,6 +11,7 @@ const tabs = [
   { href: "/admin/targets", label: "Targets & commission" },
   { href: "/admin/company", label: "Company" },
   { href: "/admin/audit", label: "Audit log" },
+  { href: "/roadmap", label: "Roadmap" },
   { href: "/admin/system", label: "System" },
 ];
 
