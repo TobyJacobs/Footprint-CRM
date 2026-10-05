@@ -388,3 +388,16 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - The first rebuild FAILED on Netlify's secret scanning: the client secret's value was found in Next.js's private Turbopack build cache (`.netlify/.next/cache/turbopack/*.sst`), which is never published. Fixed with `SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache/**"` in netlify.toml (2dae56d, pushed straight to main to save a preview build). Published fine.
 - "Sync now" on the live site: 41 staff found.
 - Still to do: daily sync key (Admin → Microsoft 365 → Create sync key, then the owner pastes it into Netlify as DIRECTORY_SYNC_KEY, secret); Postmark for real invite emails; job titles in Microsoft 365 (38 of 41 blank) or switch to groups.
+
+## Roadmap and requests (5 October 2026), built and tested, NOT live yet (bundled with the next release)
+- Branch `feature/roadmap`. Owner request: an Admin tab listing every wave with status and tasks that tick off; management can send bugs/suggestions; admins approve/deny/query; approved items become roadmap tasks; "See old requests".
+- Migration `20261015120000_roadmap.sql` (applied to test):
+  - tables roadmap_waves (12: 0, 0+, 1, 2, Staff, 3 to 8, Final), roadmap_tasks (71, pre-ticked for what's built, 29 done), feedback_requests, feedback_comments
+  - new permission "roadmap" (view), given to Directors; admins always have it
+  - RLS: roadmap visible to admins and the roadmap permission; people see their own requests, admins see all; only admins decide, tick tasks or edit
+  - triggers: ticking a task stamps who and when; ticking a request's task marks the request done; a reply to a query sends it back to review
+- App:
+  - `/roadmap` (menu item "Roadmap", also an Admin tab): overall progress; per-wave status (Done / In progress / On hold / Not started) with bar and checklist; admins tick tasks, add tasks and put a wave on hold; a side box "Send a suggestion or bug" (type, title, details, wave, page); "Your requests"; admins get "Requests to review" with Approve (picks wave and task name, becomes a roadmap task), Query (ask a question; the sender replies) and Deny (needs a reason)
+  - `/roadmap/requests` ("See old requests"): approved, done and denied, with filters
+- Tested end to end with test requests (since deleted): send → query → reply → approve → task appears on Wave 2 → tick → request becomes Done in old requests; deny → shows under Not going ahead.
+- For Claude: to see what to build next, read approved requests and un-ticked tasks (`roadmap_tasks where not done`, especially `request_id is not null`), and tick tasks off as work finishes.
