@@ -3,6 +3,7 @@ import {
   Card, CheckboxGroup, Field, Select, TextArea, TextInput, primaryButton, secondaryButton,
 } from "@/components/ui";
 import { toLocalInput } from "@/lib/customers/display";
+import { NewCustomerDuplicateWatcher } from "./DuplicateCheck";
 import {
   accountTypes, brochures, creditStatuses, customerStatuses, directDebitStatuses,
   directDebitStatusesFmn, heardAboutUs, invoiceDueTerms, ownershipTypes, services,
@@ -33,6 +34,8 @@ export default function CustomerForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Name" wide>
             <TextInput name="name" defaultValue={v("name")} required />
+            {/* New customers only: warn about possible duplicates while typing. */}
+            {!customer?.id && <NewCustomerDuplicateWatcher />}
           </Field>
           <Field label="Status">
             <Select name="status" options={customerStatuses} defaultValue={v("status") as string} />

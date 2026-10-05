@@ -326,3 +326,18 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - the old `ProductSearch` was removed
   - `/api/search/products?all=1` returns all products (the API caps at 1,000 rows, fine for 135)
 - Tested: 134 listed; filtering by name works; the description starts with the product number; prices, cost and VAT fill in; a saved test quote (QT-010185) has the product_code on its line.
+
+## Duplicate warning while typing a new customer (5 October 2026), done and tested
+- The owner wanted: typing a new customer's name flags possible duplicates; clicking opens a box listing them; choosing one leaves the new-customer page and opens that customer. NOT a dropdown on the quote customer box (a dropdown attempt was undone).
+- Migration `20261012120000_possible_duplicates_while_typing.sql` (applied): `possible_duplicate_customers(name, phone, email)`. Matches:
+  - same name key
+  - "similar name": contains the typed text (3+ letters), name-key prefix, or pg_trgm similarity ≥ 0.5 for typos (5+ letters)
+  - same phone, same email
+  - strongest first, up to 20
+- `/api/customers/possible-duplicates`; `src/app/(app)/customers/DuplicateCheck.tsx`:
+  - a flashing warning button opens a dialog (portal) with the matches and reasons
+  - "None of these: carry on" dismisses it
+- New customer page: `NewCustomerDuplicateWatcher` under the Name box; picking a match opens that customer.
+- Quote quick-add box: the same check; picking a match puts that customer on the quote.
+- Tested: "cop" → 5; "Copse Joinry" → 4; "Seaveiw Test Bakery" → 1; a new name → none; picking "Copse Joinery Ltd" opened its page; from a quote, picking a match set the quote's customer.
+- Note: the test database has a customer literally named "cop" (probably the owner testing on live).
