@@ -31,6 +31,16 @@ export async function toggleRoadmapTask(taskId: string, isDone: boolean) {
   redirect(`/roadmap#task-${taskId}`);
 }
 
+// Remove a task from the roadmap (admins only). If it came from an approved
+// request, the request stays on record as approved.
+export async function deleteRoadmapTask(taskId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("roadmap_tasks").delete().eq("id", taskId);
+  if (error) fail("/roadmap", error.message);
+  done();
+}
+
 export async function addRoadmapTask(waveId: string, fd: FormData) {
   await requireAdmin();
   const title = str(fd, "title");

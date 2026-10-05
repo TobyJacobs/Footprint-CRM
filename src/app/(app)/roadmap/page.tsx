@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckSquare, History, Square } from "lucide-react";
+import { CheckSquare, History, Square, Trash2 } from "lucide-react";
 import NoAccess from "@/components/NoAccess";
 import PageHeader from "@/components/PageHeader";
 import { Badge, Card, Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import RoadmapTabs from "./RoadmapTabs";
-import { addRoadmapTask, setWaveOnHold, submitRequest, toggleRoadmapTask } from "./actions";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
+import { addRoadmapTask, deleteRoadmapTask, setWaveOnHold, submitRequest, toggleRoadmapTask } from "./actions";
 import { RequestCard, pageOptions, waveLabel, type Comment, type RoadmapRequest, type Wave } from "./parts";
 
 export const metadata: Metadata = { title: "Roadmap" };
@@ -130,15 +131,26 @@ export default async function RoadmapPage(props: PageProps<"/roadmap">) {
                       return (
                         <li key={t.id} id={`task-${t.id}`}>
                           {user.isAdmin ? (
-                            <form action={toggleRoadmapTask.bind(null, t.id, !t.done)}>
-                              <button
-                                type="submit"
-                                className="flex w-full items-start gap-2 rounded px-1 py-1 text-left hover:bg-fp-offwhite"
-                                title={t.done ? "Mark as not done" : "Tick off"}
-                              >
-                                {label}
-                              </button>
-                            </form>
+                            <div className="flex items-start gap-1">
+                              <form action={toggleRoadmapTask.bind(null, t.id, !t.done)} className="min-w-0 flex-1">
+                                <button
+                                  type="submit"
+                                  className="flex w-full items-start gap-2 rounded px-1 py-1 text-left hover:bg-fp-offwhite"
+                                  title={t.done ? "Mark as not done" : "Tick off"}
+                                >
+                                  {label}
+                                </button>
+                              </form>
+                              <form action={deleteRoadmapTask.bind(null, t.id)}>
+                                <ConfirmSubmit
+                                  className="rounded p-1.5 text-fp-mid hover:bg-fp-light hover:text-fp-error"
+                                  message={`Delete the task "${t.title}"? This can't be undone.`}
+                                >
+                                  <Trash2 size={15} aria-hidden />
+                                  <span className="sr-only">Delete task</span>
+                                </ConfirmSubmit>
+                              </form>
+                            </div>
                           ) : (
                             <div className="flex items-start gap-2 px-1 py-1">{label}</div>
                           )}

@@ -408,3 +408,4 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - New `/roadmap/review` (admin only): "Waiting for a decision" and "Waiting for the sender's answer" lists, with Approve / Query / Deny. These actions now return to this page.
 - The Roadmap page keeps the checklist, the send box and "Your requests", plus a yellow banner for admins: "N requests waiting for your decision → Review".
 - Tested: tabs and badge, banner, the review list, deny returning to the review page; test request deleted. Two "i want beers" requests on the test database were sent by the owner; left alone.
+- Also on `feature/requests-tab`: admins get a delete (bin) button on every roadmap task, with an "Are you sure?" check (`deleteRoadmapTask`). Tested by adding and deleting a throwaway task. The owner had approved the test request "i want beers" on the live site, which became a Wave 5 task (the live approve flow works); the owner can delete it with the new button.
