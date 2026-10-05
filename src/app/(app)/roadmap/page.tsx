@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckSquare, History, Square, Trash2 } from "lucide-react";
+import { CheckSquare, ChevronRight, History, Square, Trash2 } from "lucide-react";
 import NoAccess from "@/components/NoAccess";
 import PageHeader from "@/components/PageHeader";
 import { Badge, Card, Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import ExpandAll from "./ExpandAll";
 import RoadmapTabs from "./RoadmapTabs";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import { addRoadmapTask, deleteRoadmapTask, setWaveOnHold, submitRequest, toggleRoadmapTask } from "./actions";
@@ -95,83 +96,119 @@ export default async function RoadmapPage(props: PageProps<"/roadmap">) {
 
         <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
           <div className="grid content-start gap-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-black">Waves</h2>
+              <ExpandAll />
+            </div>
             {allWaves.map((w) => {
               const waveTasks = allTasks.filter((t) => t.wave_id === w.id);
               const st = waveStatus(w, waveTasks);
+              const fromRequests = waveTasks.filter((t) => t.request_id && !t.done).length;
               return (
-                <section key={w.id} id={`wave-${w.code}`} className="rounded-lg border border-fp-border bg-white p-5">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h2 className="text-lg font-black">{waveLabel(w)}</h2>
-                      {w.description && <p className="text-sm text-fp-dark/75">{w.description}</p>}
+                <details
+                  key={w.id}
+                  id={`wave-${w.code}`}
+                  data-wave
+                  open={sp.open === w.id}
+                  className="group -mt-3 rounded-lg border border-fp-border bg-white"
+                >
+                  <summary className="flex cursor-pointer list-none items-center gap-3 p-4 hover:bg-fp-offwhite [&::-webkit-details-marker]:hidden">
+                    <ChevronRight size={18} className="shrink-0 text-fp-mid transition-transform group-open:rotate-90" aria-hidden />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <h3 className="font-black">{waveLabel(w)}</h3>
+                        <Badge tone={st.tone}>{st.label}</Badge>
+                        {fromRequests > 0 && (
+                          <span className="text-xs font-semibold text-green-700">
+                            {fromRequests} approved request{fromRequests === 1 ? "" : "s"} to do
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-fp-light">
+                        <div
+                          className={`h-full rounded-full ${st.label === "Done" ? "bg-fp-teal-deep" : "bg-fp-pink"}`}
+                          style={{ width: `${st.total ? (st.finished / st.total) * 100 : 0}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge tone={st.tone}>{st.label}</Badge>
-                      <span className="text-sm font-semibold">
-                        {st.finished}/{st.total}
-                      </span>
-                    </div>
+                    <span className="shrink-0 text-sm font-semibold tabular-nums">
+                      {st.finished}/{st.total}
+                    </span>
+                  </summary>
+
+                  <div className="border-t border-fp-border px-4 pb-4 pt-3">
+                    {w.description && <p className="mb-3 text-sm text-fp-dark/75">{w.description}</p>}
+                    <ul className="grid gap-0.5 text-sm">
+                      {waveTasks.map((t) => {
+                        const Icon = t.done ? CheckSquare : Square;
+                        const fromRequest = Boolean(t.request_id);
+                        const label = (
+                          <>
+                            <Icon
+                              size={18}
+                              className={`mt-0.5 shrink-0 ${fromRequest ? "text-green-700" : t.done ? "text-fp-teal-deep" : "text-fp-mid"}`}
+                              aria-hidden
+                            />
+                            <span
+                              className={
+                                fromRequest
+                                  ? `font-semibold text-green-700 ${t.done ? "line-through opacity-70" : ""}`
+                                  : t.done
+                                    ? "text-fp-dark/60 line-through"
+                                    : ""
+                              }
+                            >
+                              {t.title}
+                            </span>
+                            {fromRequest && <span className="ml-1 shrink-0 text-xs font-semibold text-green-700">(approved request)</span>}
+                          </>
+                        );
+                        return (
+                          <li key={t.id} id={`task-${t.id}`}>
+                            {user.isAdmin ? (
+                              <div className="flex items-start gap-1">
+                                <form action={toggleRoadmapTask.bind(null, t.id, w.id, !t.done)} className="min-w-0 flex-1">
+                                  <button
+                                    type="submit"
+                                    className="flex w-full items-start gap-2 rounded px-1 py-1 text-left hover:bg-fp-offwhite"
+                                    title={t.done ? "Mark as not done" : "Tick off"}
+                                  >
+                                    {label}
+                                  </button>
+                                </form>
+                                <form action={deleteRoadmapTask.bind(null, t.id, w.id)}>
+                                  <ConfirmSubmit
+                                    className="rounded p-1.5 text-fp-mid hover:bg-fp-light hover:text-fp-error"
+                                    message={`Delete the task "${t.title}"? This can't be undone.`}
+                                  >
+                                    <Trash2 size={15} aria-hidden />
+                                    <span className="sr-only">Delete task</span>
+                                  </ConfirmSubmit>
+                                </form>
+                              </div>
+                            ) : (
+                              <div className="flex items-start gap-2 px-1 py-1">{label}</div>
+                            )}
+                          </li>
+                        );
+                      })}
+                      {waveTasks.length === 0 && <li className="text-fp-dark/70">No tasks yet.</li>}
+                    </ul>
+                    {user.isAdmin && (
+                      <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-fp-border pt-3">
+                        <form action={addRoadmapTask.bind(null, w.id)} className="flex flex-1 gap-2">
+                          <input name="title" placeholder="Add a task to this wave…" className={`${inputClass} text-sm`} required />
+                          <button type="submit" className={secondaryButton}>Add</button>
+                        </form>
+                        <form action={setWaveOnHold.bind(null, w.id, !w.on_hold)}>
+                          <button type="submit" className="text-xs font-semibold text-fp-dark/70 underline hover:text-fp-black">
+                            {w.on_hold ? "Take off hold" : "Put on hold"}
+                          </button>
+                        </form>
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-fp-light">
-                    <div
-                      className={`h-full rounded-full ${st.label === "Done" ? "bg-fp-teal-deep" : "bg-fp-pink"}`}
-                      style={{ width: `${st.total ? (st.finished / st.total) * 100 : 0}%` }}
-                    />
-                  </div>
-                  <ul className="mt-4 grid gap-1 text-sm">
-                    {waveTasks.map((t) => {
-                      const Icon = t.done ? CheckSquare : Square;
-                      const label = (
-                        <>
-                          <Icon size={18} className={`mt-0.5 shrink-0 ${t.done ? "text-fp-teal-deep" : "text-fp-mid"}`} aria-hidden />
-                          <span className={t.done ? "text-fp-dark/60 line-through" : ""}>{t.title}</span>
-                          {t.request_id && <span className="ml-1 shrink-0"><Badge>From a request</Badge></span>}
-                        </>
-                      );
-                      return (
-                        <li key={t.id} id={`task-${t.id}`}>
-                          {user.isAdmin ? (
-                            <div className="flex items-start gap-1">
-                              <form action={toggleRoadmapTask.bind(null, t.id, !t.done)} className="min-w-0 flex-1">
-                                <button
-                                  type="submit"
-                                  className="flex w-full items-start gap-2 rounded px-1 py-1 text-left hover:bg-fp-offwhite"
-                                  title={t.done ? "Mark as not done" : "Tick off"}
-                                >
-                                  {label}
-                                </button>
-                              </form>
-                              <form action={deleteRoadmapTask.bind(null, t.id)}>
-                                <ConfirmSubmit
-                                  className="rounded p-1.5 text-fp-mid hover:bg-fp-light hover:text-fp-error"
-                                  message={`Delete the task "${t.title}"? This can't be undone.`}
-                                >
-                                  <Trash2 size={15} aria-hidden />
-                                  <span className="sr-only">Delete task</span>
-                                </ConfirmSubmit>
-                              </form>
-                            </div>
-                          ) : (
-                            <div className="flex items-start gap-2 px-1 py-1">{label}</div>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  {user.isAdmin && (
-                    <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-fp-border pt-3">
-                      <form action={addRoadmapTask.bind(null, w.id)} className="flex flex-1 gap-2">
-                        <input name="title" placeholder="Add a task to this wave…" className={`${inputClass} text-sm`} required />
-                        <button type="submit" className={secondaryButton}>Add</button>
-                      </form>
-                      <form action={setWaveOnHold.bind(null, w.id, !w.on_hold)}>
-                        <button type="submit" className="text-xs font-semibold text-fp-dark/70 underline hover:text-fp-black">
-                          {w.on_hold ? "Take off hold" : "Put on hold"}
-                        </button>
-                      </form>
-                    </div>
-                  )}
-                </section>
+                </details>
               );
             })}
           </div>

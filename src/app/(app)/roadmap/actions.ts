@@ -22,23 +22,24 @@ const done = (path = "/roadmap") => {
 
 // ─── Roadmap (admins) ───────────────────────────────────────────────────────
 
-export async function toggleRoadmapTask(taskId: string, isDone: boolean) {
+export async function toggleRoadmapTask(taskId: string, waveId: string, isDone: boolean) {
   await requireAdmin();
   const supabase = await createClient();
   const { error } = await supabase.from("roadmap_tasks").update({ done: isDone }).eq("id", taskId);
   if (error) fail("/roadmap", error.message);
   revalidatePath("/roadmap", "layout");
-  redirect(`/roadmap#task-${taskId}`);
+  // Stay on the wave you are working in.
+  redirect(`/roadmap?open=${waveId}#task-${taskId}`);
 }
 
 // Remove a task from the roadmap (admins only). If it came from an approved
 // request, the request stays on record as approved.
-export async function deleteRoadmapTask(taskId: string) {
+export async function deleteRoadmapTask(taskId: string, waveId: string) {
   await requireAdmin();
   const supabase = await createClient();
   const { error } = await supabase.from("roadmap_tasks").delete().eq("id", taskId);
   if (error) fail("/roadmap", error.message);
-  done();
+  done(`/roadmap?open=${waveId}`);
 }
 
 export async function addRoadmapTask(waveId: string, fd: FormData) {
@@ -57,7 +58,7 @@ export async function addRoadmapTask(waveId: string, fd: FormData) {
     .from("roadmap_tasks")
     .insert({ wave_id: waveId, title, position: (last?.position ?? 0) + 1 });
   if (error) fail("/roadmap", error.message);
-  done();
+  done(`/roadmap?open=${waveId}`);
 }
 
 export async function setWaveOnHold(waveId: string, onHold: boolean) {
@@ -65,7 +66,7 @@ export async function setWaveOnHold(waveId: string, onHold: boolean) {
   const supabase = await createClient();
   const { error } = await supabase.from("roadmap_waves").update({ on_hold: onHold }).eq("id", waveId);
   if (error) fail("/roadmap", error.message);
-  done();
+  done(`/roadmap?open=${waveId}`);
 }
 
 // ─── Requests ───────────────────────────────────────────────────────────────

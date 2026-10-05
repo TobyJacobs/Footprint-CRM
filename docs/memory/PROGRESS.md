@@ -409,3 +409,9 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - The Roadmap page keeps the checklist, the send box and "Your requests", plus a yellow banner for admins: "N requests waiting for your decision → Review".
 - Tested: tabs and badge, banner, the review list, deny returning to the review page; test request deleted. Two "i want beers" requests on the test database were sent by the owner; left alone.
 - Also on `feature/requests-tab`: admins get a delete (bin) button on every roadmap task, with an "Are you sure?" check (`deleteRoadmapTask`). Tested by adding and deleting a throwaway task. The owner had approved the test request "i want beers" on the live site, which became a Wave 5 task (the live approve flow works); the owner can delete it with the new button.
+
+## Roadmap tidied (5 October 2026), built and tested, NOT live yet
+- Branch `feature/roadmap-tidy`. Each wave is now a collapsible row (summary: title, status badge, thin progress bar, done/total; a green "N approved requests to do" when there are any). Click to open its tasks. "Open all / Close all" buttons. After ticking, adding or deleting a task, or putting a wave on hold, the page reopens with that wave open (`?open=<waveId>`).
+- Tasks that came from approved requests are shown in green (green icon, bold text, "(approved request)"), and struck through but still green once done.
+- Tested with a test request approved into Wave 8: green row summary and task, tick keeps the wave open; test data deleted.
+- Postmark set up the same day: the owner signed up, verified the sender toby@footprintgroup.uk (the Postmark account is in test mode; "Request approval" is needed before sending to customers); Netlify has POSTMARK_SERVER_TOKEN (secret, owner pasted) and EMAIL_FROM; rebuilt and published. Not yet tested with a real invite (the owner chooses who to activate).
