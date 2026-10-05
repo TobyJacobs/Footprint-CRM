@@ -415,3 +415,14 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Tasks that came from approved requests are shown in green (green icon, bold text, "(approved request)"), and struck through but still green once done.
 - Tested with a test request approved into Wave 8: green row summary and task, tick keeps the wave open; test data deleted.
 - Postmark set up the same day: the owner signed up, verified the sender toby@footprintgroup.uk (the Postmark account is in test mode; "Request approval" is needed before sending to customers); Netlify has POSTMARK_SERVER_TOKEN (secret, owner pasted) and EMAIL_FROM; rebuilt and published. Not yet tested with a real invite (the owner chooses who to activate).
+
+## 5 October 2026 - Nine small details (branch feature/small-details, not yet released)
+- Migration 20261016120000_small_details.sql applied to the TEST database.
+- GP override on sales documents (admin or Operations dashboard users only, reason required, who/when recorded).
+- "Quotes & Invoices" renamed "Sales & Operations".
+- File and image uploads on roadmap requests (private bucket, 5 files, 10 MB each).
+- Account owner / salesperson defaults to the signed-in user on new customer, quote, invoice, PO.
+- New customer form: no services, ownership or description; Status Active/Cancelled; "Account type" uses Zoho's 20 values; "Heard about us" is a dropdown.
+- Services tick automatically from sales orders (account code and product-name rules); shown on the customer card.
+- Email templates: 6 starter templates, composer on the customer card (send via Postmark or open in own email app), admin editor at Admin > Email templates.
+- Checked: build, type-check and lint clean. NOT yet clicked through in a browser (sign-in is Microsoft only).
