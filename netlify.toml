@@ -7,6 +7,10 @@
 
 [build.environment]
   NODE_VERSION = "24"
+  # Next.js keeps a private build cache (never published) that records
+  # environment values, which tripped Netlify's secret scanner. Skip only that
+  # cache folder; everything that is published is still scanned.
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache/**"
 
 # Turns the Next.js build into a working Netlify site (server pages, login
 # checks, etc.). Netlify didn't detect Next.js automatically because the site
