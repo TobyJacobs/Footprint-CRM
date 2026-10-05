@@ -10,7 +10,7 @@ import { address, gbp, longDate, personName, shortDateTime, statusTone, toLocalI
 import { activityKinds } from "@/lib/customers/options";
 import { statusLabel as salesStatus, statusToneFor as salesTone, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
-import { addActivity, deleteActivity } from "../actions";
+import { addActivity, deleteActivity, markNotDuplicate } from "../actions";
 
 export async function generateMetadata(props: PageProps<"/customers/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -45,7 +45,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
   const searchParams = await props.searchParams;
   const supabase = await createClient();
 
-  const [{ data: c }, { data: contacts }, { data: plans }, { data: retainers }, { data: activity }, { data: staff }] =
+  const [{ data: c }, { data: contacts }, { data: plans }, { data: retainers }, { data: activity }, { data: staff }, { data: duplicates }] =
     await Promise.all([
       supabase.from("customers").select("*, parent:parent_id(id, name)").eq("id", id).maybeSingle(),
       supabase.from("contacts").select("*").eq("customer_id", id).order("is_primary", { ascending: false }).order("last_name"),
@@ -53,6 +53,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
       supabase.from("retainers").select("*, retainer_services(*)").eq("customer_id", id).order("name"),
       supabase.from("customer_activity").select("*").eq("customer_id", id).order("occurred_at", { ascending: false }).limit(100),
       supabase.from("profiles").select("id, full_name, email"),
+      supabase.from("customer_duplicate_pairs").select("other_id, other_name, other_city, reasons").eq("customer_id", id).limit(10),
     ]);
   if (!c) notFound();
 
@@ -99,6 +100,34 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
         </div>
 
         <Notice searchParams={searchParams} />
+
+        {(duplicates ?? []).length > 0 && (
+          <div className="mb-6 rounded-lg border border-fp-amber bg-fp-amber/10 p-4 text-sm">
+            <p className="font-bold">Possible duplicate customer</p>
+            <p className="mb-3 text-fp-dark/80">
+              This looks like the same company as the record{(duplicates ?? []).length > 1 ? "s" : ""} below. Check before
+              quoting or invoicing, so everything stays on one record.
+            </p>
+            <ul className="grid gap-2">
+              {(duplicates ?? []).map((d) => (
+                <li key={d.other_id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <Link href={`/customers/${d.other_id}`} className="font-semibold text-fp-teal-deep hover:underline">
+                    {d.other_name}
+                  </Link>
+                  {d.other_city && <span className="text-fp-dark/70">{d.other_city}</span>}
+                  <span className="text-xs text-fp-dark/70">({(d.reasons as string[]).join(", ")})</span>
+                  {canEdit && (
+                    <form action={markNotDuplicate.bind(null, id, d.other_id)}>
+                      <button type="submit" className="text-xs font-semibold text-fp-dark/70 underline hover:text-fp-black">
+                        Not a duplicate
+                      </button>
+                    </form>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
           <div className="grid content-start gap-6">

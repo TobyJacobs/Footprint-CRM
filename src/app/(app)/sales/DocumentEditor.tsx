@@ -8,7 +8,7 @@ import { totals, lineNet, marginPercent } from "@/lib/sales/options";
 
 type TaxRate = { id: string; name: string; rate: number };
 type Contact = { id: string; first_name: string | null; last_name: string; email: string | null; is_primary: boolean };
-type CustomerHit = { id: string; name: string; billing_city: string | null; credit_status: string | null };
+type CustomerHit = { id: string; name: string; billing_city: string | null; credit_status: string | null; has_duplicate?: boolean };
 export type ProductHit = {
   id: string;
   name: string;
@@ -220,6 +220,9 @@ function CustomerPicker({
               >
                 <span className="font-semibold">{c.name}</span>
                 {c.billing_city && <span className="text-fp-mid"> · {c.billing_city}</span>}
+                {c.has_duplicate && (
+                  <span className="ml-2 rounded-full bg-fp-amber/20 px-2 py-0.5 text-xs font-semibold">Possible duplicate</span>
+                )}
                 {c.credit_status && /ON STOP|Up Front|before we order/i.test(c.credit_status) && (
                   <span className="ml-2 text-xs font-semibold text-fp-error">{c.credit_status}</span>
                 )}

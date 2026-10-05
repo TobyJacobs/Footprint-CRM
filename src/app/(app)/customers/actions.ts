@@ -445,15 +445,22 @@ export async function quickAddCustomer(input: QuickCustomerInput): Promise<Quick
 
   const supabase = await createClient();
   if (!input.allowDuplicate) {
-    const { data: same } = await supabase
-      .from("customers")
-      .select("id, name, billing_city, credit_status")
-      .is("erased_at", null)
-      // Same name, ignoring capitals (wildcard characters matched literally).
-      .ilike("name", name.replace(/[%_\\]/g, (c) => "\\" + c))
-      .limit(1)
-      .maybeSingle();
-    if (same) return { ok: false, error: `A customer called "${same.name}" already exists.`, existing: same };
+    // Same name (ignoring "Ltd", punctuation etc.), phone or email as an existing customer?
+    const { data: matches } = await supabase.rpc("find_matching_customers", {
+      p_name: name,
+      p_phone: clean(input.phone),
+      p_email: email,
+    });
+    const same = (matches ?? [])[0] as
+      | { id: string; name: string; billing_city: string | null; credit_status: string | null; reasons: string[] }
+      | undefined;
+    if (same) {
+      return {
+        ok: false,
+        error: `This looks like an existing customer: "${same.name}"${same.billing_city ? ` (${same.billing_city})` : ""} (${same.reasons.join(", ")}).`,
+        existing: { id: same.id, name: same.name, billing_city: same.billing_city, credit_status: same.credit_status },
+      };
+    }
   }
 
   const { data: customer, error } = await supabase
@@ -495,4 +502,18 @@ export async function quickAddCustomer(input: QuickCustomerInput): Promise<Quick
 
   revalidatePath("/customers");
   return { ok: true, customer, contact };
+}
+
+// ─── Possible duplicates ────────────────────────────────────────────────────
+
+// Someone has checked two customers and they're genuinely different companies
+// (e.g. two branches), so stop flagging them as possible duplicates.
+export async function markNotDuplicate(customerId: string, otherId: string) {
+  await requirePermission("customers", "edit");
+  const [a, b] = [customerId, otherId].sort();
+  const supabase = await createClient();
+  const { error } = await supabase.from("customer_not_duplicates").insert({ customer_a: a, customer_b: b });
+  if (error && error.code !== "23505") fail(`/customers/${customerId}`, error.message);
+  revalidatePath("/customers");
+  redirect(`/customers/${customerId}?saved=1`);
 }

@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
   if (q.length < 2 || !like) return NextResponse.json([]);
 
   const { data } = await supabase
-    .from("customers")
-    .select("id, name, billing_city, credit_status")
+    .from("customers_with_flags")
+    .select("id, name, billing_city, credit_status, has_duplicate")
     .is("erased_at", null)
     .ilike("name", like)
     .order("name")
