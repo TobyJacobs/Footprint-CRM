@@ -522,3 +522,30 @@ export async function deactivateStaff(directoryId: string, back: string) {
   revalidatePath("/admin", "layout");
   redirect(`${safeBack}?saved=1`);
 }
+
+// ─── Email templates ────────────────────────────────────────────────────────
+
+export async function saveEmailTemplate(templateId: string | null, formData: FormData) {
+  await requireAdmin();
+  const name = text(formData, "name");
+  const subject = text(formData, "subject");
+  const body = String(formData.get("body") ?? "").trim();
+  if (!name || !subject || !body) fail("/admin/email-templates", "Please fill in the name, subject and message");
+  const supabase = await createClient();
+  const fields = { name, subject, body, active: formData.get("active") === "on" };
+  const { error } = templateId
+    ? await supabase.from("email_templates").update(fields).eq("id", templateId)
+    : await supabase.from("email_templates").insert({ ...fields, position: 100 });
+  if (error) fail("/admin/email-templates", error.code === "23505" ? "A template with that name already exists" : error.message);
+  revalidatePath("/admin/email-templates");
+  redirect("/admin/email-templates?saved=1");
+}
+
+export async function deleteEmailTemplate(templateId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("email_templates").delete().eq("id", templateId);
+  if (error) fail("/admin/email-templates", error.message);
+  revalidatePath("/admin/email-templates");
+  redirect("/admin/email-templates?deleted=1");
+}

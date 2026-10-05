@@ -6,6 +6,8 @@ import PageHeader from "@/components/PageHeader";
 import { Badge, Card, Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import AttachmentPicker from "./AttachmentPicker";
+import { loadAttachments } from "./attachments";
 import ExpandAll from "./ExpandAll";
 import RoadmapTabs from "./RoadmapTabs";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
@@ -50,6 +52,7 @@ export default async function RoadmapPage(props: PageProps<"/roadmap">) {
   const allWaves = (waves ?? []) as Wave[];
   const allTasks = (tasks ?? []) as Task[];
   const open = (requests ?? []) as RoadmapRequest[];
+  const filesByRequest = await loadAttachments(supabase, ids);
   const names = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name ?? p.email) as string]));
   const commentsFor = (id: string) => ((comments ?? []) as Comment[]).filter((c) => c.request_id === id);
   const totalDone = allTasks.filter((t) => t.done).length;
@@ -251,6 +254,7 @@ export default async function RoadmapPage(props: PageProps<"/roadmap">) {
                     ))}
                   </select>
                 </label>
+                <AttachmentPicker userId={user.id} />
                 <div>
                   <button type="submit" className={primaryButton}>Send request</button>
                 </div>
@@ -272,6 +276,7 @@ export default async function RoadmapPage(props: PageProps<"/roadmap">) {
                       me={user.id}
                       isAdmin={user.isAdmin}
                       showActions={false}
+                      files={filesByRequest.get(r.id)}
                     />
                   ))}
                 </div>

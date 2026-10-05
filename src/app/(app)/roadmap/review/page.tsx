@@ -3,6 +3,7 @@ import PageHeader from "@/components/PageHeader";
 import { Notice } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { loadAttachments } from "../attachments";
 import RoadmapTabs from "../RoadmapTabs";
 import { RequestCard, type Comment, type RoadmapRequest, type Wave } from "../parts";
 
@@ -28,6 +29,7 @@ export default async function ReviewRequestsPage(props: PageProps<"/roadmap/revi
   const { data: comments } = ids.length
     ? await supabase.from("feedback_comments").select("*").in("request_id", ids).order("created_at")
     : { data: [] };
+  const filesByRequest = await loadAttachments(supabase, ids);
   const names = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name ?? p.email) as string]));
   const all = (requests ?? []) as RoadmapRequest[];
   const waiting = all.filter((r) => r.status === "pending");
@@ -46,6 +48,7 @@ export default async function ReviewRequestsPage(props: PageProps<"/roadmap/revi
           isAdmin
           showActions
           returnTo="/roadmap/review"
+          files={filesByRequest.get(r.id)}
         />
       ))}
     </div>

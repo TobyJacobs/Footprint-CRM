@@ -72,19 +72,42 @@ export async function setWaveOnHold(waveId: string, onHold: boolean) {
 // ─── Requests ───────────────────────────────────────────────────────────────
 
 export async function submitRequest(fd: FormData) {
-  await requirePermission("roadmap", "view");
+  const user = await requirePermission("roadmap", "view");
   const kind = str(fd, "kind") === "bug" ? "bug" : "suggestion";
   const title = str(fd, "title");
   if (!title) fail("/roadmap", "Please give your request a short title");
   const supabase = await createClient();
-  const { error } = await supabase.from("feedback_requests").insert({
-    kind,
-    title: title.slice(0, 200),
-    details: str(fd, "details")?.slice(0, 5000) ?? null,
-    wave_id: str(fd, "wave_id"),
-    page: str(fd, "page"),
-  });
+  const { data: created, error } = await supabase
+    .from("feedback_requests")
+    .insert({
+      kind,
+      title: title.slice(0, 200),
+      details: str(fd, "details")?.slice(0, 5000) ?? null,
+      wave_id: str(fd, "wave_id"),
+      page: str(fd, "page"),
+    })
+    .select("id")
+    .single();
   if (error) fail("/roadmap", error.message);
+
+  // Files already uploaded from the browser: record them against the request.
+  // Only paths inside this person's own folder are accepted.
+  try {
+    const files = JSON.parse(String(fd.get("attachments") ?? "[]")) as { path: string; name: string; size: number; type: string }[];
+    const rows = (Array.isArray(files) ? files : [])
+      .filter((f) => typeof f.path === "string" && f.path.startsWith(`${user.id}/`) && !f.path.includes(".."))
+      .slice(0, 5)
+      .map((f) => ({
+        request_id: created.id,
+        path: f.path,
+        file_name: String(f.name ?? "file").slice(0, 200),
+        size_bytes: Number(f.size) || null,
+        content_type: String(f.type ?? "").slice(0, 100) || null,
+      }));
+    if (rows.length) await supabase.from("feedback_attachments").insert(rows);
+  } catch {
+    // A bad attachment list shouldn't lose the request itself.
+  }
   revalidatePath("/roadmap", "layout");
   redirect("/roadmap?sent=1");
 }

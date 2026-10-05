@@ -17,11 +17,14 @@ export default function CustomerForm({
   staff,
   action,
   cancelHref,
+  defaultOwnerId,
 }: {
   customer?: CustomerRecord;
   staff: { id: string; name: string }[];
   action: (fd: FormData) => Promise<void>;
   cancelHref: string;
+  // For a new customer: the person filling it in becomes the account owner.
+  defaultOwnerId?: string;
 }) {
   const v = (k: string) => (customer?.[k] as string | number | null | undefined) ?? null;
   const arr = (k: string) => (customer?.[k] as string[] | undefined) ?? [];
@@ -38,9 +41,14 @@ export default function CustomerForm({
             {!customer?.id && <NewCustomerDuplicateWatcher />}
           </Field>
           <Field label="Status">
-            <Select name="status" options={customerStatuses} defaultValue={v("status") as string} />
+            <Select
+              name="status"
+              options={customerStatuses}
+              defaultValue={(v("status") as string) ?? (customer ? null : "Active")}
+              blank={false}
+            />
           </Field>
-          <Field label="Type">
+          <Field label="Account type">
             <Select name="account_type" options={accountTypes} defaultValue={v("account_type") as string} />
           </Field>
           <Field label="Phone">
@@ -56,21 +64,27 @@ export default function CustomerForm({
             <Select
               name="owner_id"
               options={staff.map((s) => ({ value: s.id, label: s.name }))}
-              defaultValue={v("owner_id") as string}
+              defaultValue={(v("owner_id") as string) ?? defaultOwnerId ?? null}
             />
           </Field>
           <Field label="Industry">
             <TextInput name="industry" defaultValue={v("industry")} />
           </Field>
-          <Field label="Ownership">
-            <Select name="ownership" options={ownershipTypes} defaultValue={v("ownership") as string} />
-          </Field>
-          <Field label="Services they use" wide>
-            <CheckboxGroup name="services" options={services} selected={arr("services")} />
-          </Field>
-          <Field label="Description" wide>
-            <TextArea name="description" defaultValue={v("description") as string} />
-          </Field>
+          {/* Existing customers only. For new ones, services are ticked
+              automatically from what they order. */}
+          {customer && (
+            <>
+              <Field label="Ownership">
+                <Select name="ownership" options={ownershipTypes} defaultValue={v("ownership") as string} />
+              </Field>
+              <Field label="Services they use" hint="Ticked automatically from sales orders; change here if needed." wide>
+                <CheckboxGroup name="services" options={services} selected={arr("services")} />
+              </Field>
+              <Field label="Description" wide>
+                <TextArea name="description" defaultValue={v("description") as string} />
+              </Field>
+            </>
+          )}
         </div>
       </Card>
 
@@ -131,7 +145,7 @@ export default function CustomerForm({
       <Card title="Sales & marketing">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="How did they hear about us?" wide>
-            <CheckboxGroup name="heard_about_us" options={heardAboutUs} selected={arr("heard_about_us")} />
+            <Select name="heard_about_us" options={heardAboutUs} defaultValue={arr("heard_about_us")[0] ?? null} />
           </Field>
           <Field label="Brochures sent" wide>
             <CheckboxGroup name="brochures_sent" options={brochures} selected={arr("brochures_sent")} />

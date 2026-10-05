@@ -10,7 +10,7 @@ import CustomerForm from "../CustomerForm";
 export const metadata: Metadata = { title: "New customer" };
 
 export default async function NewCustomerPage(props: PageProps<"/customers/new">) {
-  await requirePermission("customers", "edit");
+  const user = await requirePermission("customers", "edit");
   const searchParams = await props.searchParams;
   const staff = await getStaffOptions();
 
@@ -23,7 +23,7 @@ export default async function NewCustomerPage(props: PageProps<"/customers/new">
         </Link>
         <div className="mt-4">
           <Notice searchParams={searchParams} />
-          <CustomerForm staff={staff} action={saveCustomer.bind(null, null)} cancelHref="/customers" />
+          <CustomerForm staff={staff} action={saveCustomer.bind(null, null)} cancelHref="/customers" defaultOwnerId={user.id} />
         </div>
       </div>
     </>

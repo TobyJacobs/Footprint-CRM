@@ -1,25 +1,29 @@
 // Choices for customer fields, worded exactly as in Zoho CRM so imported
-// records match. Add new options here — no database change needed.
+// records match (account types and "heard about us" copied from Zoho on
+// 5 October 2026). Add new options here — no database change needed.
 
-export const customerStatuses = [
-  "Client Active",
-  "Client Information Update Required",
-  "Client Not Active - Awaiting Deletion",
-  "No Current Services",
-  "Cancelled Services",
-];
+export const customerStatuses = ["Active", "Cancelled"];
 
 export const accountTypes = [
   "Business Customer",
+  "Key Account",
+  "Managed Account",
+  "Pool Customer",
   "Prospect",
+  "Acquisition Target",
+  "Acquisition - Contacted",
   "Partner",
   "Reseller",
   "Distributor",
   "Integrator",
+  "Supplier",
+  "Vendor",
   "Investor",
   "Analyst",
   "Competitor",
   "Press",
+  "ON STOP - NO ORDERS TO BE PROCESSED",
+  "Imported",
   "Other",
 ];
 
@@ -68,18 +72,19 @@ export const invoiceDueTerms = [
 ];
 
 export const heardAboutUs = [
-  "Website Enquiry",
-  "Referral",
-  "Social",
-  "Paid Ad",
-  "Event",
-  "Walk in",
   "Cold Contact - Sourced Business",
-  "Existing Client - Footprint",
-  "Existing Client - FMN",
+  "Event",
   "Existing Client - C3",
+  "Existing Client - FMN",
+  "Existing Client - Footprint",
   "Existing Client - Freedom",
   "FMN Client",
+  "Paid Ad",
+  "Referral",
+  "Social",
+  "Walk in",
+  "Website Enquiry",
+  "Your Lead Kit",
 ];
 
 export const brochures = ["Footprint Group", "Print", "Signage", "Digital Marketing", "Advertising"];
