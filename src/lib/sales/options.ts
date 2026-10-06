@@ -138,6 +138,7 @@ export type LineInput = {
   unit_cost: number | null;
   discount_percent: number;
   tax_rate: number;
+  gp_override?: number | null;
 };
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -154,7 +155,8 @@ export function totals(lines: LineInput[]) {
     const net = lineNet(l);
     subtotal += net;
     vat += round2((net * l.tax_rate) / 100);
-    cost += round2(l.quantity * (l.unit_cost ?? 0));
+    // An overridden line's cost is whatever makes its gross profit the override.
+    cost += l.gp_override != null ? round2(net - l.gp_override) : round2(l.quantity * (l.unit_cost ?? 0));
   }
   subtotal = round2(subtotal);
   vat = round2(vat);

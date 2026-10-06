@@ -433,3 +433,11 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Build, type-check and lint clean. Not clicked through in a browser.
 - **Still manual for the owner:** rename the Entra app, the Supabase project, and the Netlify site. Renaming the Netlify site changes the address (footprinthub.netlify.app becomes footprintos.netlify.app), so first add `https://footprintos.netlify.app/**` and `https://*--footprintos.netlify.app/**` to Supabase redirect URLs, change the Site URL, and update any `NEXT_PUBLIC_SITE_URL`-style Netlify variable. Keep the old entries until the new one works.
 - Also: `EMAIL_FROM` display name (Netlify env var) and the Postmark sender name.
+
+## 6 October 2026 - GP override is now per line (on branch, not yet live)
+
+- The "Override GP" button moved from the whole quote/order/invoice to **each line**. Operations/admins set the line's gross profit and a reason; the line shows its GP (and an "overridden" mark), and the document cost is the sum of line costs.
+- Needs migration `20261017120000_line_gp_override.sql` run in the Supabase SQL editor (adds line override columns, recalculates `line_cost`, retires the document-level trigger, adds `copy_line_overrides`, updates the accepted-quote-to-order function).
+- Saving a document now updates existing lines in place (instead of delete and re-insert) so overrides survive edits. Overrides carry over when converting a quote to an order or invoice.
+- The old document-level override columns are left in the database but unused; any document-level override set earlier is dropped (the test data had none known).
+- Build/type-check/lint results: see session log. Not clicked through in a browser.

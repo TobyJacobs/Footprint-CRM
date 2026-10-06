@@ -16,7 +16,10 @@ function fail(path: string, message: string): never {
   redirect(`${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}`);
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 type LineIn = {
+  id: string | null;
   product_id: string | null;
   description: string;
   quantity: number;
@@ -32,6 +35,7 @@ function parseLines(fd: FormData): LineIn[] | null {
     const raw = JSON.parse(String(fd.get("lines_json") ?? "[]"));
     if (!Array.isArray(raw)) return null;
     return raw.map((l) => ({
+      id: typeof l.id === "string" && UUID_RE.test(l.id) ? l.id : null,
       product_id: typeof l.product_id === "string" && l.product_id ? l.product_id : null,
       description: String(l.description ?? "").slice(0, 5000),
       quantity: Number(l.quantity) || 0,
@@ -75,8 +79,9 @@ function headerFields(fd: FormData, docType: DocType) {
   };
 }
 
-// Replace a document's lines: new lines are saved first, old ones removed
-// afterwards, so a failure never leaves a document empty.
+// Save a document's lines. Lines that already exist are updated in place (so
+// their GP override survives an edit), new lines are added, and lines that were
+// removed are deleted last, so a failure never leaves a document empty.
 async function replaceLines(documentId: string, lines: LineIn[]): Promise<string | null> {
   const supabase = await createClient();
   const { data: old, error: readError } = await supabase
@@ -85,15 +90,31 @@ async function replaceLines(documentId: string, lines: LineIn[]): Promise<string
     .eq("document_id", documentId);
   if (readError) return readError.message;
 
-  if (lines.length) {
+  const oldIds = new Set((old ?? []).map((r) => r.id as string));
+  const keptIds = new Set<string>();
+  const fresh: Omit<LineIn, "id">[] = [];
+  const freshPositions: number[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const { id: lineId, ...fields } = lines[i];
+    if (lineId && oldIds.has(lineId) && !keptIds.has(lineId)) {
+      keptIds.add(lineId);
+      const { error } = await supabase.from("sales_document_lines").update({ ...fields, position: i }).eq("id", lineId);
+      if (error) return error.message;
+    } else {
+      fresh.push(fields);
+      freshPositions.push(i);
+    }
+  }
+  if (fresh.length) {
     const { error } = await supabase
       .from("sales_document_lines")
-      .insert(lines.map((l, i) => ({ ...l, document_id: documentId, position: i })));
+      .insert(fresh.map((f, k) => ({ ...f, document_id: documentId, position: freshPositions[k] })));
     if (error) return error.message;
   }
-  const oldIds = (old ?? []).map((r) => r.id as string);
-  if (oldIds.length) {
-    const { error } = await supabase.from("sales_document_lines").delete().in("id", oldIds);
+  const removed = [...oldIds].filter((id) => !keptIds.has(id));
+  if (removed.length) {
+    const { error } = await supabase.from("sales_document_lines").delete().in("id", removed);
     if (error) return error.message;
   }
   return null;
@@ -240,6 +261,8 @@ export async function convertDocument(documentId: string, to: DocType) {
       .from("sales_document_lines")
       .insert(srcLines.map((l) => ({ ...l, document_id: created.id })));
     if (lineError) fail(back, lineError.message);
+    // Keep any line GP overrides from the source document.
+    await supabase.rpc("copy_line_overrides", { p_from: documentId, p_to: created.id });
   }
 
   // Mark the source as moved on.
@@ -296,9 +319,10 @@ export async function saveProduct(productId: string | null, fd: FormData) {
   redirect("/sales/products?saved=1");
 }
 
-// Override gross profit when the calculated figure is wrong. The database only
-// lets the operations team and admins do this, and insists on a reason.
-export async function setGpOverride(documentId: string, fd: FormData) {
+// Override a line's gross profit when the calculated figure is wrong. The
+// database only lets the operations team and admins do this, and insists on a
+// reason.
+export async function setLineGpOverride(documentId: string, lineId: string, fd: FormData) {
   await requirePermission("quotes", "edit");
   const back = `/sales/${documentId}`;
   const gp = num(fd, "gp");
@@ -307,22 +331,24 @@ export async function setGpOverride(documentId: string, fd: FormData) {
   if (!reason) fail(back, "Please say why you're overriding it");
   const supabase = await createClient();
   const { error } = await supabase
-    .from("sales_documents")
+    .from("sales_document_lines")
     .update({ gp_override: gp, gp_override_reason: reason })
-    .eq("id", documentId);
+    .eq("id", lineId)
+    .eq("document_id", documentId);
   if (error) fail(back, error.message);
   revalidatePath("/sales", "layout");
   redirect(`${back}?saved=1`);
 }
 
-export async function clearGpOverride(documentId: string) {
+export async function clearLineGpOverride(documentId: string, lineId: string) {
   await requirePermission("quotes", "edit");
   const back = `/sales/${documentId}`;
   const supabase = await createClient();
   const { error } = await supabase
-    .from("sales_documents")
+    .from("sales_document_lines")
     .update({ gp_override: null, gp_override_reason: null })
-    .eq("id", documentId);
+    .eq("id", lineId)
+    .eq("document_id", documentId);
   if (error) fail(back, error.message);
   revalidatePath("/sales", "layout");
   redirect(`${back}?saved=1`);

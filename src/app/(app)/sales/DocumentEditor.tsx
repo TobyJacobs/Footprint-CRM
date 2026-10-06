@@ -33,6 +33,7 @@ export type EditorLine = {
   discount_percent: number;
   tax_rate_id: string | null;
   tax_rate: number;
+  gp_override?: number | null;
 };
 
 const money = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" });
@@ -315,6 +316,7 @@ export default function DocumentEditor({
           lines
             .filter((l) => l.description.trim() || l.unit_price || l.product_id)
             .map((l) => ({
+              id: l.key,
               product_id: l.product_id,
               description: l.description,
               quantity: l.quantity,
