@@ -13,7 +13,7 @@ import {
   docTypes, isDocType, isLockedRecord, marginPercent, poStatusLabel, statusLabel, statusToneFor, type DocType,
 } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
-import { clearGpOverride, convertDocument, deleteDocument, setDocumentStatus, setGpOverride } from "../actions";
+import { clearLineGpOverride, convertDocument, deleteDocument, setDocumentStatus, setLineGpOverride } from "../actions";
 import { raisePurchaseOrders } from "../purchase-orders/actions";
 import EmailCard from "../EmailCard";
 
@@ -50,7 +50,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
   if (!doc || !isDocType(doc.doc_type)) notFound();
   const type = doc.doc_type as DocType;
 
-  const [lines, { data: source }, { data: children }, { data: pos }, { data: emailLog }, { data: settings }, { data: canOverrideGp }, { data: overrider }] = await Promise.all([
+  const [lines, { data: source }, { data: children }, { data: pos }, { data: emailLog }, { data: settings }, { data: canOverrideGp }] = await Promise.all([
     getDocumentLines(id),
     doc.source_document_id
       ? supabase.from("sales_documents").select("id, number, doc_type").eq("id", doc.source_document_id).maybeSingle()
@@ -67,10 +67,14 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
       .limit(10),
     supabase.from("company_settings").select("company_name").single(),
     supabase.rpc("can_override_gp"),
-    doc.gp_override_by
-      ? supabase.from("profiles").select("full_name, email").eq("id", doc.gp_override_by).maybeSingle()
-      : Promise.resolve({ data: null }),
   ]);
+
+  // Names for "overridden by" on any lines that have a GP override.
+  const overriderIds = [...new Set(lines.map((l) => l.gp_override_by).filter((v): v is string => !!v))];
+  const { data: overriders } = overriderIds.length
+    ? await supabase.from("profiles").select("id, full_name, email").in("id", overriderIds)
+    : { data: [] as { id: string; full_name: string | null; email: string }[] };
+  const overriderName = new Map((overriders ?? []).map((o) => [o.id, o.full_name ?? o.email]));
 
   const customer = doc.customers as unknown as { id: string; name: string; credit_status: string | null };
   const contact = doc.contacts as unknown as { first_name: string | null; last_name: string; email: string | null } | null;
@@ -263,7 +267,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
         <Card title="Lines">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
+            <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
                 <tr>
                   <th className="py-2 pr-3 font-semibold">Description</th>
@@ -271,18 +275,58 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                   <th className="py-2 pr-3 text-right font-semibold">Price</th>
                   <th className="py-2 pr-3 text-right font-semibold">Disc</th>
                   <th className="py-2 pr-3 text-right font-semibold">VAT</th>
-                  <th className="py-2 text-right font-semibold">Net</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Net</th>
+                  <th className="py-2 text-right font-semibold">GP</th>
                 </tr>
               </thead>
               <tbody>
                 {lines.map((l) => (
                   <tr key={l.key} className="border-b border-fp-border align-top last:border-0">
-                    <td className="whitespace-pre-line py-2 pr-3">{l.description}</td>
+                    <td className="py-2 pr-3">
+                      <span className="whitespace-pre-line">{l.description}</span>
+                      {l.gp_override !== null && (
+                        <p className="mt-1 rounded-md bg-fp-amber/15 px-2 py-1 text-xs">
+                          <strong>GP overridden</strong> to {gbp(l.gp_override)} by {(l.gp_override_by && overriderName.get(l.gp_override_by)) || "someone"}
+                          {l.gp_override_at ? ` on ${shortDateTime(l.gp_override_at)}` : ""}. Reason: {l.gp_override_reason}
+                        </p>
+                      )}
+                      {canOverrideGp === true && canEdit && (
+                        <details className="mt-1 text-xs">
+                          <summary className="cursor-pointer font-semibold text-fp-teal-deep">
+                            {l.gp_override !== null ? "Change or remove GP override" : "Override GP"}
+                          </summary>
+                          <form action={setLineGpOverride.bind(null, id, l.key)} className="mt-2 grid max-w-sm gap-2">
+                            <label className="grid gap-1">
+                              <span className="font-semibold">Gross profit for this line (£, excluding VAT)</span>
+                              <input name="gp" type="number" step="0.01" required defaultValue={l.gp_override ?? ""} className={inputClass} />
+                            </label>
+                            <label className="grid gap-1">
+                              <span className="font-semibold">Reason</span>
+                              <input name="reason" required defaultValue={l.gp_override_reason ?? ""} className={inputClass} placeholder="e.g. supplier cost was wrong" />
+                            </label>
+                            <div>
+                              <button type="submit" className={primaryButton}>Save override</button>
+                            </div>
+                          </form>
+                          {l.gp_override !== null && (
+                            <form action={clearLineGpOverride.bind(null, id, l.key)} className="mt-2">
+                              <button type="submit" className="font-semibold text-fp-dark/70 underline hover:text-fp-black">
+                                Remove the override (go back to the calculated figure)
+                              </button>
+                            </form>
+                          )}
+                        </details>
+                      )}
+                    </td>
                     <td className="py-2 pr-3 text-right">{l.quantity}</td>
                     <td className="py-2 pr-3 text-right">{gbp(l.unit_price)}</td>
                     <td className="py-2 pr-3 text-right">{l.discount_percent ? `${l.discount_percent}%` : ""}</td>
                     <td className="py-2 pr-3 text-right">{l.tax_rate}%</td>
-                    <td className="py-2 text-right font-semibold">{gbp(l.line_net)}</td>
+                    <td className="py-2 pr-3 text-right font-semibold">{gbp(l.line_net)}</td>
+                    <td className="py-2 text-right">
+                      {gbp(l.line_net - l.line_cost)}
+                      {l.gp_override !== null && <span className="block text-[10px] font-semibold uppercase text-fp-amber">overridden</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -310,13 +354,6 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
           <Card title="Margin">
             <p className="text-3xl font-black text-fp-teal-deep">{margin === null ? "—" : `${margin}%`}</p>
             <p className="mb-3 text-xs text-fp-mid">Staff only — customers never see cost or margin.</p>
-            {doc.gp_override !== null && (
-              <p className="mb-3 rounded-md bg-fp-amber/15 px-3 py-2 text-xs">
-                <strong>GP overridden</strong> to {gbp(Number(doc.gp_override))} by{" "}
-                {overrider ? (overrider.full_name ?? overrider.email) : "someone"}
-                {doc.gp_override_at ? ` on ${shortDateTime(doc.gp_override_at)}` : ""}. Reason: {doc.gp_override_reason}
-              </p>
-            )}
             <dl className="grid grid-cols-2 gap-y-1 text-sm">
               <dt className="text-fp-dark/75">Cost</dt>
               <dd className="text-right">{gbp(Number(doc.cost_total))}</dd>
@@ -327,37 +364,6 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 </>
               )}
             </dl>
-            {canOverrideGp === true && canEdit && (
-              <details className="mt-4 border-t border-fp-border pt-3 text-sm">
-                <summary className="cursor-pointer font-semibold text-fp-teal-deep">
-                  {doc.gp_override !== null ? "Change or remove the GP override" : "Override GP"}
-                </summary>
-                <p className="mt-2 text-xs text-fp-dark/70">
-                  If the calculated numbers are wrong, enter the gross profit (in £, excluding VAT) this {docTypes[type].label.toLowerCase()} should show.
-                  It stays at that figure, even if lines change, until you remove the override.
-                </p>
-                <form action={setGpOverride.bind(null, id)} className="mt-2 grid gap-2">
-                  <label className="grid gap-1">
-                    <span className="text-xs font-semibold">Gross profit (£)</span>
-                    <input name="gp" type="number" step="0.01" required defaultValue={doc.gp_override ?? ""} className={inputClass} />
-                  </label>
-                  <label className="grid gap-1">
-                    <span className="text-xs font-semibold">Reason</span>
-                    <input name="reason" required defaultValue={doc.gp_override_reason ?? ""} className={inputClass} placeholder="e.g. supplier cost was wrong" />
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    <button type="submit" className={primaryButton}>Save override</button>
-                  </div>
-                </form>
-                {doc.gp_override !== null && (
-                  <form action={clearGpOverride.bind(null, id)} className="mt-2">
-                    <button type="submit" className="text-xs font-semibold text-fp-dark/70 underline hover:text-fp-black">
-                      Remove the override (go back to the calculated figure)
-                    </button>
-                  </form>
-                )}
-              </details>
-            )}
           </Card>
 
           <Card title="Details">
