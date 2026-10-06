@@ -433,3 +433,10 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Build, type-check and lint clean. Not clicked through in a browser.
 - **Still manual for the owner:** rename the Entra app, the Supabase project, and the Netlify site. Renaming the Netlify site changes the address (footprinthub.netlify.app becomes footprintos.netlify.app), so first add `https://footprintos.netlify.app/**` and `https://*--footprintos.netlify.app/**` to Supabase redirect URLs, change the Site URL, and update any `NEXT_PUBLIC_SITE_URL`-style Netlify variable. Keep the old entries until the new one works.
 - Also: `EMAIL_FROM` display name (Netlify env var) and the Postmark sender name.
+
+## 6 October 2026 - Netlify site renamed
+
+- Netlify project renamed `footprinthub` to **`footprintgroupos`**. The live address is now **https://footprintgroupos.netlify.app**. The old footprinthub address no longer works.
+- Supabase redirect URLs now include `https://footprintgroupos.netlify.app/**` and `https://*--footprintgroupos.netlify.app/**`. The old footprinthub entries are still there; remove them once a real Microsoft sign-in has been tested on the new address.
+- The login page loads on the new address and shows FootprintOS. A full Microsoft sign-in has not been tested yet.
+- No Netlify environment variable held the site address, so none needed changing.
