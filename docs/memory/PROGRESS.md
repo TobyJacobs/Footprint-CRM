@@ -427,17 +427,23 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Email templates: 6 starter templates, composer on the customer card (send via Postmark or open in own email app), admin editor at Admin > Email templates.
 - Checked: build, type-check and lint clean. NOT yet clicked through in a browser (sign-in is Microsoft only).
 
-## 6 October 2026 - Renamed to FootprintOS (on branch, not yet live)
+## 6 October 2026 - Renamed to FootprintOS (LIVE)
 
 - Product name is now **FootprintOS** (sub-brand of Footprint Group): page titles, login, invite, welcome heading, GDPR export wording, sidebar wordmark under the logo, and the docs.
 - Build, type-check and lint clean. Not clicked through in a browser.
 - **Still manual for the owner:** rename the Entra app, the Supabase project, and the Netlify site. Renaming the Netlify site changes the address (footprinthub.netlify.app becomes footprintos.netlify.app), so first add `https://footprintos.netlify.app/**` and `https://*--footprintos.netlify.app/**` to Supabase redirect URLs, change the Site URL, and update any `NEXT_PUBLIC_SITE_URL`-style Netlify variable. Keep the old entries until the new one works.
 - Also: `EMAIL_FROM` display name (Netlify env var) and the Postmark sender name.
 
-## 6 October 2026 - GP override is now per line (on branch, not yet live)
+## 6 October 2026 - GP override is now per line (LIVE)
 
 - The "Override GP" button moved from the whole quote/order/invoice to **each line**. Operations/admins set the line's gross profit and a reason; the line shows its GP (and an "overridden" mark), and the document cost is the sum of line costs.
 - Needs migration `20261017120000_line_gp_override.sql` run in the Supabase SQL editor (adds line override columns, recalculates `line_cost`, retires the document-level trigger, adds `copy_line_overrides`, updates the accepted-quote-to-order function).
 - Saving a document now updates existing lines in place (instead of delete and re-insert) so overrides survive edits. Overrides carry over when converting a quote to an order or invoice.
 - The old document-level override columns are left in the database but unused; any document-level override set earlier is dropped (the test data had none known).
-- Build/type-check/lint results: see session log. Not clicked through in a browser.
+- Migration applied to the test database and verified on 6 October 2026. Build, type-check and lint clean. Not clicked through in a browser.
+## 6 October 2026 - Netlify site renamed
+
+- Netlify project renamed `footprinthub` to **`footprintgroupos`**. The live address is now **https://footprintgroupos.netlify.app**. The old footprinthub address no longer works.
+- Supabase redirect URLs now include `https://footprintgroupos.netlify.app/**` and `https://*--footprintgroupos.netlify.app/**`. The old footprinthub entries were **removed on 6 October 2026** after the owner confirmed Microsoft sign-in works on the new address. Supabase now lists only localhost and the two footprintgroupos entries.
+- The login page loads on the new address and shows FootprintOS. The owner confirmed a full Microsoft sign-in works there.
+- No Netlify environment variable held the site address, so none needed changing.
