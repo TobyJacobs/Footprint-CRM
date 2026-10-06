@@ -51,7 +51,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
           className="mb-8"
         />
         <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-xl">
-          <h1 className="text-lg font-bold">Sign in to the Footprint Platform</h1>
+          <h1 className="text-lg font-bold">Sign in to FootprintOS</h1>
           <p className="mt-1 text-sm text-fp-dark/75">
             Use your Footprint Microsoft 365 work account.
           </p>

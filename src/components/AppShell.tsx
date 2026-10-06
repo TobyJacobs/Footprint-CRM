@@ -18,6 +18,9 @@ function Wordmark() {
         height={44}
         priority
       />
+      <span className="mt-1 block text-sm font-bold tracking-wide text-white">
+        Footprint<span className="text-fp-pink-light">OS</span>
+      </span>
     </Link>
   );
 }

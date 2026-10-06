@@ -1,4 +1,4 @@
-# Footprint Platform — Brand guide
+# FootprintOS — Brand guide
 
 _Taken from footprintgroup.uk on 29 September 2026. The owner will supply the official logo files; until then, the website is the reference._
 

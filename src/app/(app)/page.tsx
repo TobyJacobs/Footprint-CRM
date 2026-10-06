@@ -29,7 +29,7 @@ export default async function Home(props: PageProps<"/">) {
   return (
     <>
       <PageHeader
-        title={firstName ? `Welcome, ${firstName}` : "Welcome to the Footprint Platform"}
+        title={firstName ? `Welcome, ${firstName}` : "Welcome to FootprintOS"}
         intro={
           view
             ? `${label(view)} view · ${new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`

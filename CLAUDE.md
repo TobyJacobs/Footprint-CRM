@@ -1,4 +1,4 @@
-# Footprint Platform — Standing Instructions for Claude
+# FootprintOS — Standing Instructions for Claude
 
 Claude reads this file automatically at the start of every session. Keep it short and up to date.
 

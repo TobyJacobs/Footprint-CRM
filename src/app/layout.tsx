@@ -9,10 +9,10 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   title: {
-    default: "Footprint Platform",
-    template: "%s · Footprint Platform",
+    default: "FootprintOS",
+    template: "%s · FootprintOS",
   },
-  description: "Footprint Group's business platform.",
+  description: "FootprintOS, Footprint Group's business platform.",
   robots: { index: false, follow: false },
 };
 

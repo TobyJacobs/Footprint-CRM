@@ -1,11 +1,11 @@
 import "server-only";
 
 // Reads the staff list from Microsoft 365 (Microsoft Graph), using the
-// "Footprint Platform" app's own permission (User.Read.All, read-only).
+// "FootprintOS" app's own permission (User.Read.All, read-only).
 //
 // Settings (Netlify environment variables, and .env.local on your computer):
 //   ENTRA_TENANT_ID      — the Microsoft 365 tenant (directory) ID. Not secret.
-//   ENTRA_CLIENT_ID      — the "Footprint Platform" app's client ID. Not secret.
+//   ENTRA_CLIENT_ID      — the "FootprintOS" app's client ID. Not secret.
 //   ENTRA_CLIENT_SECRET  — SECRET; a client secret created on that app.
 //   STAFF_EMAIL_DOMAINS  — optional, comma-separated; defaults to footprintgroup.uk.
 

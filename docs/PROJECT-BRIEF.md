@@ -1,4 +1,4 @@
-# Footprint Platform — Project Brief
+# FootprintOS — Project Brief
 
 _Draft 2 (owner-reviewed) · 29 September 2026 · Built from the kickoff interview with the project owner. Raw answers are in `docs/memory/INTERVIEW-NOTES.md`._
 
