@@ -1,4 +1,4 @@
-# Footprint Platform — Roadmap
+# FootprintOS — Roadmap
 
 _Draft 2 · 29 September 2026 · Reordered: Zoho first, Quote to Invoice as priority · Based on `docs/PROJECT-BRIEF.md`. Technical choices are in `docs/memory/DECISIONS.md`._
 

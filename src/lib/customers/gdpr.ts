@@ -12,7 +12,7 @@ export function exportResponse(user: CurrentUser, filenameStem: string, subject:
       exported_by: user.email,
       organisation: "Footprint Group",
       note:
-        "Everything the Footprint Platform holds about this subject at the time of export, " +
+        "Everything FootprintOS holds about this subject at the time of export, " +
         "including its change history. Prepared for a UK GDPR subject access request.",
     },
     ...data,

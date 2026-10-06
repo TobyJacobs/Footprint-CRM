@@ -31,7 +31,7 @@ export default async function InvitePage(props: PageProps<"/invite/[token]">) {
             <>
               <h1 className="text-lg font-bold">{firstName ? `Welcome, ${firstName}` : "Welcome"}</h1>
               <p className="mt-1 text-sm text-fp-dark/75">
-                You&apos;ve been set up on the Footprint Platform. Sign in with your usual Microsoft work account to get
+                You&apos;ve been set up on FootprintOS. Sign in with your usual Microsoft work account to get
                 started.
               </p>
               <form action={signInWithMicrosoft} className="mt-6">

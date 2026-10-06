@@ -426,3 +426,10 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Services tick automatically from sales orders (account code and product-name rules); shown on the customer card.
 - Email templates: 6 starter templates, composer on the customer card (send via Postmark or open in own email app), admin editor at Admin > Email templates.
 - Checked: build, type-check and lint clean. NOT yet clicked through in a browser (sign-in is Microsoft only).
+
+## 6 October 2026 - Renamed to FootprintOS (on branch, not yet live)
+
+- Product name is now **FootprintOS** (sub-brand of Footprint Group): page titles, login, invite, welcome heading, GDPR export wording, sidebar wordmark under the logo, and the docs.
+- Build, type-check and lint clean. Not clicked through in a browser.
+- **Still manual for the owner:** rename the Entra app, the Supabase project, and the Netlify site. Renaming the Netlify site changes the address (footprinthub.netlify.app becomes footprintos.netlify.app), so first add `https://footprintos.netlify.app/**` and `https://*--footprintos.netlify.app/**` to Supabase redirect URLs, change the Site URL, and update any `NEXT_PUBLIC_SITE_URL`-style Netlify variable. Keep the old entries until the new one works.
+- Also: `EMAIL_FROM` display name (Netlify env var) and the Postmark sender name.

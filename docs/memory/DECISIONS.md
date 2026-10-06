@@ -221,3 +221,8 @@ This refines the "Supabase, London region" part of the technical foundations dec
 - Choosing a product puts its **Zoho product number** at the start of the line description, and also stores it on the line (`product_code`), because the product number is what Xero uses to match items.
 
 **Why:** The owner's request and answers, 5 October 2026.
+
+## 6 October 2026 - Product name: FootprintOS
+
+**Decision:** The platform is called **FootprintOS**, a sub-brand of Footprint Group. "Footprint Group" stays as the company name (logo, emails, legal text). Chosen by the owner, replacing the working title "Footprint Platform".
+**Manual follow-ups for the owner:** rename the Microsoft Entra app, the Supabase project and the Netlify site; if the Netlify address changes, update the Supabase redirect list first (see PROGRESS.md).
