@@ -437,6 +437,6 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 ## 6 October 2026 - Netlify site renamed
 
 - Netlify project renamed `footprinthub` to **`footprintgroupos`**. The live address is now **https://footprintgroupos.netlify.app**. The old footprinthub address no longer works.
-- Supabase redirect URLs now include `https://footprintgroupos.netlify.app/**` and `https://*--footprintgroupos.netlify.app/**`. The old footprinthub entries are still there; remove them once a real Microsoft sign-in has been tested on the new address.
-- The login page loads on the new address and shows FootprintOS. A full Microsoft sign-in has not been tested yet.
+- Supabase redirect URLs now include `https://footprintgroupos.netlify.app/**` and `https://*--footprintgroupos.netlify.app/**`. The old footprinthub entries were **removed on 6 October 2026** after the owner confirmed Microsoft sign-in works on the new address. Supabase now lists only localhost and the two footprintgroupos entries.
+- The login page loads on the new address and shows FootprintOS. The owner confirmed a full Microsoft sign-in works there.
 - No Netlify environment variable held the site address, so none needed changing.
