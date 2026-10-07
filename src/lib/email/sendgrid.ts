@@ -1,19 +1,28 @@
 import "server-only";
 
-// Sends email through Postmark (https://postmarkapp.com).
+// Sends email through SendGrid (https://sendgrid.com).
 //
 // Settings (Netlify environment variables, and .env.local on your computer):
-//   POSTMARK_SERVER_TOKEN  — secret; set in Netlify only. The special value
-//                            "POSTMARK_API_TEST" is Postmark's test mode:
-//                            emails are accepted but never delivered.
-//   EMAIL_FROM             — e.g. "Footprint Group <accounts@footprintgroup.uk>".
-//                            Must be a verified sender in Postmark.
-//   EMAIL_REPLY_TO         — optional reply-to address.
+//   SENDGRID_API_KEY  - secret; set in Netlify only (a key with "Mail Send"
+//                       permission).
+//   EMAIL_FROM        - e.g. "Footprint Group <accounts@footprintgroup.uk>".
+//                       Must be a verified sender (or on an authenticated
+//                       domain) in SendGrid.
+//   EMAIL_REPLY_TO    - optional reply-to address.
+//   EMAIL_TEST_MODE   - set to "true" to use SendGrid's sandbox: messages are
+//                       checked and accepted but never delivered.
 
-export const isEmailConfigured = () => Boolean(process.env.POSTMARK_SERVER_TOKEN && process.env.EMAIL_FROM);
-export const isEmailTestMode = () => process.env.POSTMARK_SERVER_TOKEN === "POSTMARK_API_TEST";
+export const isEmailConfigured = () => Boolean(process.env.SENDGRID_API_KEY && process.env.EMAIL_FROM);
+export const isEmailTestMode = () => process.env.EMAIL_TEST_MODE === "true";
 
 export type SendResult = { ok: true; messageId: string | null } | { ok: false; error: string };
+
+// "Name <a@b.com>" or just "a@b.com" -> SendGrid's {email, name}.
+function parseAddress(v: string): { email: string; name?: string } {
+  const m = v.match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
+  if (m) return { email: m[2].trim(), name: m[1].replace(/^"|"$/g, "") || undefined };
+  return { email: v.trim() };
+}
 
 export async function sendEmail(msg: {
   to: string;
@@ -23,37 +32,43 @@ export async function sendEmail(msg: {
   html: string;
   tag?: string;
 }): Promise<SendResult> {
-  const token = process.env.POSTMARK_SERVER_TOKEN;
+  const key = process.env.SENDGRID_API_KEY;
   const from = process.env.EMAIL_FROM;
-  if (!token || !from) return { ok: false, error: "Email isn't set up yet (no Postmark settings)." };
+  if (!key || !from) return { ok: false, error: "Email isn't set up yet (no SendGrid settings)." };
+
+  const cc = msg.cc ? parseAddress(msg.cc) : null;
+  const to = parseAddress(msg.to);
+  const replyTo = process.env.EMAIL_REPLY_TO;
 
   try {
-    const res = await fetch("https://api.postmarkapp.com/email", {
+    const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "X-Postmark-Server-Token": token,
-      },
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        From: from,
-        To: msg.to,
-        Cc: msg.cc || undefined,
-        ReplyTo: process.env.EMAIL_REPLY_TO || undefined,
-        Subject: msg.subject,
-        TextBody: msg.text,
-        HtmlBody: msg.html,
-        Tag: msg.tag,
-        MessageStream: "outbound",
+        personalizations: [
+          {
+            to: [to],
+            ...(cc && cc.email.toLowerCase() !== to.email.toLowerCase() ? { cc: [cc] } : {}),
+          },
+        ],
+        from: parseAddress(from),
+        ...(replyTo ? { reply_to: parseAddress(replyTo) } : {}),
+        subject: msg.subject,
+        content: [
+          { type: "text/plain", value: msg.text },
+          { type: "text/html", value: msg.html },
+        ],
+        ...(msg.tag ? { categories: [msg.tag] } : {}),
+        ...(isEmailTestMode() ? { mail_settings: { sandbox_mode: { enable: true } } } : {}),
       }),
     });
-    const body = (await res.json().catch(() => ({}))) as { ErrorCode?: number; Message?: string; MessageID?: string };
-    if (!res.ok || (body.ErrorCode && body.ErrorCode !== 0)) {
-      return { ok: false, error: body.Message ?? `Postmark error (${res.status})` };
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { errors?: { message?: string }[] };
+      return { ok: false, error: body.errors?.[0]?.message ?? `SendGrid error (${res.status})` };
     }
-    return { ok: true, messageId: body.MessageID ?? null };
+    return { ok: true, messageId: res.headers.get("x-message-id") };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Couldn't reach Postmark" };
+    return { ok: false, error: e instanceof Error ? e.message : "Couldn't reach SendGrid" };
   }
 }
 

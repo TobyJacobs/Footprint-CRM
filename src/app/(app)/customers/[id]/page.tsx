@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 import { addActivity, deleteActivity, markNotDuplicate } from "../actions";
 import EmailComposer from "../EmailComposer";
 import { sendCustomerEmail } from "../email-actions";
-import { isEmailConfigured, isEmailTestMode } from "@/lib/email/postmark";
+import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 
 export async function generateMetadata(props: PageProps<"/customers/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -443,7 +443,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                 <>
                   {isEmailConfigured() && isEmailTestMode() && (
                     <p className="mb-3 rounded-md bg-fp-amber/15 px-3 py-2 text-xs">
-                      Test mode: emails are accepted by Postmark but <strong>not delivered</strong>.
+                      Test mode: emails are accepted by SendGrid but <strong>not delivered</strong>.
                     </p>
                   )}
                   <EmailComposer

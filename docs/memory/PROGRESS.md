@@ -447,3 +447,7 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Supabase redirect URLs now include `https://footprintgroupos.netlify.app/**` and `https://*--footprintgroupos.netlify.app/**`. The old footprinthub entries were **removed on 6 October 2026** after the owner confirmed Microsoft sign-in works on the new address. Supabase now lists only localhost and the two footprintgroupos entries.
 - The login page loads on the new address and shows FootprintOS. The owner confirmed a full Microsoft sign-in works there.
 - No Netlify environment variable held the site address, so none needed changing.
+
+## 7 October 2026 - Switched email from Postmark to SendGrid (on branch, not yet live)
+
+- Code swapped (`src/lib/email/sendgrid.ts`), wording updated, `.env.example` updated. Build/type-check/lint run before release. Not tested with a real send: needs the SendGrid key and a verified sender first (see DECISIONS.md).

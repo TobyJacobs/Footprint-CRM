@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { isDirectoryConfigured } from "@/lib/entra/graph";
 import { runDirectorySync } from "@/lib/entra/sync";
-import { brandedHtml, isEmailConfigured, isEmailTestMode, sendEmail } from "@/lib/email/postmark";
+import { brandedHtml, isEmailConfigured, isEmailTestMode, sendEmail } from "@/lib/email/sendgrid";
 import { dashboardTypes } from "@/lib/dashboards/data";
 import { createClient } from "@/lib/supabase/server";
 import { permissionFeatures, ACTIONS } from "./permissions";

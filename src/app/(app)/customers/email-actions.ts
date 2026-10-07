@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
-import { brandedHtml, isEmailTestMode, sendEmail } from "@/lib/email/postmark";
+import { brandedHtml, isEmailTestMode, sendEmail } from "@/lib/email/sendgrid";
 import { str } from "@/lib/forms";
 import { createClient } from "@/lib/supabase/server";
 
