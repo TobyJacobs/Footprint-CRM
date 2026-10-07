@@ -469,3 +469,7 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Estimates: migration `20261019120000_task_estimates.sql` adds `estimated_minutes` to tasks and template steps; new projects copy the estimate from their template. Typed in as hours on the project page and the templates page. Project page shows logged vs estimated per task, per stage and for the project.
 - Applied to the test database on 12 October. Not yet applied to the live London database (apply with the next release). Not yet clicked through in a browser (needs a Microsoft sign-in).
 - Not built: timers that start by themselves (would record hours nobody worked); a "My work" list across projects (offered).
+
+## 7 October 2026 - Switched email from Postmark to SendGrid (on branch, not yet live)
+
+- Code swapped (`src/lib/email/sendgrid.ts`), wording updated, `.env.example` updated. Build/type-check/lint run before release. Not tested with a real send: needs the SendGrid key and a verified sender first (see DECISIONS.md).

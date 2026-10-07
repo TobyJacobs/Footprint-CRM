@@ -130,7 +130,7 @@ _Kept lean on purpose: only what quoting and invoicing need, so we reach Quote t
 - **Quotes** with line items, VAT and branded PDFs, **sent digitally**. The customer **approves online** through a secure link, and the approval is recorded.
 - Approved quotes become **sales orders**, then **invoices**. **Purchase orders** go to suppliers.
 - **Subscription billing:** recurring invoices for subscriptions and hosting plans.
-- **Email sending through Postmark**, logged on the customer timeline.
+- **Email sending through SendGrid**, logged on the customer timeline.
 - **Payments:** Stripe (card), GoCardless (Direct Debit) and bank transfer recorded.
 - **Xero connection:** invoices (and payments) sent to Xero automatically.
 - **Migration:** full history of quotes, orders, POs and invoices from Zoho Books.
@@ -143,7 +143,7 @@ _Kept lean on purpose: only what quoting and invoicing need, so we reach Quote t
 - Subscriptions billed correctly.
 - The finance team signs it off.
 
-**Replaces:** **Zoho Books** (use stops; Zoho One bill continues until Wave 3). **Size:** L. **Depends on:** Wave 1; Xero, Stripe, GoCardless and Postmark accounts.
+**Replaces:** **Zoho Books** (use stops; Zoho One bill continues until Wave 3). **Size:** L. **Depends on:** Wave 1; Xero, Stripe, GoCardless and SendGrid accounts.
 
 ---
 

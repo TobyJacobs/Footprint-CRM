@@ -226,3 +226,9 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 **Decision:** The platform is called **FootprintOS**, a sub-brand of Footprint Group. "Footprint Group" stays as the company name (logo, emails, legal text). Chosen by the owner, replacing the working title "Footprint Platform".
 **Manual follow-ups for the owner:** rename the Microsoft Entra app, the Supabase project and the Netlify site; if the Netlify address changes, update the Supabase redirect list first (see PROGRESS.md).
+
+## 7 October 2026 - Email provider: SendGrid instead of Postmark
+
+**Decision:** The platform sends email through **SendGrid**, not Postmark (the owner's choice). Postmark was never approved out of test mode, so nothing live depended on it.
+**What changed:** `src/lib/email/sendgrid.ts` replaces `postmark.ts`; same functions, so every email feature works as before. Netlify variables: `SENDGRID_API_KEY` (secret) replaces `POSTMARK_SERVER_TOKEN`; `EMAIL_FROM` and `EMAIL_REPLY_TO` stay; optional `EMAIL_TEST_MODE=true` uses SendGrid's sandbox (accepted, never delivered).
+**Owner steps:** create the SendGrid key (Mail Send permission) and add it to Netlify; verify a sender or authenticate the footprintgroup.uk domain in SendGrid (DNS records); remove the old POSTMARK variable afterwards.
