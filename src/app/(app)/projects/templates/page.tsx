@@ -3,9 +3,9 @@ import { Trash2 } from "lucide-react";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import { Badge, Card, Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth";
-import { projectGroups } from "@/lib/projects/options";
+import { minutesText, minutesToHours, projectGroups } from "@/lib/projects/options";
 import { createClient } from "@/lib/supabase/server";
-import { addTemplateTask, deleteTemplateTask, saveTemplate } from "../actions";
+import { addTemplateTask, deleteTemplateTask, saveTemplate, setTemplateTaskEstimate } from "../actions";
 
 export const metadata: Metadata = { title: "Project templates" };
 
@@ -42,7 +42,7 @@ export default async function TemplatesPage(props: PageProps<"/projects/template
                 {!t.active && <Badge>Hidden</Badge>}
               </span>
               <span className="text-sm font-normal text-fp-mid">
-                {t.project_group ?? "No group"} · {mine.length} steps
+                {t.project_group ?? "No group"} · {mine.length} steps · {minutesText(mine.reduce((n, x) => n + (x.estimated_minutes ?? 0), 0))} estimated
               </span>
             </summary>
             <div className="grid gap-5 border-t border-fp-border p-4">
@@ -54,12 +54,32 @@ export default async function TemplatesPage(props: PageProps<"/projects/template
                         <span className="text-fp-mid">{s.stage} ·</span> {s.title}
                         {s.due_offset_days !== null && <span className="text-fp-dark/70"> (due day {s.due_offset_days})</span>}
                       </span>
-                      {canEdit && (
-                        <form action={deleteTemplateTask.bind(null, s.id)}>
-                          <ConfirmSubmit className="inline-flex items-center gap-1 text-xs font-semibold text-fp-error hover:underline" message={`Remove the step "${s.title}"?`}>
-                            <Trash2 size={12} aria-hidden /> Remove
-                          </ConfirmSubmit>
-                        </form>
+                      {canEdit ? (
+                        <span className="flex flex-wrap items-center gap-3">
+                          <form action={setTemplateTaskEstimate.bind(null, s.id)} className="flex items-center gap-1">
+                            <input
+                              name="estimate_hours"
+                              type="number"
+                              step="0.25"
+                              min="0"
+                              defaultValue={minutesToHours(s.estimated_minutes)}
+                              placeholder="–"
+                              aria-label={`Estimated hours for ${s.title}`}
+                              className={`${inputClass} w-20 py-1`}
+                            />
+                            <span className="text-xs text-fp-mid">h</span>
+                            <button type="submit" className="text-xs font-semibold text-fp-teal-deep hover:underline">
+                              Save
+                            </button>
+                          </form>
+                          <form action={deleteTemplateTask.bind(null, s.id)}>
+                            <ConfirmSubmit className="inline-flex items-center gap-1 text-xs font-semibold text-fp-error hover:underline" message={`Remove the step "${s.title}"?`}>
+                              <Trash2 size={12} aria-hidden /> Remove
+                            </ConfirmSubmit>
+                          </form>
+                        </span>
+                      ) : (
+                        s.estimated_minutes !== null && <span className="text-xs text-fp-dark/70">{minutesText(s.estimated_minutes)}</span>
                       )}
                     </li>
                   ))}
@@ -67,7 +87,7 @@ export default async function TemplatesPage(props: PageProps<"/projects/template
               )}
               {canEdit && (
                 <>
-                  <form action={addTemplateTask.bind(null, t.id)} className="grid gap-3 border-t border-fp-border pt-4 sm:grid-cols-[2fr_1.5fr_1fr_auto] sm:items-end">
+                  <form action={addTemplateTask.bind(null, t.id)} className="grid gap-3 border-t border-fp-border pt-4 sm:grid-cols-[2fr_1.5fr_1fr_1fr_auto] sm:items-end">
                     <label className="grid gap-1 text-sm">
                       <span className="font-semibold">Add a step</span>
                       <input name="title" required className={inputClass} placeholder="e.g. Proof approved" />
@@ -84,6 +104,10 @@ export default async function TemplatesPage(props: PageProps<"/projects/template
                     <label className="grid gap-1 text-sm">
                       <span className="font-semibold">Due after (days)</span>
                       <input name="due_offset_days" type="number" min="0" className={inputClass} />
+                    </label>
+                    <label className="grid gap-1 text-sm">
+                      <span className="font-semibold">Estimate (hours)</span>
+                      <input name="estimate_hours" type="number" step="0.25" min="0" className={inputClass} />
                     </label>
                     <button type="submit" className={secondaryButton}>
                       Add

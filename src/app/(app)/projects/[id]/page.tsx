@@ -6,7 +6,7 @@ import ConfirmSubmit from "@/components/ConfirmSubmit";
 import { Badge, Card, Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { gbp, longDate, shortDateTime } from "@/lib/customers/display";
-import { isOpenProject, minutesText, projectStatusLabel, projectTone, taskStatuses, todayIso } from "@/lib/projects/options";
+import { isOpenProject, minutesText, minutesToHours, projectStatusLabel, projectTone, taskStatuses, todayIso } from "@/lib/projects/options";
 import { createClient } from "@/lib/supabase/server";
 import { addTask, deleteProject, deleteTask, deleteTimeLog, logTime, startTimer, stopTimer, updateTask } from "../actions";
 import TimeForm from "../TimeForm";
@@ -36,7 +36,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
     .maybeSingle();
   if (!project) notFound();
 
-  const [{ data: tasks }, { data: people }, { data: logs }, { data: costRows }, { data: myTimer }] = await Promise.all([
+  const [{ data: tasks }, { data: people }, { data: logs }, { data: costRows }, { data: myTimer }, { data: taskTime }] = await Promise.all([
     supabase.from("project_tasks").select("*, assignee:assignee_id(full_name, email)").eq("project_id", id).order("position"),
     supabase.from("profiles").select("id, full_name, email").eq("is_active", true).order("full_name"),
     supabase
@@ -48,6 +48,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
       .limit(60),
     supabase.rpc("project_time_costs", { p_project_ids: [id] }),
     supabase.from("time_logs").select("id, project_id, started_at, projects(number, name)").eq("user_id", user.id).is("minutes", null).maybeSingle(),
+    supabase.from("time_logs").select("task_id, minutes").eq("project_id", id).not("task_id", "is", null).not("minutes", "is", null).limit(5000),
   ]);
 
   const customer = project.customers as unknown as { id: string; name: string } | null;
@@ -57,6 +58,9 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
   const today = todayIso();
   const open = isOpenProject(project.status);
   const done = (tasks ?? []).filter((t) => t.status === "done").length;
+  const loggedByTask = new Map<string, number>();
+  for (const l of taskTime ?? []) loggedByTask.set(l.task_id as string, (loggedByTask.get(l.task_id as string) ?? 0) + Number(l.minutes));
+  const estimatedTotal = (tasks ?? []).reduce((n, t) => n + (t.estimated_minutes ?? 0), 0);
   const taskTitle = new Map((tasks ?? []).map((t) => [t.id, t.title]));
 
   // Tasks grouped into their stages, in order.
@@ -107,6 +111,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
                 <div key={stage.name} className="mb-5 last:mb-0">
                   <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-fp-mid">
                     {stage.name} · {stage.tasks.filter((t) => t.status === "done").length}/{stage.tasks.length}
+                    {stage.tasks.some((t) => t.estimated_minutes) && ` · ${minutesText(stage.tasks.reduce((n, t) => n + (t.estimated_minutes ?? 0), 0))} estimated`}
                   </h3>
                   <ul className="divide-y divide-fp-border">
                     {stage.tasks.map((t) => {
@@ -118,6 +123,13 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
                             <p className="text-xs text-fp-dark/70">
                               {nameOf(t.assignee as unknown as Person) ?? "Unassigned"}
                               {t.due_date && <span className={overdue ? "font-semibold text-fp-error" : ""}> · due {longDate(t.due_date)}</span>}
+                              {(t.estimated_minutes !== null || loggedByTask.has(t.id)) && (
+                                <span className={(loggedByTask.get(t.id) ?? 0) > (t.estimated_minutes ?? Infinity) ? "font-semibold text-fp-error" : ""}>
+                                  {" "}
+                                  · {minutesText(loggedByTask.get(t.id) ?? 0)}
+                                  {t.estimated_minutes !== null && ` of ${minutesText(t.estimated_minutes)}`}
+                                </span>
+                              )}
                             </p>
                           </div>
                           {canEdit && (
@@ -138,6 +150,16 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
                                     </option>
                                   ))}
                                 </select>
+                                <input
+                                  name="estimate_hours"
+                                  type="number"
+                                  step="0.25"
+                                  min="0"
+                                  defaultValue={minutesToHours(t.estimated_minutes)}
+                                  placeholder="Est. h"
+                                  aria-label="Estimated hours"
+                                  className={`${inputClass} w-20 py-1`}
+                                />
                                 <button type="submit" className={`${secondaryButton} py-1`}>
                                   Save
                                 </button>
@@ -156,7 +178,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
                 </div>
               ))}
               {canEdit && (
-                <form action={addTask.bind(null, id)} className="mt-4 grid gap-3 border-t border-fp-border pt-4 sm:grid-cols-[2fr_1.2fr_1.5fr_1fr_auto] sm:items-end">
+                <form action={addTask.bind(null, id)} className="mt-4 grid gap-3 border-t border-fp-border pt-4 sm:grid-cols-[2fr_1.2fr_1.5fr_1fr_0.8fr_auto] sm:items-end">
                   <label className="grid gap-1 text-sm">
                     <span className="font-semibold">New task</span>
                     <input name="title" required className={inputClass} placeholder="What needs doing?" />
@@ -184,6 +206,10 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
                   <label className="grid gap-1 text-sm">
                     <span className="font-semibold">Due</span>
                     <input name="due_date" type="date" className={inputClass} />
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span className="font-semibold">Est. hours</span>
+                    <input name="estimate_hours" type="number" step="0.25" min="0" className={inputClass} />
                   </label>
                   <button type="submit" className={primaryButton}>
                     Add
@@ -317,6 +343,14 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
                   {totals?.billable_minutes != null && <span className="text-fp-dark/70"> ({minutesText(Number(totals.billable_minutes))} billable)</span>}
                 </dd>
               </div>
+              {estimatedTotal > 0 && (
+                <div>
+                  <dt className="text-fp-dark/70">Estimated time</dt>
+                  <dd className={Number(totals?.minutes ?? 0) > estimatedTotal ? "font-semibold text-fp-error" : ""}>
+                    {minutesText(Number(totals?.minutes ?? 0))} of {minutesText(estimatedTotal)}
+                  </dd>
+                </div>
+              )}
               {totals?.cost != null && (
                 <div>
                   <dt className="text-fp-dark/70">Staff time cost</dt>
