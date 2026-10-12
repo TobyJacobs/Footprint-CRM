@@ -15,6 +15,14 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const uuid = (v: string | null) => (v && UUID_RE.test(v) ? v : null);
 const date = (v: string | null) => (v && isDateIso(v) ? v : null);
 
+// An estimate typed in as hours becomes whole minutes; blank means "no estimate".
+function estimate(fd: FormData, name: string, back: string): number | null {
+  const hours = num(fd, name);
+  if (hours === null) return null;
+  if (hours < 0 || hours > 24 * 30) fail(back, "An estimate must be between 0 and 720 hours");
+  return Math.round(hours * 60);
+}
+
 // Only ever send people back to a page inside Projects & Time.
 const safeBack = (v: string | null, fallback: string) => (v && v.startsWith("/projects") && !v.startsWith("//") ? v : fallback);
 const withFlag = (path: string, flag: string) => `${path}${path.includes("?") ? "&" : "?"}${flag}=1`;
@@ -69,7 +77,7 @@ export async function saveProject(projectId: string | null, fd: FormData) {
     id = data.id as string;
     // Start the project with the template's standard stages and steps.
     if (templateId) {
-      const { data: steps } = await supabase.from("project_template_tasks").select("stage, position, title, due_offset_days").eq("template_id", templateId);
+      const { data: steps } = await supabase.from("project_template_tasks").select("stage, position, title, due_offset_days, estimated_minutes").eq("template_id", templateId);
       const start = fields.start_date ?? new Date().toISOString().slice(0, 10);
       if (steps?.length) {
         await supabase.from("project_tasks").insert(
@@ -78,6 +86,7 @@ export async function saveProject(projectId: string | null, fd: FormData) {
             stage: s.stage,
             position: s.position,
             title: s.title,
+            estimated_minutes: s.estimated_minutes,
             due_date: s.due_offset_days === null ? null : new Date(new Date(`${start}T12:00:00`).getTime() + s.due_offset_days * 86400000).toISOString().slice(0, 10),
           })),
         );
@@ -112,10 +121,11 @@ export async function addTask(projectId: string, fd: FormData) {
     title,
     assignee_id: uuid(str(fd, "assignee_id")),
     due_date: date(str(fd, "due_date")),
+    estimated_minutes: estimate(fd, "estimate_hours", back),
     position: (last?.[0]?.position ?? 0) + 1,
   });
   if (error) fail(back, error.message);
-  revalidatePath(back);
+  revalidatePath("/projects", "layout");
   redirect(`${withFlag(back, "saved")}#tasks`);
 }
 
@@ -129,10 +139,11 @@ export async function updateTask(projectId: string, taskId: string, fd: FormData
     patch.status = status;
   }
   if (fd.has("assignee_id")) patch.assignee_id = uuid(str(fd, "assignee_id"));
+  if (fd.has("estimate_hours")) patch.estimated_minutes = estimate(fd, "estimate_hours", back);
   const supabase = await createClient();
   const { error } = await supabase.from("project_tasks").update(patch).eq("id", taskId).eq("project_id", projectId);
   if (error) fail(back, error.message);
-  revalidatePath(back);
+  revalidatePath("/projects", "layout");
   redirect(`${back}#tasks`);
 }
 
@@ -262,8 +273,19 @@ export async function addTemplateTask(templateId: string, fd: FormData) {
     stage: str(fd, "stage") ?? "General",
     title,
     due_offset_days: int(fd, "due_offset_days"),
+    estimated_minutes: estimate(fd, "estimate_hours", back),
     position: (last?.[0]?.position ?? 0) + 1,
   });
+  if (error) fail(back, error.message);
+  revalidatePath(back);
+  redirect(withFlag(back, "saved"));
+}
+
+export async function setTemplateTaskEstimate(taskId: string, fd: FormData) {
+  await requirePermission("projects", "edit");
+  const back = "/projects/templates";
+  const supabase = await createClient();
+  const { error } = await supabase.from("project_template_tasks").update({ estimated_minutes: estimate(fd, "estimate_hours", back) }).eq("id", taskId);
   if (error) fail(back, error.message);
   revalidatePath(back);
   redirect(withFlag(back, "saved"));

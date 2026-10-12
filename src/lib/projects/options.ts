@@ -60,3 +60,10 @@ export function minutesText(total: number) {
 export function dayLabel(date: string) {
   return new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" }).format(new Date(`${date}T12:00:00`));
 }
+
+// Estimates are typed in as hours (e.g. 1.5) and stored as minutes.
+export const minutesToHours = (m: number | null | undefined) => (m === null || m === undefined ? "" : String(Math.round((m / 60) * 100) / 100));
+
+// The pipeline groups each project by the stage of its first unfinished task.
+export const PIPELINE_NO_TASKS = "No tasks yet";
+export const PIPELINE_ALL_DONE = "All tasks done";
