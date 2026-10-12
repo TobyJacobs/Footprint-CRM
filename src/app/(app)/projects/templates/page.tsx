@@ -65,7 +65,7 @@ export default async function TemplatesPage(props: PageProps<"/projects/template
                               defaultValue={minutesToHours(s.estimated_minutes)}
                               placeholder="–"
                               aria-label={`Estimated hours for ${s.title}`}
-                              className={`${inputClass} w-20 py-1`}
+                              className={`${inputClass} w-20! py-1`}
                             />
                             <span className="text-xs text-fp-mid">h</span>
                             <button type="submit" className="text-xs font-semibold text-fp-teal-deep hover:underline">
