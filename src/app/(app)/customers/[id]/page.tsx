@@ -9,6 +9,7 @@ import { requirePermission } from "@/lib/auth";
 import { address, gbp, longDate, personName, shortDateTime, statusTone, toLocalInput } from "@/lib/customers/display";
 import { activityKinds } from "@/lib/customers/options";
 import { statusLabel as salesStatus, statusToneFor as salesTone, type DocType } from "@/lib/sales/options";
+import { projectStatusLabel, projectTone } from "@/lib/projects/options";
 import { createClient } from "@/lib/supabase/server";
 import { addActivity, deleteActivity, markNotDuplicate } from "../actions";
 import EmailComposer from "../EmailComposer";
@@ -73,6 +74,11 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
       .limit(5),
   ]);
   const emailed = typeof searchParams.emailed === "string" ? searchParams.emailed : null;
+
+  const canSeeProjects = user.can("projects", "view");
+  const { data: customerProjects } = canSeeProjects
+    ? await supabase.from("projects").select("id, name, status, due_date").eq("customer_id", id).order("created_at", { ascending: false }).limit(10)
+    : { data: null };
 
   const canSeeSales = user.can("quotes", "view");
   const { data: salesDocs } = canSeeSales
@@ -427,6 +433,34 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                 <Detail label="Follow up">{shortDateTime(c.follow_up_at)}</Detail>
               </dl>
             </Card>
+
+            {canSeeProjects && (
+              <Card
+                title="Projects"
+                action={
+                  user.can("projects", "edit") ? (
+                    <Link href={`/projects/new?customer=${id}`} className="text-sm font-semibold text-fp-teal-deep hover:underline">
+                      New project
+                    </Link>
+                  ) : undefined
+                }
+              >
+                {(customerProjects ?? []).length === 0 ? (
+                  <p className="text-sm text-fp-dark/70">No projects for this customer yet.</p>
+                ) : (
+                  <ul className="grid gap-2 text-sm">
+                    {(customerProjects ?? []).map((pr) => (
+                      <li key={pr.id} className="flex flex-wrap items-center justify-between gap-2">
+                        <Link href={`/projects/${pr.id}`} className="font-semibold hover:text-fp-pink">
+                          {pr.name}
+                        </Link>
+                        <Badge tone={projectTone(pr.status)}>{projectStatusLabel(pr.status)}</Badge>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Card>
+            )}
 
             <div id="email" className="-mt-4" />
             <Card title="Email this customer">

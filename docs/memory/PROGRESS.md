@@ -447,3 +447,17 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Supabase redirect URLs now include `https://footprintgroupos.netlify.app/**` and `https://*--footprintgroupos.netlify.app/**`. The old footprinthub entries were **removed on 6 October 2026** after the owner confirmed Microsoft sign-in works on the new address. Supabase now lists only localhost and the two footprintgroupos entries.
 - The login page loads on the new address and shows FootprintOS. The owner confirmed a full Microsoft sign-in works there.
 - No Netlify environment variable held the site address, so none needed changing.
+
+## 7 October 2026 - Wave 3: Projects & Time screens built
+
+- The Wave 3 **database** was already built and applied to the test database on 5 October (migration `20261009120000_projects_time.sql`, from branch `wave-3/projects`, now brought into `main`). It has projects (FO- numbers), tasks by stage, templates, time logs with a timer, staff cost rates, and a trigger that makes a project for every new sales order. 18 projects and 180 tasks already existed from back-filling test orders.
+- This release adds the **screens** on that design (owner approved "use the defaults, build it" on 7 October):
+  - `/projects`: list (search, status, group, only mine); new and edit (with optional template); project page with tasks by stage (status, assignee, add, delete), timer start/stop, typed-in time, time log, staff time cost (only for admins, directors and finance), link to the sales order and customer.
+  - `/projects/time`: my weekly timesheet and any running timer.
+  - `/projects/reports`: time by project and person.
+  - `/projects/templates`: edit templates and their steps.
+  - `/projects/rates`: staff cost rates (admins only). The default £25/hour is still a made-up example.
+  - A Projects card on each customer page.
+- Permissions migration `20261018120000_projects_permissions.sql`: Sales and Finance can view and edit; Directors can also delete (delete = correct anyone's time, delete projects).
+- Everyone with Projects access sees all projects and all time logs (that is how the earlier design works). Only your own time can be deleted unless you have delete.
+- Not yet: Zoho Projects import (needs an export), billing from hours, time widgets on dashboards, back-fill of cost rates.
