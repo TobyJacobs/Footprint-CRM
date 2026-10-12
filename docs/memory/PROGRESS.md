@@ -447,3 +447,11 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Supabase redirect URLs now include `https://footprintgroupos.netlify.app/**` and `https://*--footprintgroupos.netlify.app/**`. The old footprinthub entries were **removed on 6 October 2026** after the owner confirmed Microsoft sign-in works on the new address. Supabase now lists only localhost and the two footprintgroupos entries.
 - The login page loads on the new address and shows FootprintOS. The owner confirmed a full Microsoft sign-in works there.
 - No Netlify environment variable held the site address, so none needed changing.
+
+## 7 October 2026 - Wave 3: Projects & Time built (on branch, not yet live)
+
+- Owner said "use the defaults, build it": tasks and hours both, no billing from hours yet, internal projects allowed.
+- Migration `20261018120000_projects_time.sql` (projects, project_tasks, time_entries, audit, row-level security, `is_projects_manager()`, `project_hours()`, starting permissions: Directors/Operations/Sales/Finance view+edit, Directors also delete = manager).
+- Pages under `/projects`: list with filters, new/edit, project page (tasks with status and assignee, log time, hours vs budget), `/projects/time` (my weekly timesheet), `/projects/reports` (managers: hours by project and person). Projects card on the customer page.
+- Time entries are private to the person who logged them; managers see all. Everyone with Projects access sees all projects and tasks.
+- Not yet: migration applied, release, browser click-through, Zoho Projects import (needs an export), billing from hours, dashboards widgets for time.
