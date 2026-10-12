@@ -36,7 +36,8 @@ export default async function ProjectsPage(props: PageProps<"/projects">) {
     if (t.status === "done") c.done += 1;
     taskCount.set(t.project_id, c);
   }
-  const logged = new Map((hours ?? []).map((h: { project_id: string; hours: number }) => [h.project_id, Number(h.hours)]));
+  const logged = new Map<string, number>();
+  for (const h of (hours ?? []) as { project_id: string; hours: number }[]) logged.set(h.project_id, Number(h.hours));
   const today = todayIso();
 
   return (
