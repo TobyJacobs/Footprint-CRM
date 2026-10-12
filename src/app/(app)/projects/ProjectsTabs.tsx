@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export default function ProjectsTabs({ isManager }: { isManager: boolean }) {
+export default function ProjectsTabs({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
+  const other = ["/projects/time", "/projects/reports", "/projects/templates", "/projects/rates"];
   const tabs = [
-    { href: "/projects", label: "Projects", active: pathname === "/projects" || (pathname.startsWith("/projects/") && !pathname.startsWith("/projects/time") && !pathname.startsWith("/projects/reports")) },
+    { href: "/projects", label: "Projects", active: pathname.startsWith("/projects") && !other.some((o) => pathname.startsWith(o)) },
     { href: "/projects/time", label: "My time", active: pathname.startsWith("/projects/time") },
-    ...(isManager ? [{ href: "/projects/reports", label: "Time reports", active: pathname.startsWith("/projects/reports") }] : []),
+    { href: "/projects/reports", label: "Time reports", active: pathname.startsWith("/projects/reports") },
+    { href: "/projects/templates", label: "Templates", active: pathname.startsWith("/projects/templates") },
+    ...(isAdmin ? [{ href: "/projects/rates", label: "Cost rates", active: pathname.startsWith("/projects/rates") }] : []),
   ];
   return (
     <nav aria-label="Projects & Time" className="no-scrollbar flex gap-1 overflow-x-auto border-b border-fp-border bg-white px-6 lg:px-10">

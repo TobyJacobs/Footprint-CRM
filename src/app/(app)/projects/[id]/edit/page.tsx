@@ -25,7 +25,7 @@ export default async function EditProjectPage(props: PageProps<"/projects/[id]/e
   return (
     <>
       <Link href={`/projects/${id}`} className="text-sm font-semibold text-fp-teal-deep hover:underline">
-        ← {project.name}
+        ← {project.number}
       </Link>
       <h2 className="mb-6 mt-3 text-xl font-black">Edit project</h2>
       <Notice searchParams={sp} />
@@ -37,10 +37,10 @@ export default async function EditProjectPage(props: PageProps<"/projects/[id]/e
           customer,
           owner_id: project.owner_id,
           status: project.status,
+          project_group: project.project_group,
           start_date: project.start_date,
           due_date: project.due_date,
-          budget_hours: project.budget_hours === null ? null : Number(project.budget_hours),
-          description: project.description,
+          overview: project.overview,
           sales_order: order?.number ?? null,
         }}
         submitLabel="Save changes"

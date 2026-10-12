@@ -12,7 +12,10 @@ export default async function NewProjectPage(props: PageProps<"/projects/new">) 
   await requirePermission("projects", "edit");
   const sp = await props.searchParams;
   const supabase = await createClient();
-  const { data: people } = await supabase.from("profiles").select("id, full_name, email").eq("is_active", true).order("full_name");
+  const [{ data: people }, { data: templates }] = await Promise.all([
+    supabase.from("profiles").select("id, full_name, email").eq("is_active", true).order("full_name"),
+    supabase.from("project_templates").select("id, name").eq("active", true).order("name"),
+  ]);
 
   // Arriving from a customer's page pre-fills the customer.
   const customerId = typeof sp.customer === "string" ? sp.customer : null;
@@ -30,6 +33,7 @@ export default async function NewProjectPage(props: PageProps<"/projects/new">) 
       <ProjectForm
         action={saveProject.bind(null, null)}
         people={(people ?? []).map((p) => ({ id: p.id, name: p.full_name ?? p.email }))}
+        templates={templates ?? []}
         values={{ customer: customer ? { id: customer.id, name: customer.name } : null }}
         submitLabel="Create project"
       />

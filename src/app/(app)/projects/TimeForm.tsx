@@ -6,7 +6,8 @@ import { inputClass, primaryButton } from "@/components/ui";
 type Project = { id: string; name: string };
 type Task = { id: string; project_id: string; title: string };
 
-// Log hours: pick a project (the task list follows it), the day, the hours.
+// Type in time already worked: pick a project (the task list follows it), the
+// day and the hours.
 export default function TimeForm({
   action,
   projects,
@@ -23,6 +24,7 @@ export default function TimeForm({
   back: string;
 }) {
   const [projectId, setProjectId] = useState(defaultProjectId ?? "");
+  const [billable, setBillable] = useState(true);
   const projectTasks = tasks.filter((t) => t.project_id === projectId);
   return (
     <form action={action} className="grid gap-3 sm:grid-cols-[2fr_2fr_1fr_1fr] sm:items-end">
@@ -51,15 +53,20 @@ export default function TimeForm({
       </label>
       <label className="grid gap-1 text-sm">
         <span className="font-semibold">Day</span>
-        <input name="work_date" type="date" required defaultValue={defaultDate} className={inputClass} />
+        <input name="log_date" type="date" required defaultValue={defaultDate} className={inputClass} />
       </label>
       <label className="grid gap-1 text-sm">
         <span className="font-semibold">Hours</span>
         <input name="hours" type="number" step="0.25" min="0.25" max="24" required placeholder="1.5" className={inputClass} />
       </label>
-      <label className="grid gap-1 text-sm sm:col-span-3">
+      <label className="grid gap-1 text-sm sm:col-span-2">
         <span className="font-semibold">Notes (optional)</span>
         <input name="notes" className={inputClass} placeholder="What did you do?" />
+      </label>
+      <label className="flex items-center gap-2 pb-2 text-sm">
+        <input type="checkbox" checked={billable} onChange={(e) => setBillable(e.target.checked)} className="accent-fp-pink" />
+        <input type="hidden" name="billable" value={billable ? "yes" : "no"} />
+        Billable
       </label>
       <div>
         <button type="submit" className={`${primaryButton} w-full`}>
