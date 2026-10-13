@@ -134,6 +134,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
                           </div>
                           {canEdit && (
                             <div className="flex flex-wrap items-center gap-2">
+                              {/* inputClass sets w-full, so the small widths below need the ! to win */}
                               <form action={updateTask.bind(null, id, t.id)} className="flex items-center gap-2">
                                 <select name="status" defaultValue={t.status} className={`${inputClass} w-auto! py-1`} aria-label="Task status">
                                   {taskStatuses.map((s) => (
