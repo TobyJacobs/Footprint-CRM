@@ -499,12 +499,12 @@ export async function activateStaff(directoryId: string, back: string) {
     const first = (invite.name ?? "").split(" ")[0];
     const { data: settings } = await supabase.from("company_settings").select("company_name").single();
     const company = settings?.company_name ?? "Footprint Group";
-    const message = `${first ? `Hi ${first},` : "Hello,"}\n\n${me.fullName ?? "An admin"} has set you up on the ${company} platform, where we run quotes, invoices, customers and more.\n\nUse the button below and sign in with your usual Microsoft work account.`;
+    const message = `${first ? `Hi ${first},` : "Hello,"}\n\n${me.fullName ?? "An admin"} has set you up on FootprintOS, where we run quotes, invoices, customers and more.\n\nUse the button below and sign in with your usual Microsoft work account.`;
     const result = await sendEmail({
       to: invite.email,
-      subject: `You're invited to the ${company} platform`,
+      subject: "You're invited to FootprintOS",
       text: `${message}\n\nSign in: ${link}`,
-      html: brandedHtml({ text: message, buttonLabel: "Sign in to the platform", buttonUrl: link, companyName: company }),
+      html: brandedHtml({ text: message, buttonLabel: "Sign in to FootprintOS", buttonUrl: link, companyName: company }),
       tag: "staff-invite",
     });
     status = result.ok ? (isEmailTestMode() ? "test" : "sent") : "failed";
