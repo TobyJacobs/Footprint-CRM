@@ -117,7 +117,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
                     {stage.tasks.map((t) => {
                       const overdue = t.due_date && t.due_date < today && t.status !== "done";
                       return (
-                        <li key={t.id} className="grid gap-2 py-2 sm:grid-cols-[1fr_auto] sm:items-center">
+                        <li key={t.id} className="grid gap-2 py-2">
                           <div>
                             <p className={`text-sm font-semibold ${t.status === "done" ? "text-fp-mid line-through" : ""}`}>{t.title}</p>
                             <p className="text-xs text-fp-dark/70">
@@ -134,15 +134,16 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
                           </div>
                           {canEdit && (
                             <div className="flex flex-wrap items-center gap-2">
+                              {/* inputClass sets w-full, so the small widths below need the ! to win */}
                               <form action={updateTask.bind(null, id, t.id)} className="flex items-center gap-2">
-                                <select name="status" defaultValue={t.status} className={`${inputClass} w-auto py-1`} aria-label="Task status">
+                                <select name="status" defaultValue={t.status} className={`${inputClass} w-auto! py-1`} aria-label="Task status">
                                   {taskStatuses.map((s) => (
                                     <option key={s.value} value={s.value}>
                                       {s.label}
                                     </option>
                                   ))}
                                 </select>
-                                <select name="assignee_id" defaultValue={t.assignee_id ?? ""} className={`${inputClass} w-auto py-1`} aria-label="Assigned to">
+                                <select name="assignee_id" defaultValue={t.assignee_id ?? ""} className={`${inputClass} w-auto! py-1`} aria-label="Assigned to">
                                   <option value="">Unassigned</option>
                                   {(people ?? []).map((p) => (
                                     <option key={p.id} value={p.id}>
@@ -158,7 +159,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
                                   defaultValue={minutesToHours(t.estimated_minutes)}
                                   placeholder="Est. h"
                                   aria-label="Estimated hours"
-                                  className={`${inputClass} w-20 py-1`}
+                                  className={`${inputClass} w-20! py-1`}
                                 />
                                 <button type="submit" className={`${secondaryButton} py-1`}>
                                   Save
