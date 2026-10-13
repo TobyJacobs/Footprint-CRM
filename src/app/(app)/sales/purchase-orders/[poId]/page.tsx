@@ -8,7 +8,7 @@ import { requirePermission } from "@/lib/auth";
 import { gbp, longDate, shortDateTime } from "@/lib/customers/display";
 import { getPurchaseOrderLines } from "@/lib/sales/data";
 import { poStatusLabel, statusToneFor } from "@/lib/sales/options";
-import { isEmailConfigured, isEmailTestMode } from "@/lib/email/postmark";
+import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import { createClient } from "@/lib/supabase/server";
 import { deletePurchaseOrder, setPurchaseOrderStatus } from "../actions";
 import { sendPurchaseOrderEmail } from "../email-actions";
@@ -159,12 +159,12 @@ ${company}`;
         <div className="mt-6">
           <Card title="Place order with supplier">
             {!isEmailConfigured() ? (
-              <p className="text-sm text-fp-dark/75">Email isn&apos;t switched on yet. Once Postmark is set up, you&apos;ll be able to email orders from here.</p>
+              <p className="text-sm text-fp-dark/75">Email isn&apos;t switched on yet. Once SendGrid is set up, you&apos;ll be able to email orders from here.</p>
             ) : (
               <form action={sendPurchaseOrderEmail.bind(null, poId)} className="grid gap-3">
                 {isEmailTestMode() && (
                   <p className="rounded-md bg-fp-amber/15 px-3 py-2 text-xs">
-                    Test mode: emails are accepted by Postmark but <strong>not delivered</strong>.
+                    Test mode: emails are accepted by SendGrid but <strong>not delivered</strong>.
                   </p>
                 )}
                 <Field label="To">

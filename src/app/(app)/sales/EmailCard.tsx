@@ -1,6 +1,6 @@
 import { Mail, RotateCw } from "lucide-react";
 import { Badge, Card, Field, inputClass, primaryButton, secondaryButton } from "@/components/ui";
-import { isEmailConfigured, isEmailTestMode } from "@/lib/email/postmark";
+import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import { shortDateTime } from "@/lib/customers/display";
 import { docTypes, type DocType } from "@/lib/sales/options";
 import { sendDocumentEmail } from "./email-actions";
@@ -53,13 +53,13 @@ export default function EmailCard({
     <Card title="Email to customer">
       {!configured ? (
         <p className="text-sm text-fp-dark/75">
-          Email isn&apos;t switched on yet. Once Postmark is set up, you&apos;ll be able to send {label.toLowerCase()}s from here.
+          Email isn&apos;t switched on yet. Once SendGrid is set up, you&apos;ll be able to send {label.toLowerCase()}s from here.
         </p>
       ) : (
         <div className="grid gap-3">
           {isEmailTestMode() && (
             <p className="rounded-md bg-fp-amber/15 px-3 py-2 text-xs">
-              Test mode: emails are accepted by Postmark but <strong>not delivered</strong>.
+              Test mode: emails are accepted by SendGrid but <strong>not delivered</strong>.
             </p>
           )}
 

@@ -467,5 +467,9 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Owner asked for the Projects section to work like a pipeline, with an estimated time on every task ("for now").
 - `/projects` now opens on a **Pipeline** board (a List view is one click away). Each project sits in the column for the stage of its first unfinished task; "No tasks yet" comes first and "All tasks done" last. Inside a column the most urgent job is first: overdue, then soonest due. Cards show the next task, due date, progress, and time logged against the estimate (red when over).
 - Estimates: migration `20261019120000_task_estimates.sql` adds `estimated_minutes` to tasks and template steps; new projects copy the estimate from their template. Typed in as hours on the project page and the templates page. Project page shows logged vs estimated per task, per stage and for the project.
-- Applied to the test database on 12 October. Not yet applied to the live London database (apply with the next release). Not yet clicked through in a browser (needs a Microsoft sign-in).
+- Applied to the test database on 12 October. Also applied to the live London database on 12 October, with my estimates for all 29 template steps. Not yet clicked through in a browser (needs a Microsoft sign-in).
 - Not built: timers that start by themselves (would record hours nobody worked); a "My work" list across projects (offered).
+
+## 13 October 2026 - Switched email from Postmark to SendGrid (SENDGRID_API_KEY saved in Netlify; staff invites are the first use)
+
+- Code swapped (`src/lib/email/sendgrid.ts`), wording updated, `.env.example` updated. Build/type-check/lint run before release. Not tested with a real send: needs the SendGrid key and a verified sender first (see DECISIONS.md).
