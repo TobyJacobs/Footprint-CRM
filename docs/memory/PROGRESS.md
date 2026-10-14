@@ -473,3 +473,9 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 ## 13 October 2026 - Switched email from Postmark to SendGrid (SENDGRID_API_KEY saved in Netlify; staff invites are the first use)
 
 - Code swapped (`src/lib/email/sendgrid.ts`), wording updated, `.env.example` updated. Build/type-check/lint run before release. Not tested with a real send: needs the SendGrid key and a verified sender first (see DECISIONS.md).
+
+## 14 October 2026 - Fixed first-time sign-in failing for activated staff
+
+- The first colleague to use an invite link saw "Microsoft sign-in couldn't be completed" (Supabase said "Database error saving new user"). Cause: in `handle_new_user()` (from `20261014120000_staff_activation.sql`) a variable named `activated` clashed with the `staff_directory.activated` column, so Postgres rejected the UPDATE. It only showed up for new users after activation was introduced (the first admin signed in before it).
+- Fix: migration `20261020120000_fix_new_user_trigger.sql` renames the variable to `v_activated`. Applied and checked on both the test database and the live London database on 14 October 2026. The migration file is on branch `notes/fix-new-user-trigger` and will go into `main` with the next release.
+- The failed sign-in rolled back completely, so nothing was half-created: the person's invite link still works, they just try again.
