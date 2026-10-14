@@ -4,6 +4,12 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 14 October 2026: Roadmap check
+- The Claude app is now on a different Claude account. Checked that the project itself (code, GitHub, commit identity) is unchanged.
+- Read the roadmap on both Supabase projects (read only). Found that the live London database exists, and that the live roadmap was out of date.
+- The owner confirmed SendGrid works (a real invite reached a colleague).
+- Auto mode blocked writing to Live. The owner switched to Ask permissions, and Claude then tidied the live roadmap: 7 tasks ticked, Postmark renamed to SendGrid, Wave 3 off hold. Verified.
+
 ## 1 October 2026 — Session 3 (continued): Wave 2a
 - Read Zoho Books settings (numbering, VAT, custom fields; no records) and wrote `docs/discovery/ZOHO-BOOKS.md`.
 - The owner chose: core flow first (2a/2b/2c), secure-link approval, and keep-and-tidy custom fields.

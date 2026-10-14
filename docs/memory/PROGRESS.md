@@ -473,3 +473,13 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 ## 13 October 2026 - Switched email from Postmark to SendGrid (SENDGRID_API_KEY saved in Netlify; staff invites are the first use)
 
 - Code swapped (`src/lib/email/sendgrid.ts`), wording updated, `.env.example` updated. Build/type-check/lint run before release. Not tested with a real send: needs the SendGrid key and a verified sender first (see DECISIONS.md).
+- **14 October 2026: SendGrid confirmed working.** The owner set it up, sent a real invite to a colleague, and the colleague received it and can sign in to FootprintOS.
+
+## 14 October 2026 - Roadmap check and tidy-up
+
+- The owner's Claude app is now signed in as a different Claude account (personal iCloud). The project, GitHub, Netlify and Supabase are unaffected. The owner's Chrome (Claude in Chrome) is connected to this account.
+- Supabase organisation "Footprint Group - CRM" (Pro plan) has two projects: **FootprintOS - Live** (London, eu-west-2, ref `khjcplhuenureeobvzqo`) and **Footprint Platform – Test** (Frankfurt, ref `ifspqkcdatruybgzygic`). The live roadmap is on the Live project. Earlier notes said the live database was "on hold"; it does exist (creation date not recorded in these notes).
+- Live roadmap: no approved requests. The test database has a joke request ("i want beers"), ignored.
+- Live roadmap tidied (done by Claude with the owner's approval, read back and verified): renamed the Postmark task to SendGrid; ticked off the platform name, the four Projects screen tasks, the live database and SendGrid emails; took Wave 3 off hold.
+- Claude Code's **Auto mode** blocks Claude from writing to the live database. Use **Ask permissions** mode for live SQL: the owner approves each change on a prompt.
+- Still open after the tidy-up: Zoho Projects import, profit after time, daily Microsoft 365 sync key, job titles for automatic roles, real targets and commission, GoCardless, Xero sync, Waves 4–8, go-live tasks.
