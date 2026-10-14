@@ -9,6 +9,7 @@ One short entry per session. Newest at the top.
 - Read the roadmap on both Supabase projects (read only). Found that the live London database exists, and that the live roadmap was out of date.
 - The owner confirmed SendGrid works (a real invite reached a colleague).
 - Auto mode blocked writing to Live. The owner switched to Ask permissions, and Claude then tidied the live roadmap: 7 tasks ticked, Postmark renamed to SendGrid, Wave 3 off hold. Verified.
+- Found that the live website still uses the test database, and that the daily Microsoft 365 sync has run every day since 7 October. Tidied the roadmap on the test database too (the one the app shows) and ticked off the daily sync.
 
 ## 1 October 2026 — Session 3 (continued): Wave 2a
 - Read Zoho Books settings (numbering, VAT, custom fields; no records) and wrote `docs/discovery/ZOHO-BOOKS.md`.
