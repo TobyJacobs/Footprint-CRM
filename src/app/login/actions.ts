@@ -7,7 +7,9 @@ import { createClient } from "@/lib/supabase/server";
 // Only allow returning to a page on this site after sign-in.
 function safeNext(next: FormDataEntryValue | null): string {
   const value = typeof next === "string" ? next : "/";
-  return value.startsWith("/") && !value.startsWith("//") ? value : "/";
+  // Browsers treat "/\site" like "//site" (another website), so refuse
+  // backslashes and hidden control characters as well.
+  return /^\/(?![\/\\])/.test(value) && !/[\\\x00-\x1f]/.test(value) ? value : "/";
 }
 
 export async function signInWithMicrosoft(formData: FormData) {

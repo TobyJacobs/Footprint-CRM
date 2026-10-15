@@ -174,7 +174,8 @@ export async function queryRequest(requestId: string, fd: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.from("feedback_comments").insert({ request_id: requestId, body: question });
   if (error) fail(REVIEW, error.message);
-  await supabase.from("feedback_requests").update({ status: "query" }).eq("id", requestId);
+  const { error: statusError } = await supabase.from("feedback_requests").update({ status: "query" }).eq("id", requestId);
+  if (statusError) fail(REVIEW, statusError.message);
   done(REVIEW);
 }
 

@@ -380,8 +380,9 @@ async function upsertTarget(userId: string | null, metric: string, value: number
   existing = month ? existing.eq("month", month) : existing.is("month", null);
   const { data: row } = await existing.maybeSingle();
   if (value === null) {
-    if (row) await supabase.from("monthly_targets").delete().eq("id", row.id);
-    return null;
+    if (!row) return null;
+    const { error } = await supabase.from("monthly_targets").delete().eq("id", row.id);
+    return error;
   }
   const { error } = row
     ? await supabase.from("monthly_targets").update({ amount: value, is_example: false }).eq("id", row.id)

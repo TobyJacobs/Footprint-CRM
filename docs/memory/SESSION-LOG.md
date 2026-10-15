@@ -7,7 +7,7 @@ One short entry per session. Newest at the top.
 ## 15 October 2026: Repository health check (cloud session)
 - Checked build, type-check, lint and package security on `main`: all clean, no known vulnerabilities.
 - Reviewed the code for obvious bugs and the memory files for out-of-date notes.
-- Fixed small, safe problems only, in one pull request (branch `claude/charming-lovelace-5i9y13`). Bigger issues are listed in that pull request for the owner to choose from. Nothing merged, deployed or changed in any database.
+- Fixed small, safe problems only, in one pull request (branch `claude/charming-lovelace-5i9y13`): emails to two or more addresses failed; the after-login redirect could be steered to another website; four places ignored database errors (GDPR export logging, template steps on new projects, deleting a target, marking a request as a query); memory files brought up to date. Bigger issues are listed in that pull request for the owner to choose from. Nothing merged, deployed or changed in any database.
 - Note: sessions between 2 and 13 October 2026 have no entry here; their work is recorded, dated, in `PROGRESS.md`.
 
 ## 15 October 2026: Marketing, Dashboards, speed and health-check fixes

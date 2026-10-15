@@ -7,7 +7,9 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  // Browsers treat "/\site" like "//site" (another website), so refuse
+  // backslashes and hidden control characters as well.
+  const safeNext = /^\/(?![\/\\])/.test(next) && !/[\\\x00-\x1f]/.test(next) ? next : "/";
 
   if (code) {
     const supabase = await createClient();
