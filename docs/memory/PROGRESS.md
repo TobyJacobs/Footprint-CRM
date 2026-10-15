@@ -1,11 +1,13 @@
 # Progress — where we are right now
 
-_Last updated: 1 October 2026_
+_Last updated: 15 October 2026_
 
 ## Current stage
-**Wave 1 — Customers: built and LIVE for the demo** (PR [TobyJacobs/Footprint-CRM#3](https://github.com/TobyJacobs/Footprint-CRM/pull/3) merged as `e5276cf`, 1 October 2026). It's on footprinthub.netlify.app, using the **test database with made-up data only**. The owner will show it to their director.
+**Waves 0, 1, 2 (2a/2b/2c) and the Wave 3 building work are LIVE** on https://footprintgroupos.netlify.app, along with the Marketing workspace, Dashboards, profit after time and the 15 October 2026 health-check fixes. The live site still uses the **test database** (Frankfurt); the move to the London database, every Zoho import and the switch-offs all sit in the final Go-live stage.
 
-Still to do for Wave 1: the Zoho import tool (built against made-up Zoho-format files). The real import and nightly sync wait for the final cut-over.
+Open right now: PR [TobyJacobs/Footprint-CRM#32](https://github.com/TobyJacobs/Footprint-CRM/pull/32) (Staff hub one-pass fix), waiting for the owner's merge. For what's next, see **"Next (as of 15 October 2026)"** at the bottom of this file. The sections in between are a dated history, oldest first.
+
+_Earlier snapshot (1 October 2026): Wave 1 — Customers went live for the demo (PR [TobyJacobs/Footprint-CRM#3](https://github.com/TobyJacobs/Footprint-CRM/pull/3), `e5276cf`)._
 
 ## Done
 - Planning (Session 1):
@@ -151,13 +153,13 @@ Still to do for Wave 1: the Zoho import tool (built against made-up Zoho-format 
     - the public approval page `/q/[token]`
   - Tested end to end on localhost: QT-009972 created (£340.80, GP £179), marked sent, accepted anonymously with a PO and note, converted to SO-010913 (PO carried over), then INV-074891 (due in 30 days) → Issued → Paid. Issued invoices can't be deleted. The print layout was checked.
 
-## Next
+## Next (as of 1 October 2026; superseded, kept for history — see "Next (as of 15 October 2026)" at the bottom)
 1. **Finish Wave 1:**
    - the **Zoho import tool**: map the Zoho export to our tables; never import third-party passwords; skip legacy fields
    - the one-way nightly Zoho → platform copy (needs a Zoho API connection; its secret is set by the owner)
 2. **ON HOLD (owner, 1 October 2026):** the live London database, the real Zoho import, the nightly sync and switching off old tools. These wait until the owner has shown the project to their director, and until the final wave. Keep building on the test database with made-up data only.
 3. Open a pull request for `wave-1/customers` so the owner can check it on the preview.
-2. Before any real customer data goes in:
+4. Before any real customer data goes in:
    - create the **live London Supabase project** (Pro plan, owner approval)
    - point Netlify production at it
    - run the first **backup restore test** (see the runbook)
@@ -166,8 +168,9 @@ Still to do for Wave 1: the Zoho import tool (built against made-up Zoho-format 
 - Official logo files, ideally SVG (optional; the website logo is in use).
 
 ## Key IDs (not secret)
-- Netlify site: `footprinthub` → https://footprinthub.netlify.app
-- Supabase test project ref: `ifspqkcdatruybgzygic`
+- Netlify site: `footprintgroupos` → https://footprintgroupos.netlify.app (renamed from `footprinthub` on 6 October 2026; the old address no longer works)
+- Supabase test project ref: `ifspqkcdatruybgzygic` (Frankfurt; the live site uses this one for now)
+- Supabase live project ref: `khjcplhuenureeobvzqo` (London, "FootprintOS - Live"; nothing uses it yet)
 - Entra app (client) ID: `40bb9fdf-798e-4644-a888-b0e2e788f495`
 - Tenant ID: `b2165b1f-511b-4829-a947-40cc1fbbb769`
 
@@ -177,7 +180,7 @@ Git Credential Manager holds the owner's GitHub sign-in, so **Claude pushes auto
 ## Local running
 The dev server runs from the Claude desktop preview (`.claude/launch.json` in `Documents\claude`) at http://localhost:3000.
 
-## Director's improvements list (received 2 October 2026, not yet started)
+## Director's improvements list (received 2 October 2026; since built, see the sections below)
 1. New staff with a Footprint email get access automatically.
 2. Staff roles assigned automatically from their job role in Microsoft Entra.
 3. "Resend" buttons on quotes and invoices.
