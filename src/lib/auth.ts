@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -19,7 +20,16 @@ export type CurrentUser = {
   dashboards: string[];
   // False for people who may only see their own quotes, orders and invoices.
   seesAllSales: boolean;
+  // Set while an admin is previewing the app as one role (see PREVIEW_COOKIE).
+  previewRole: { id: string; name: string } | null;
 };
+
+// An admin can preview the app as a role: menus, pages, tabs and buttons
+// follow that role's permissions. Only honoured for real admins, so it can
+// only ever take access away. Records aren't filtered (the database still
+// sees the admin), which the preview banner explains.
+export const PREVIEW_COOKIE = "fp_preview_role";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // The one place that works out who is signed in and what they may do.
 // Cached so it runs once per request however many components call it.
@@ -50,10 +60,30 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
 
   if (!profile || !profile.is_active) redirect("/login?error=inactive");
 
-  const granted = new Set(
+  let granted = new Set(
     (perms ?? []).map((p: { feature: string; action: string }) => `${p.feature}:${p.action}`),
   );
-  const isAdmin = profile.is_admin;
+  let isAdmin = profile.is_admin;
+  let myDashboards = (dashboards as string[] | null) ?? [];
+  let seesAllSales = isAdmin || seesAll === true;
+  let previewRole: CurrentUser["previewRole"] = null;
+
+  // Admin previewing as a role: use that role's permissions instead.
+  const previewId = profile.is_admin ? (await cookies()).get(PREVIEW_COOKIE)?.value : undefined;
+  if (previewId && UUID_RE.test(previewId)) {
+    const [{ data: role }, { data: rolePerms }] = await Promise.all([
+      supabase.from("roles").select("id, name, dashboard, own_records_only").eq("id", previewId).maybeSingle(),
+      supabase.from("role_permissions").select("feature, action").eq("role_id", previewId),
+    ]);
+    if (role) {
+      granted = new Set((rolePerms ?? []).map((p) => `${p.feature}:${p.action}`));
+      isAdmin = false;
+      myDashboards = role.dashboard ? [role.dashboard] : [];
+      seesAllSales = granted.has("quotes:view") && !role.own_records_only;
+      previewRole = { id: role.id, name: role.name };
+    }
+  }
+
   const can = (feature: string, action: Action) =>
     isAdmin || granted.has(`${feature}:${action}`);
 
@@ -66,8 +96,9 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
     visibleFeatureKeys: features
       .filter((f) => (f.key === "admin" ? isAdmin : can(f.key, "view")))
       .map((f) => f.key),
-    dashboards: (dashboards as string[] | null) ?? [],
-    seesAllSales: isAdmin || seesAll === true,
+    dashboards: myDashboards,
+    seesAllSales,
+    previewRole,
   };
 });
 

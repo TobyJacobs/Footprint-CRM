@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import { Notice, dangerButton } from "@/components/ui";
 import { getCurrentUser, requirePermission } from "@/lib/auth";
-import { shortDateTime } from "@/lib/customers/display";
+import { longDate, shortDateTime } from "@/lib/customers/display";
+import { contentStatusLabel } from "@/lib/marketing/options";
+import ReadOnlyDetails from "../../ReadOnlyDetails";
 import { createClient } from "@/lib/supabase/server";
 import { deleteContent, saveContent } from "../../actions";
 import ContentForm from "../ContentForm";
@@ -12,8 +14,10 @@ import ContentForm from "../ContentForm";
 export const metadata: Metadata = { title: "Content" };
 
 export default async function ContentItemPage(props: PageProps<"/marketing/content/[id]">) {
-  await requirePermission("marketing", "edit");
+  // Anyone who can see Marketing can open an item; only editors get the form.
+  await requirePermission("marketing", "view");
   const user = await getCurrentUser();
+  const canEdit = user.can("marketing", "edit");
   const { id } = await props.params;
   const sp = await props.searchParams;
   const supabase = await createClient();
@@ -40,13 +44,27 @@ export default async function ContentItemPage(props: PageProps<"/marketing/conte
       <div className="mt-4">
         <Notice searchParams={sp} />
       </div>
-      <ContentForm
-        action={saveContent.bind(null, item.id)}
-        people={(people ?? []).map((p) => ({ id: p.id, name: p.full_name ?? p.email }))}
-        values={{ ...item, customer }}
-        back={back}
-        submitLabel="Save changes"
-      />
+      {canEdit ? (
+        <ContentForm
+          action={saveContent.bind(null, item.id)}
+          people={(people ?? []).map((p) => ({ id: p.id, name: p.full_name ?? p.email }))}
+          values={{ ...item, customer }}
+          back={back}
+          submitLabel="Save changes"
+        />
+      ) : (
+        <ReadOnlyDetails
+          rows={[
+            ["Client", customer?.name ?? "Footprint"],
+            ["Channel", item.channel],
+            ["Status", contentStatusLabel(item.status)],
+            ["Publish date", item.publish_date ? longDate(item.publish_date) : "No date yet"],
+            ["Who's doing it", (people ?? []).find((p) => p.id === item.assignee_id)?.full_name ?? "Nobody yet"],
+            ["Link", item.link],
+            ["Notes", item.notes],
+          ]}
+        />
+      )}
       {user.can("marketing", "delete") && (
         <form action={deleteContent.bind(null, item.id)} className="mt-6">
           <ConfirmSubmit message="Delete this content from the calendar?" className={dangerButton}>

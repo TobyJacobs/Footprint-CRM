@@ -28,7 +28,46 @@ const tableLabels: Record<string, string> = {
   purchase_order_lines: "Purchase order lines",
   recurring_invoices: "Recurring invoices",
   recurring_invoice_lines: "Recurring invoice lines",
+  projects: "Projects",
+  project_tasks: "Project tasks",
+  time_logs: "Time logs",
+  project_templates: "Project templates",
+  content_items: "Content calendar",
+  ad_campaigns: "Ad campaigns",
+  staff_directory: "Microsoft 365 staff",
+  job_role_rules: "Job title rules",
+  email_templates: "Email templates",
+  monthly_targets: "Targets",
+  commission_rules: "Commission rules",
+  role_cost_rates: "Cost rates",
+  roadmap_tasks: "Roadmap tasks",
+  roadmap_waves: "Roadmap stages",
+  feedback_requests: "Requests",
+  sales_accounts: "Sales accounts",
 };
+
+// Bookkeeping columns that only add noise to the log.
+const HIDDEN = new Set(["id", "updated_at", "updated_by", "created_at", "created_by", "search", "position"]);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// "customer_id" → "Customer", "due_date" → "Due date".
+const fieldLabel = (k: string) => {
+  const s = k.replace(/_id$/, "").replace(/_/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
+
+// A value as a person would say it: names for people, Yes/No, "empty", short text.
+function show(v: unknown, people: Map<string, string>): string {
+  if (v === null || v === undefined || v === "") return "empty";
+  if (typeof v === "boolean") return v ? "Yes" : "No";
+  if (typeof v === "string") {
+    if (UUID_RE.test(v)) return people.get(v) ?? "a linked record";
+    if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return new Date(v).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/London" });
+    return v.length > 60 ? `“${v.slice(0, 57)}…”` : `“${v}”`;
+  }
+  if (typeof v === "number") return String(v);
+  return Array.isArray(v) ? `${v.length} item${v.length === 1 ? "" : "s"}` : "details";
+}
 
 const actionLabels: Record<string, string> = {
   insert: "Added",
@@ -38,26 +77,36 @@ const actionLabels: Record<string, string> = {
   gdpr_erase: "GDPR erasure",
 };
 
-// Shows what changed on an update, or the record itself otherwise.
-function describe(entry: {
-  action: string;
-  old_data: Record<string, unknown> | null;
-  new_data: Record<string, unknown> | null;
-  record: Record<string, unknown> | null;
-}) {
-  if (entry.record?.redacted) return "Details removed (GDPR erasure)";
-  if (entry.action === "gdpr_export") return "Personal data exported for a subject access request";
-  if (entry.action === "gdpr_erase") return "Personal data erased on request";
+// Shows what changed on an update (one line per field), or which record was
+// added or removed, in plain words.
+function describe(
+  entry: {
+    action: string;
+    old_data: Record<string, unknown> | null;
+    new_data: Record<string, unknown> | null;
+    record: Record<string, unknown> | null;
+  },
+  people: Map<string, string>,
+): string[] {
+  if (entry.record?.redacted) return ["Details removed (GDPR erasure)"];
+  if (entry.action === "gdpr_export") return ["Personal data exported for a subject access request"];
+  if (entry.action === "gdpr_erase") return ["Personal data erased on request"];
   if (entry.action === "update" && entry.old_data && entry.new_data) {
     const changes = Object.keys(entry.new_data)
-      .filter((k) => k !== "updated_at")
+      .filter((k) => !HIDDEN.has(k))
       .filter((k) => JSON.stringify(entry.old_data![k]) !== JSON.stringify(entry.new_data![k]))
-      .map((k) => `${k}: ${JSON.stringify(entry.old_data![k])} → ${JSON.stringify(entry.new_data![k])}`);
-    return changes.join("; ") || "No visible change";
+      .map((k) => `${fieldLabel(k)}: ${show(entry.old_data![k], people)} → ${show(entry.new_data![k], people)}`);
+    return changes.length ? changes : ["No visible change"];
   }
   const r = entry.record ?? {};
-  const label = r.name ?? r.email ?? (r.feature ? `${r.feature}: ${r.action}` : null);
-  return label ? String(label) : JSON.stringify(r);
+  const name = r.name ?? r.title ?? r.number ?? r.email ?? r.full_name ?? (r.feature ? `${r.feature}: ${r.action}` : null);
+  if (name) return [String(name)];
+  // No obvious name: show the first few meaningful fields.
+  const parts = Object.keys(r)
+    .filter((k) => !HIDDEN.has(k) && r[k] !== null && r[k] !== "")
+    .slice(0, 3)
+    .map((k) => `${fieldLabel(k)}: ${show(r[k], people)}`);
+  return parts.length ? [parts.join(" · ")] : ["—"];
 }
 
 export default async function AuditPage(props: PageProps<"/admin/audit">) {
@@ -72,7 +121,8 @@ export default async function AuditPage(props: PageProps<"/admin/audit">) {
     .order("at", { ascending: false })
     .limit(200);
   if (filter) query = query.eq("table_name", filter);
-  const { data: entries } = await query;
+  const [{ data: entries }, { data: profiles }] = await Promise.all([query, supabase.from("profiles").select("id, full_name, email")]);
+  const people = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? (p.email as string)]));
 
   const time = new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
@@ -118,7 +168,15 @@ export default async function AuditPage(props: PageProps<"/admin/audit">) {
                 <td className="whitespace-nowrap py-3 pr-4">
                   {actionLabels[e.action] ?? e.action} · {tableLabels[e.table_name] ?? e.table_name}
                 </td>
-                <td className="break-all py-3 text-fp-dark/80">{describe(e)}</td>
+                <td className="py-3 text-fp-dark/80">
+                  <ul className="grid gap-0.5">
+                    {describe(e, people).map((line, i) => (
+                      <li key={i} className="break-words">
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                </td>
               </tr>
             ))}
             {(entries ?? []).length === 0 && (

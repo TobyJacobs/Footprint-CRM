@@ -61,17 +61,30 @@ export function recentMonths(count: number): Month[] {
   });
 }
 
-export async function getTeamStats(month: Month): Promise<OwnerStats[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("team_month_stats", { p_from: month.from, p_to: month.to });
-  if (error) throw new Error(`Couldn't load figures: ${error.message}`);
-  return ((data ?? []) as OwnerStats[]).map((o) => {
+const toOwnerStats = (rows: unknown) =>
+  ((rows ?? []) as OwnerStats[]).map((o) => {
     const out = { ...o };
     for (const k of Object.keys(out) as (keyof OwnerStats)[]) {
       if (k !== "owner_id" && k !== "name") (out[k] as number) = Number(out[k]);
     }
     return out;
   });
+
+export async function getTeamStats(month: Month): Promise<OwnerStats[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("team_month_stats", { p_from: month.from, p_to: month.to });
+  if (error) throw new Error(`Couldn't load figures: ${error.message}`);
+  return toOwnerStats(data);
+}
+
+// Several months' figures in one trip to the database, keyed by month ("2026-10").
+export async function getTeamStatsForMonths(months: Month[]): Promise<Map<string, OwnerStats[]>> {
+  const supabase = await createClient();
+  const unique = [...new Map(months.map((m) => [m.key, { key: m.key, from: m.from, to: m.to }])).values()];
+  const { data, error } = await supabase.rpc("team_stats_history", { p_ranges: unique });
+  if (error) throw new Error(`Couldn't load figures: ${error.message}`);
+  const byMonth = (data ?? {}) as Record<string, unknown>;
+  return new Map(unique.map((m) => [m.key, toOwnerStats(byMonth[m.key])]));
 }
 
 export function sumStats(rows: OwnerStats[]): OwnerStats {

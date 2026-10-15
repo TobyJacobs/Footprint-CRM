@@ -6,8 +6,8 @@ import { GoalBar, SimpleList, Tile, money, moneyExact, pacePct } from "@/compone
 import { getCurrentUser } from "@/lib/auth";
 import { longDate } from "@/lib/customers/display";
 import {
-  commissionFor, describeRule, getCommissionRules, getMonth, getTargets, getTeamStats, grossProfit,
-  marginOf, recentMonths, ruleForPerson, sumStats, targetFor, winRate,
+  commissionFor, describeRule, getCommissionRules, getMonth, getTargets, getTeamStatsForMonths, grossProfit,
+  marginOf, recentMonths, ruleForPerson, sumStats, targetFor, winRate, type OwnerStats,
 } from "@/lib/dashboards/data";
 import { docTypes, statusLabel, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
@@ -26,11 +26,11 @@ export default async function StaffHubPage(props: PageProps<"/hub">) {
   const isSales = user.dashboards.includes("sales") || user.dashboards.includes("director");
 
   const supabase = await createClient();
-  const [targets, rules, monthStats, historyStats, { data: myDocs }] = await Promise.all([
+  // All the months on this page in one trip to the database.
+  const [targets, rules, statsByMonth, { data: myDocs }] = await Promise.all([
     getTargets(),
     getCommissionRules(),
-    canSeeFigures ? getTeamStats(month) : Promise.resolve([]),
-    canSeeFigures ? Promise.all(history.map((m) => getTeamStats(m))) : Promise.resolve([]),
+    canSeeFigures ? getTeamStatsForMonths([month, ...history]) : Promise.resolve(new Map<string, OwnerStats[]>()),
     canSeeFigures
       ? supabase
           .from("sales_documents")
@@ -42,6 +42,8 @@ export default async function StaffHubPage(props: PageProps<"/hub">) {
           .limit(12)
       : Promise.resolve({ data: [] }),
   ]);
+  const monthStats = statsByMonth.get(month.key) ?? [];
+  const historyStats = history.map((m) => statsByMonth.get(m.key) ?? []);
 
   const me = monthStats.find((t) => t.owner_id === user.id) ?? sumStats([]);
   const group = sumStats(monthStats);

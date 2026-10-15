@@ -16,6 +16,8 @@ import {
 import { addDays, todayIso, weekStart } from "@/lib/projects/options";
 import { createClient } from "@/lib/supabase/server";
 import { setContentStatus } from "../actions";
+import PhoneListView from "./PhoneListView";
+import { Suspense } from "react";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -107,6 +109,9 @@ export default async function ContentCalendarPage(props: PageProps<"/marketing/c
 
   return (
     <div className="grid gap-6">
+      <Suspense fallback={null}>
+        <PhoneListView />
+      </Suspense>
       <Notice searchParams={sp} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">

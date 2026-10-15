@@ -47,7 +47,7 @@ export default function ContentForm({
         </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Who's doing it">
+        <Field label="Who's doing it" hint="Only staff who have signed in to FootprintOS are listed.">
           <Select name="assignee_id" options={people.map((p) => ({ value: p.id, label: p.name }))} defaultValue={values.assignee_id} blank="Nobody yet" />
         </Field>
         <Field label="Link" hint="The draft, design file or live post.">
