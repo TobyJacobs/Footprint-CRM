@@ -8,10 +8,11 @@ export const dashboardTypes = [
   { value: "sales", label: "Sales", description: "Their own sales against target, commission and open quotes." },
   { value: "finance", label: "Finance", description: "Budget, margin, money owed, payments and recurring billing." },
   { value: "operations", label: "Operations", description: "Orders to deliver, purchase orders and supplier deliveries." },
+  { value: "marketing", label: "Marketing", description: "Their tasks, content due, client approvals and ad campaigns." },
   { value: "general", label: "General", description: "Just the person's sections — no figures." },
 ] as const;
 export type DashboardType = (typeof dashboardTypes)[number]["value"];
-export const dashboardOrder: DashboardType[] = ["director", "finance", "sales", "operations", "general"];
+export const dashboardOrder: DashboardType[] = ["director", "finance", "sales", "operations", "marketing", "general"];
 
 export type OwnerStats = {
   owner_id: string | null;
