@@ -3,8 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { LogOut, Menu, X } from "lucide-react";
+import ActivityBar from "./ActivityBar";
 import { features, home, type Feature } from "@/lib/features";
 
 function Wordmark() {
@@ -96,6 +97,9 @@ export default function AppShell({
 
   return (
     <div className="min-h-screen lg:flex">
+      <Suspense fallback={null}>
+        <ActivityBar />
+      </Suspense>
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-fp-black print:hidden lg:flex">
         <div className="bg-fp-gradient h-1" />

@@ -140,6 +140,81 @@ summary:focus-visible {
   }
 }
 
+/* Loading outlines: soft grey blocks with a gentle shimmer. */
+.fp-skeleton {
+  background: linear-gradient(90deg, var(--color-fp-light) 25%, #fafafa 50%, var(--color-fp-light) 75%);
+  background-size: 200% 100%;
+  animation: fp-shimmer 1.2s ease-in-out infinite;
+}
+@keyframes fp-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+/* Only show the outline if loading takes a moment, so fast pages don't flash. */
+.fp-skeleton-fade {
+  animation: fp-enter 200ms var(--fp-ease) 120ms both;
+}
+
+/* Thin brand-coloured bar along the top while a page or save is on its way. */
+.fp-activity-bar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  height: 3px;
+  pointer-events: none;
+  background-image: linear-gradient(90deg, #de2277 0%, #e58207 50%, #7bcbd1 100%);
+  transform-origin: left;
+  transform: scaleX(0);
+  opacity: 0;
+  transition: transform 300ms var(--fp-ease), opacity 400ms ease 150ms;
+}
+.fp-activity-bar.is-busy {
+  opacity: 1;
+  transition: opacity 120ms ease;
+  animation: fp-progress 8s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+}
+@keyframes fp-progress {
+  0% {
+    transform: scaleX(0.05);
+  }
+  20% {
+    transform: scaleX(0.45);
+  }
+  100% {
+    transform: scaleX(0.92);
+  }
+}
+
+/* The button that sent a form dims and shows a small spinner. */
+button[data-pending] {
+  position: relative;
+  opacity: 0.75;
+  cursor: progress;
+  padding-right: 2.25rem;
+}
+button[data-pending]::after {
+  content: "";
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-top: -0.45rem;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: fp-spin 700ms linear infinite;
+}
+@keyframes fp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
