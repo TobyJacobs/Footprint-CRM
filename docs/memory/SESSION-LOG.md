@@ -16,6 +16,8 @@ One short entry per session. Newest at the top.
 - Marketing home page for the Marketing team role (like Directors, Sales, Finance, Operations), PR #25, merged by the owner. Roadmap ticked. The safety check still blocks Claude's final merge click in every mode, so the owner presses merge.
 - At the owner's request, moved every import and switch-off task (Zoho Projects, Zoho One, monday.com, Mag Manager, Vault, Cliq, the Zoho billing trial) into Go-live.
 - Built the Wave 3 Dashboards section (Revenue, Pipeline, Renewals, Time), PR #26, merged by the owner. Roadmap ticked.
+- Profit after time with hourly costs per role (made-up example rates; Zoho check postponed by the owner), PR #27, live. Wave 3 building work complete.
+- Smoother feel (hover lift, button press, page fade-in, reduced-motion respected), PR #28, live and checked in the live stylesheet.
 
 ## 1 October 2026 — Session 3 (continued): Wave 2a
 - Read Zoho Books settings (numbering, VAT, custom fields; no records) and wrote `docs/discovery/ZOHO-BOOKS.md`.
