@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { HoursBars } from "@/components/charts/DashboardCharts";
-import { Tile } from "@/components/dashboards/parts";
+import { Tile, money } from "@/components/dashboards/parts";
 import { Card, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { addDays, isDateIso, minutesText, todayIso } from "@/lib/projects/options";
 import { createClient } from "@/lib/supabase/server";
@@ -72,12 +72,22 @@ export default async function TimeDashboard(props: PageProps<"/dashboards/time">
 
   // Estimated against actual for jobs finished in the period (all their time, not just this period's).
   const finishedIds = (finished ?? []).map((p) => p.id);
-  const [{ data: estimates }, { data: allTime }] = finishedIds.length
+  const [{ data: estimates }, { data: allTime }, { data: profitRows }] = finishedIds.length
     ? await Promise.all([
         supabase.from("project_tasks").select("project_id, estimated_minutes").in("project_id", finishedIds).limit(20000),
         supabase.from("time_logs").select("project_id, minutes").in("project_id", finishedIds).not("minutes", "is", null).limit(50000),
+        // Only returns rows for admins, directors and finance.
+        supabase.rpc("project_profit", { p_project_ids: finishedIds }),
       ])
-    : [{ data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }];
+  const profitBy = new Map(
+    ((profitRows ?? []) as { project_id: string; basis: string; invoiced: number; profit: number }[])
+      .filter((r) => r.basis !== "none")
+      .map((r) => [r.project_id, { invoiced: Number(r.invoiced), profit: Number(r.profit) }]),
+  );
+  const seesProfit = profitBy.size > 0;
+  const profitTotal = [...profitBy.values()].reduce((s, r) => ({ invoiced: s.invoiced + r.invoiced, profit: s.profit + r.profit }), { invoiced: 0, profit: 0 });
+  const lossMakers = [...profitBy.values()].filter((r) => r.profit < 0).length;
   const estBy = new Map<string, number>();
   for (const t of estimates ?? []) estBy.set(t.project_id as string, (estBy.get(t.project_id as string) ?? 0) + Number(t.estimated_minutes ?? 0));
   const actBy = new Map<string, number>();
@@ -125,6 +135,14 @@ export default async function TimeDashboard(props: PageProps<"/dashboards/time">
           note="Took longer than estimated"
           tone={overRun ? "amber" : undefined}
         />
+        {seesProfit && (
+          <Tile
+            label="Profit after time"
+            value={money(profitTotal.profit)}
+            note={`On jobs finished in the period${profitTotal.invoiced > 0 ? ` · ${Math.round((profitTotal.profit / profitTotal.invoiced) * 100)}% margin` : ""}${lossMakers ? ` · ${lossMakers} lost money` : ""}`}
+            tone={profitTotal.profit < 0 || lossMakers ? "red" : "teal"}
+          />
+        )}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
@@ -183,6 +201,7 @@ export default async function TimeDashboard(props: PageProps<"/dashboards/time">
                     <th className="py-1.5 text-right">Estimated</th>
                     <th className="py-1.5 text-right">Actual</th>
                     <th className="py-1.5 text-right">Difference</th>
+                    {seesProfit && <th className="py-1.5 text-right">Profit after time</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -199,6 +218,11 @@ export default async function TimeDashboard(props: PageProps<"/dashboards/time">
                       <td className={`py-2 text-right font-semibold ${diff !== null && diff > 0 ? "text-fp-error" : "text-fp-teal-deep"}`}>
                         {diff === null ? "—" : `${diff > 0 ? "+" : ""}${diff}%`}
                       </td>
+                      {seesProfit && (
+                        <td className={`py-2 text-right font-semibold ${(profitBy.get(p.id)?.profit ?? 0) < 0 ? "text-fp-error" : ""}`}>
+                          {profitBy.has(p.id) ? money(profitBy.get(p.id)!.profit) : "—"}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
