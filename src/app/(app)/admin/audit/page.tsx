@@ -121,8 +121,16 @@ export default async function AuditPage(props: PageProps<"/admin/audit">) {
     .order("at", { ascending: false })
     .limit(200);
   if (filter) query = query.eq("table_name", filter);
-  const [{ data: entries }, { data: profiles }] = await Promise.all([query, supabase.from("profiles").select("id, full_name, email")]);
-  const people = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? (p.email as string)]));
+  const [{ data: entries }, { data: profiles }, { data: roles }] = await Promise.all([
+    query,
+    supabase.from("profiles").select("id, full_name, email"),
+    supabase.from("roles").select("id, name"),
+  ]);
+  // Names for the IDs that turn up most: people and roles.
+  const people = new Map([
+    ...(profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? (p.email as string)] as const),
+    ...(roles ?? []).map((r) => [r.id as string, `${r.name} (role)`] as const),
+  ]);
 
   const time = new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
