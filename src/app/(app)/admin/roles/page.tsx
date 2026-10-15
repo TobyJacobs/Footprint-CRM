@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
 import { dashboardTypes } from "@/lib/dashboards/data";
 import { createRole } from "../actions";
+import { startPreview } from "../../preview-actions";
 import DashboardSelect from "./DashboardSelect";
 import { Card, Notice, inputClass, primaryButton } from "../ui";
 
@@ -23,7 +24,8 @@ export default async function RolesPage(props: PageProps<"/admin/roles">) {
         <Card title="Roles">
           <p className="mb-4 text-sm text-fp-dark/75">
             A role is a set of permissions, like &ldquo;Sales&rdquo; or &ldquo;Accounts&rdquo;. Give people roles
-            on the Users tab. Someone with several roles gets everything those roles allow.
+            on the Users tab. Someone with several roles gets everything those roles allow. &ldquo;Preview as this
+            role&rdquo; shows you the menus, pages and buttons that role gets.
           </p>
           {(roles ?? []).length === 0 ? (
             <p className="text-sm text-fp-dark/75">No roles yet. Create your first one.</p>
@@ -31,6 +33,11 @@ export default async function RolesPage(props: PageProps<"/admin/roles">) {
             <ul className="divide-y divide-fp-border">
               {(roles ?? []).map((r) => (
                 <li key={r.id} className="py-3">
+                  <form action={startPreview.bind(null, r.id)} className="float-right ml-3">
+                    <button type="submit" className="rounded-md border border-fp-border px-2.5 py-1 text-xs font-semibold hover:border-fp-pink">
+                      Preview as this role
+                    </button>
+                  </form>
                   <Link href={`/admin/roles/${r.id}`} className="font-semibold hover:text-fp-pink">
                     {r.name}
                   </Link>

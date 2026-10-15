@@ -206,6 +206,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
                         </option>
                       ))}
                     </select>
+                    <span className="text-xs text-fp-mid">Only staff who have signed in are listed.</span>
                   </label>
                   <label className="grid gap-1 text-sm">
                     <span className="font-semibold">Due</span>

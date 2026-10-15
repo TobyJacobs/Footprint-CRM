@@ -39,7 +39,7 @@ export default function ProjectForm({
         <Field label="Sales order (optional)" hint="Most projects are created automatically from a sales order. Only needed for one made by hand.">
           <TextInput name="sales_order" defaultValue={values.sales_order} placeholder="e.g. SO-010913" />
         </Field>
-        <Field label="Owner">
+        <Field label="Owner" hint="Only staff who have signed in to FootprintOS are listed.">
           <Select name="owner_id" options={people.map((p) => ({ value: p.id, label: p.name }))} defaultValue={values.owner_id} blank="Me" />
         </Field>
       </div>

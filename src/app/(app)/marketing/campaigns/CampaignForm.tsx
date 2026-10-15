@@ -60,7 +60,7 @@ export default function CampaignForm({
         <Field label="Leads">
           <TextInput name="leads" type="number" step="1" defaultValue={values.leads} />
         </Field>
-        <Field label="Owner">
+        <Field label="Owner" hint="Only staff who have signed in to FootprintOS are listed.">
           <Select name="owner_id" options={people.map((p) => ({ value: p.id, label: p.name }))} defaultValue={values.owner_id} blank="Me" />
         </Field>
       </div>
