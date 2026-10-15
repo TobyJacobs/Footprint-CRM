@@ -310,21 +310,27 @@ export async function saveCostRates(fd: FormData) {
   const defaultRate = num(fd, "default_hourly_cost");
   if (defaultRate !== null) {
     if (defaultRate < 0) fail(back, "Rates can't be negative");
-    const { data: settings } = await supabase.from("company_settings").select("id").single();
-    if (settings) await supabase.from("company_settings").update({ default_hourly_cost: defaultRate, default_hourly_cost_is_example: false }).eq("id", settings.id);
+    const { data: settings } = await supabase.from("company_settings").select("id, default_hourly_cost").single();
+    if (settings && Number(settings.default_hourly_cost) !== defaultRate) {
+      await supabase.from("company_settings").update({ default_hourly_cost: defaultRate, default_hourly_cost_is_example: false }).eq("id", settings.id);
+    }
   }
+  // One rate per role. Only a changed rate stops being marked as an example.
+  const { data: existing } = await supabase.from("role_cost_rates").select("role_id, hourly_cost");
+  const before = new Map((existing ?? []).map((r) => [r.role_id as string, Number(r.hourly_cost)]));
   for (const [key, value] of fd.entries()) {
     if (!key.startsWith("rate_") || typeof value !== "string") continue;
-    const userId = uuid(key.slice(5));
-    if (!userId) continue;
+    const roleId = uuid(key.slice(5));
+    if (!roleId) continue;
     const trimmed = value.trim();
     if (trimmed === "") {
-      await supabase.from("staff_cost_rates").delete().eq("user_id", userId);
+      if (before.has(roleId)) await supabase.from("role_cost_rates").delete().eq("role_id", roleId);
       continue;
     }
     const rate = Number(trimmed);
     if (!Number.isFinite(rate) || rate < 0) fail(back, "Rates must be numbers, zero or more");
-    const { error } = await supabase.from("staff_cost_rates").upsert({ user_id: userId, hourly_cost: rate, is_example: false });
+    if (before.get(roleId) === rate) continue;
+    const { error } = await supabase.from("role_cost_rates").upsert({ role_id: roleId, hourly_cost: rate, is_example: false });
     if (error) fail(back, error.message);
   }
   revalidatePath("/projects", "layout");

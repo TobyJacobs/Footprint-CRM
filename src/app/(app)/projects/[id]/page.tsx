@@ -36,7 +36,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
     .maybeSingle();
   if (!project) notFound();
 
-  const [{ data: tasks }, { data: people }, { data: logs }, { data: costRows }, { data: myTimer }, { data: taskTime }] = await Promise.all([
+  const [{ data: tasks }, { data: people }, { data: logs }, { data: costRows }, { data: myTimer }, { data: taskTime }, { data: profitRows }] = await Promise.all([
     supabase.from("project_tasks").select("*, assignee:assignee_id(full_name, email)").eq("project_id", id).order("position"),
     supabase.from("profiles").select("id, full_name, email").eq("is_active", true).order("full_name"),
     supabase
@@ -49,7 +49,10 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
     supabase.rpc("project_time_costs", { p_project_ids: [id] }),
     supabase.from("time_logs").select("id, project_id, started_at, projects(number, name)").eq("user_id", user.id).is("minutes", null).maybeSingle(),
     supabase.from("time_logs").select("task_id, minutes").eq("project_id", id).not("task_id", "is", null).not("minutes", "is", null).limit(5000),
+    // Only returns a row for admins, directors and finance.
+    supabase.rpc("project_profit", { p_project_ids: [id] }),
   ]);
+  const profit = ((profitRows ?? []) as { basis: string; invoiced: number; materials: number; time_cost: number; profit: number }[])[0];
 
   const customer = project.customers as unknown as { id: string; name: string } | null;
   const owner = project.owner as unknown as Person;
@@ -352,11 +355,20 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
                   </dd>
                 </div>
               )}
-              {totals?.cost != null && (
+              {profit && profit.basis !== "none" ? (
                 <div>
-                  <dt className="text-fp-dark/70">Staff time cost</dt>
-                  <dd>{gbp(Number(totals.cost))}</dd>
+                  <dt className="text-fp-dark/70">Profit after time</dt>
+                  <dd>
+                    <ProfitBreakdown {...profit} />
+                  </dd>
                 </div>
+              ) : (
+                totals?.cost != null && (
+                  <div>
+                    <dt className="text-fp-dark/70">Staff time cost</dt>
+                    <dd>{gbp(Number(totals.cost))}</dd>
+                  </div>
+                )
               )}
               {project.overview && (
                 <div>
@@ -369,5 +381,35 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
         </div>
       </div>
     </>
+  );
+}
+
+// Invoiced, less materials and suppliers, less staff time. Before anything is
+// invoiced, the sales order's value is used instead.
+function ProfitBreakdown({ basis, invoiced, materials, time_cost, profit }: { basis: string; invoiced: number; materials: number; time_cost: number; profit: number }) {
+  const money = (n: number) => gbp(Number(n)) ?? "£0.00";
+  const margin = Number(invoiced) > 0 ? Math.round((Number(profit) / Number(invoiced)) * 1000) / 10 : null;
+  return (
+    <div className="grid gap-0.5">
+      <div className="flex justify-between gap-4">
+        <span>{basis === "invoiced" ? "Invoiced" : "Order value (not invoiced yet)"}</span>
+        <span>{money(invoiced)}</span>
+      </div>
+      <div className="flex justify-between gap-4 text-fp-dark/70">
+        <span>Materials and suppliers</span>
+        <span>−{money(materials)}</span>
+      </div>
+      <div className="flex justify-between gap-4 text-fp-dark/70">
+        <span>Staff time</span>
+        <span>−{money(time_cost)}</span>
+      </div>
+      <div className={`flex justify-between gap-4 border-t border-fp-border pt-0.5 font-bold ${Number(profit) < 0 ? "text-fp-error" : "text-fp-teal-deep"}`}>
+        <span>Profit after time</span>
+        <span>
+          {money(profit)}
+          {margin !== null && <span className="font-normal"> ({margin}%)</span>}
+        </span>
+      </div>
+    </div>
   );
 }
