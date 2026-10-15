@@ -11,6 +11,8 @@ One short entry per session. Newest at the top.
 - Auto mode blocked writing to Live. The owner switched to Ask permissions, and Claude then tidied the live roadmap: 7 tasks ticked, Postmark renamed to SendGrid, Wave 3 off hold. Verified.
 - Found that the live website still uses the test database, and that the daily Microsoft 365 sync has run every day since 7 October. Tidied the roadmap on the test database too (the one the app shows) and ticked off the daily sync.
 - Set up "fewer prompts" (local permission settings). At the owner's request, moved the Zoho customer import into the Go-live stage and added "Move the website to the London database" there.
+- Job titles for automatic roles: matching was already built; only 3 of 43 staff have titles. Added a Marketing team role (owner approved its access). Owner to fill in titles in Microsoft 365.
+- 15 October 2026: built the Marketing team workspace (overview, content calendar, ad campaigns, templates) on `feature/marketing-workspace`, PR #24. Database part applied to the test database.
 
 ## 1 October 2026 — Session 3 (continued): Wave 2a
 - Read Zoho Books settings (numbering, VAT, custom fields; no records) and wrote `docs/discovery/ZOHO-BOOKS.md`.
