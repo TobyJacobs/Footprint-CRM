@@ -117,7 +117,7 @@ export const features: Feature[] = [
     label: "Marketing",
     href: "/marketing",
     icon: Megaphone,
-    description: "Footprint's own email and SMS campaigns and pipelines.",
+    description: "Client marketing work: jobs, retainers, the content calendar and ad campaigns.",
     wave: 8,
     replaces: "GoHighLevel (internal use)",
   },
