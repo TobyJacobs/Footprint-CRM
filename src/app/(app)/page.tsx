@@ -2,6 +2,7 @@ import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import DirectorDashboard from "@/components/dashboards/DirectorDashboard";
 import FinanceDashboard from "@/components/dashboards/FinanceDashboard";
+import MarketingDashboard from "@/components/dashboards/MarketingDashboard";
 import OperationsDashboard from "@/components/dashboards/OperationsDashboard";
 import SalesDashboard from "@/components/dashboards/SalesDashboard";
 import { getCurrentUser } from "@/lib/auth";
@@ -16,12 +17,13 @@ export default async function Home(props: PageProps<"/">) {
   const visible = features.filter((f) => user.visibleFeatureKeys.includes(f.key));
   const firstName = (user.fullName ?? "").split(" ")[0];
 
-  // Which dashboards this person gets. Figures need the Sales & Operations
-  // permission; admins without a role see the Directors' view.
-  const canSeeFigures = user.can("quotes", "view");
+  // Which dashboards this person gets. Sales and money figures need the Sales &
+  // Operations permission; the Marketing view needs Marketing. Admins without
+  // a role see the Directors' view.
+  const allowed = (d: DashboardType) => (d === "marketing" ? user.can("marketing", "view") : user.can("quotes", "view"));
   let mine = dashboardOrder.filter((d) => d !== "general" && user.dashboards.includes(d));
   if (mine.length === 0 && user.isAdmin) mine = ["director"];
-  if (!canSeeFigures) mine = [];
+  mine = mine.filter(allowed);
   const requested = typeof sp.view === "string" ? (sp.view as DashboardType) : null;
   const view = requested && mine.includes(requested) ? requested : mine[0] ?? null;
   const label = (d: DashboardType) => dashboardTypes.find((t) => t.value === d)?.label ?? d;
@@ -64,6 +66,7 @@ export default async function Home(props: PageProps<"/">) {
         {view === "sales" && <SalesDashboard userId={user.id} />}
         {view === "finance" && <FinanceDashboard />}
         {view === "operations" && <OperationsDashboard />}
+        {view === "marketing" && <MarketingDashboard userId={user.id} />}
 
         {visible.length === 0 ? (
           <div className="max-w-xl rounded-lg border border-fp-border bg-white p-6">
