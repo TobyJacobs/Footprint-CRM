@@ -14,6 +14,8 @@ One short entry per session. Newest at the top.
 - Job titles for automatic roles: matching was already built; only 3 of 43 staff have titles. Added a Marketing team role (owner approved its access). Owner to fill in titles in Microsoft 365.
 - 15 October 2026: built the Marketing team workspace (overview, content calendar, ad campaigns, templates) on `feature/marketing-workspace`, PR #24. Database part applied to the test database. The safety check blocked Claude from merging; the owner merged it, so it's live. Roadmap ticked.
 - Marketing home page for the Marketing team role (like Directors, Sales, Finance, Operations), PR #25, merged by the owner. Roadmap ticked. The safety check still blocks Claude's final merge click in every mode, so the owner presses merge.
+- At the owner's request, moved every import and switch-off task (Zoho Projects, Zoho One, monday.com, Mag Manager, Vault, Cliq, the Zoho billing trial) into Go-live.
+- Built the Wave 3 Dashboards section (Revenue, Pipeline, Renewals, Time), PR #26, merged by the owner. Roadmap ticked.
 
 ## 1 October 2026 — Session 3 (continued): Wave 2a
 - Read Zoho Books settings (numbering, VAT, custom fields; no records) and wrote `docs/discovery/ZOHO-BOOKS.md`.
