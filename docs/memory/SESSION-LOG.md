@@ -19,6 +19,7 @@ One short entry per session. Newest at the top.
 - Profit after time with hourly costs per role (made-up example rates; Zoho check postponed by the owner), PR #27, live. Wave 3 building work complete.
 - Smoother feel (hover lift, button press, page fade-in, reduced-motion respected), PR #28, live and checked in the live stylesheet.
 - Owner said clicks feel slow. Found: no loading states, Netlify functions in Ohio while the database is in Frankfurt (region change needs a paid Netlify plan — owner to decide), and an extra login check per page. Built loading screens, a top progress bar and busy buttons (PR #29, live).
+- Click-through test signed in as the owner: every page loads, figures agree. Health-check fixes: database tune-up (#30), polish batch with readable Audit log, view-only marketing items, phone calendar list view, preview as role (#31), and a one-pass Staff hub fix (#32). Junk test requests removed.
 
 ## 1 October 2026 — Session 3 (continued): Wave 2a
 - Read Zoho Books settings (numbering, VAT, custom fields; no records) and wrote `docs/discovery/ZOHO-BOOKS.md`.
