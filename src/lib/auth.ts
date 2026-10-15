@@ -29,8 +29,13 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
   if (!isSupabaseConfigured) redirect("/login");
 
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) redirect("/login");
+  // getClaims checks the sign-in token's signature. With Supabase's signing
+  // keys switched on it does this locally (no trip to Supabase); otherwise it
+  // asks Supabase, exactly like getUser did.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
+  if (!userId) redirect("/login");
+  const auth = { user: { id: userId } };
 
   const [{ data: profile }, { data: perms }, { data: dashboards }, { data: seesAll }] = await Promise.all([
     supabase
