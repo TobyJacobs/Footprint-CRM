@@ -36,6 +36,7 @@ export default function ChartFilters({
           <option value="24">Last 24 months</option>
         </select>
       </label>
+      {people.length > 0 && (
       <label className="flex items-center gap-2">
         <span className="text-fp-dark/75">Salesperson</span>
         <select className={select} value={owner} onChange={(e) => update("owner", e.target.value)}>
@@ -47,6 +48,7 @@ export default function ChartFilters({
           ))}
         </select>
       </label>
+      )}
     </div>
   );
 }
