@@ -48,6 +48,115 @@ body {
   }
 }
 
+/* ─── Motion: smooth, quick and subtle ───────────────────────────────────────
+   Kept outside the Tailwind layers on purpose, so these win over a page's own
+   transition classes. Everything is switched off for people who ask their
+   computer to reduce motion (see the end of this section). */
+
+:root {
+  --fp-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* Colour, border and shadow changes glide instead of snapping. */
+a,
+button,
+input,
+select,
+textarea,
+summary,
+tr {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 180ms;
+  transition-timing-function: var(--fp-ease);
+}
+
+/* Buttons (and links styled as buttons) press in slightly when clicked. */
+button:not(:disabled):active,
+a[class*="rounded-md"][class*="px-"]:active {
+  transform: scale(0.97);
+}
+
+/* Clickable boxes lift a little, with a soft shadow and a hint of pink. */
+a[class*="rounded-lg"][class*="border"] {
+  transition-duration: 220ms;
+}
+a[class*="rounded-lg"][class*="border"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -14px rgb(0 0 0 / 0.25);
+  border-color: color-mix(in srgb, var(--color-fp-pink) 35%, var(--color-fp-border));
+}
+a[class*="rounded-lg"][class*="border"]:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* Board cards (retainers, pipeline) get a gentle shadow on hover. */
+li[class*="rounded-lg"][class*="border"],
+li[class*="rounded-md"][class*="border"] {
+  transition: box-shadow 220ms var(--fp-ease), border-color 220ms var(--fp-ease);
+}
+li[class*="rounded-lg"][class*="border"]:hover,
+li[class*="rounded-md"][class*="border"]:hover {
+  box-shadow: 0 8px 20px -14px rgb(0 0 0 / 0.22);
+}
+
+/* Menu items slide a touch to the right on hover. */
+nav[aria-label="Main"] a:hover {
+  transform: translateX(3px);
+}
+
+/* Keyboard users get a clear, smooth pink focus ring. */
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--color-fp-pink);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Progress bars fill up from empty when a page opens. */
+.rounded-full > [style*="width"],
+.overflow-hidden > [style*="width"] {
+  animation: fp-grow 700ms var(--fp-ease) both;
+  transition: width 400ms var(--fp-ease);
+}
+@keyframes fp-grow {
+  from {
+    width: 0;
+  }
+}
+
+/* Each page fades and slides in softly (see app/(app)/template.tsx). */
+.fp-page-enter {
+  animation: fp-enter 280ms var(--fp-ease) both;
+}
+@keyframes fp-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  a[class*="rounded-lg"][class*="border"]:hover,
+  a[class*="rounded-lg"][class*="border"]:active,
+  nav[aria-label="Main"] a:hover,
+  button:not(:disabled):active,
+  a[class*="rounded-md"][class*="px-"]:active {
+    transform: none;
+  }
+}
+
 /* Tab strips scroll sideways on small screens without showing a scrollbar. */
 @utility no-scrollbar {
   scrollbar-width: none;
