@@ -509,7 +509,7 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - The browser pane is shared with the owner: always pass `tabId` to browser actions, or clicks/typing can land in the owner's tab.
 
 ## Next (as of 15 October 2026)
-- Owner's to-dos: fill in Microsoft 365 job titles; sign in to Zoho in Chrome so Claude can look for real hourly rates; turn Auto mode off in Settings → Claude Code.
+- Owner's to-dos: Microsoft 365 job titles (the director is filling them in; the owner will say when done, then Claude runs/reads the sync and reports who matched a role and who didn't); sign in to Zoho in Chrome so Claude can look for real hourly rates; turn Auto mode off in Settings → Claude Code.
 - Suggested next builds: GoCardless Direct Debit, Xero sync (Wave 2), real targets and commission (Staff), then Wave 4 Design Workload.
 - **Merging:** Claude Code's automatic safety check blocks Claude from merging pull requests (and from loosening its own rules), even after switching out of Auto mode within the same session. The owner clicks "Squash and merge" on GitHub. The owner is turning Auto mode off in Settings → Claude Code; in a fresh session, try merging with an Allow prompt.
 - Personal permission settings in `.claude/settings.local.json` (not on GitHub): reading pages, git status/commit, build/lint and code edits don't prompt; clicking/typing in browsers (so database changes) and git push still ask.
