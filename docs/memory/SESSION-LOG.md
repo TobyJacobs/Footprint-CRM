@@ -4,6 +4,22 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 15 October 2026: Repository health check (cloud session)
+- Checked build, type-check, lint and package security on `main`: all clean, no known vulnerabilities.
+- Reviewed the code for obvious bugs and the memory files for out-of-date notes.
+- Fixed small, safe problems only, in one pull request (branch `claude/charming-lovelace-5i9y13`): emails to two or more addresses failed; the after-login redirect could be steered to another website; four places ignored database errors (GDPR export logging, template steps on new projects, deleting a target, marking a request as a query); memory files brought up to date. Bigger issues are listed in that pull request for the owner to choose from. Nothing merged, deployed or changed in any database.
+- Note: sessions between 2 and 13 October 2026 have no entry here; their work is recorded, dated, in `PROGRESS.md`.
+
+## 15 October 2026: Marketing, Dashboards, speed and health-check fixes
+- Built the Marketing team workspace (overview, content calendar, ad campaigns, templates) on `feature/marketing-workspace`, PR #24. Database part applied to the test database. The safety check blocked Claude from merging; the owner merged it, so it's live. Roadmap ticked.
+- Marketing home page for the Marketing team role (like Directors, Sales, Finance, Operations), PR #25, merged by the owner. Roadmap ticked. The safety check still blocks Claude's final merge click in every mode, so the owner presses merge.
+- At the owner's request, moved every import and switch-off task (Zoho Projects, Zoho One, monday.com, Mag Manager, Vault, Cliq, the Zoho billing trial) into Go-live.
+- Built the Wave 3 Dashboards section (Revenue, Pipeline, Renewals, Time), PR #26, merged by the owner. Roadmap ticked.
+- Profit after time with hourly costs per role (made-up example rates; Zoho check postponed by the owner), PR #27, live. Wave 3 building work complete.
+- Smoother feel (hover lift, button press, page fade-in, reduced-motion respected), PR #28, live and checked in the live stylesheet.
+- Owner said clicks feel slow. Found: no loading states, Netlify functions in Ohio while the database is in Frankfurt (region change needs a paid Netlify plan — owner to decide), and an extra login check per page. Built loading screens, a top progress bar and busy buttons (PR #29, live).
+- Click-through test signed in as the owner: every page loads, figures agree. Health-check fixes: database tune-up (#30), polish batch with readable Audit log, view-only marketing items, phone calendar list view, preview as role (#31), and a one-pass Staff hub fix (#32). Junk test requests removed.
+
 ## 14 October 2026: Roadmap check
 - The Claude app is now on a different Claude account. Checked that the project itself (code, GitHub, commit identity) is unchanged.
 - Read the roadmap on both Supabase projects (read only). Found that the live London database exists, and that the live roadmap was out of date.
@@ -12,14 +28,6 @@ One short entry per session. Newest at the top.
 - Found that the live website still uses the test database, and that the daily Microsoft 365 sync has run every day since 7 October. Tidied the roadmap on the test database too (the one the app shows) and ticked off the daily sync.
 - Set up "fewer prompts" (local permission settings). At the owner's request, moved the Zoho customer import into the Go-live stage and added "Move the website to the London database" there.
 - Job titles for automatic roles: matching was already built; only 3 of 43 staff have titles. Added a Marketing team role (owner approved its access). Owner to fill in titles in Microsoft 365.
-- 15 October 2026: built the Marketing team workspace (overview, content calendar, ad campaigns, templates) on `feature/marketing-workspace`, PR #24. Database part applied to the test database. The safety check blocked Claude from merging; the owner merged it, so it's live. Roadmap ticked.
-- Marketing home page for the Marketing team role (like Directors, Sales, Finance, Operations), PR #25, merged by the owner. Roadmap ticked. The safety check still blocks Claude's final merge click in every mode, so the owner presses merge.
-- At the owner's request, moved every import and switch-off task (Zoho Projects, Zoho One, monday.com, Mag Manager, Vault, Cliq, the Zoho billing trial) into Go-live.
-- Built the Wave 3 Dashboards section (Revenue, Pipeline, Renewals, Time), PR #26, merged by the owner. Roadmap ticked.
-- Profit after time with hourly costs per role (made-up example rates; Zoho check postponed by the owner), PR #27, live. Wave 3 building work complete.
-- Smoother feel (hover lift, button press, page fade-in, reduced-motion respected), PR #28, live and checked in the live stylesheet.
-- Owner said clicks feel slow. Found: no loading states, Netlify functions in Ohio while the database is in Frankfurt (region change needs a paid Netlify plan — owner to decide), and an extra login check per page. Built loading screens, a top progress bar and busy buttons (PR #29, live).
-- Click-through test signed in as the owner: every page loads, figures agree. Health-check fixes: database tune-up (#30), polish batch with readable Audit log, view-only marketing items, phone calendar list view, preview as role (#31), and a one-pass Staff hub fix (#32). Junk test requests removed.
 
 ## 1 October 2026 — Session 3 (continued): Wave 2a
 - Read Zoho Books settings (numbering, VAT, custom fields; no records) and wrote `docs/discovery/ZOHO-BOOKS.md`.

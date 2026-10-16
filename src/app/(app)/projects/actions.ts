@@ -80,7 +80,7 @@ export async function saveProject(projectId: string | null, fd: FormData) {
       const { data: steps } = await supabase.from("project_template_tasks").select("stage, position, title, due_offset_days, estimated_minutes").eq("template_id", templateId);
       const start = fields.start_date ?? new Date().toISOString().slice(0, 10);
       if (steps?.length) {
-        await supabase.from("project_tasks").insert(
+        const { error: stepsError } = await supabase.from("project_tasks").insert(
           steps.map((s) => ({
             project_id: id,
             stage: s.stage,
@@ -90,6 +90,8 @@ export async function saveProject(projectId: string | null, fd: FormData) {
             due_date: s.due_offset_days === null ? null : new Date(new Date(`${start}T12:00:00`).getTime() + s.due_offset_days * 86400000).toISOString().slice(0, 10),
           })),
         );
+        // The project itself is saved, so send them to it rather than back to the form.
+        if (stepsError) fail(`/projects/${id}`, `Project saved, but its template steps couldn't be added: ${stepsError.message}`);
       }
     }
   }

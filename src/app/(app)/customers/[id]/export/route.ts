@@ -26,11 +26,13 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/customers/[id]/
       .order("at"),
   ]);
 
-  await supabase.rpc("log_admin_event", {
+  // GDPR: every export must be on record, so don't hand over data unlogged.
+  const { error: logError } = await supabase.rpc("log_admin_event", {
     p_action: "gdpr_export",
     p_table: "customers",
     p_record: { id },
   });
+  if (logError) return new Response("This export couldn't be recorded in the audit log, so it was stopped. Please try again.", { status: 500 });
 
   return exportResponse(user, customer.name, `Customer: ${customer.name}`, {
     customer,

@@ -24,6 +24,12 @@ function parseAddress(v: string): { email: string; name?: string } {
   return { email: v.trim() };
 }
 
+// "a@b.com, c@d.com" -> one SendGrid address per entry (callers join lists
+// with commas, and check each address before sending).
+function parseAddressList(v: string): { email: string; name?: string }[] {
+  return v.split(/[,;]+/).map((s) => s.trim()).filter(Boolean).map(parseAddress);
+}
+
 export async function sendEmail(msg: {
   to: string;
   cc?: string | null;
@@ -36,8 +42,11 @@ export async function sendEmail(msg: {
   const from = process.env.EMAIL_FROM;
   if (!key || !from) return { ok: false, error: "Email isn't set up yet (no SendGrid settings)." };
 
-  const cc = msg.cc ? parseAddress(msg.cc) : null;
-  const to = parseAddress(msg.to);
+  const to = parseAddressList(msg.to);
+  if (to.length === 0) return { ok: false, error: "No address to send to." };
+  // SendGrid rejects a message that lists the same address twice.
+  const toEmails = new Set(to.map((a) => a.email.toLowerCase()));
+  const cc = msg.cc ? parseAddressList(msg.cc).filter((a) => !toEmails.has(a.email.toLowerCase())) : [];
   const replyTo = process.env.EMAIL_REPLY_TO;
 
   try {
@@ -47,8 +56,8 @@ export async function sendEmail(msg: {
       body: JSON.stringify({
         personalizations: [
           {
-            to: [to],
-            ...(cc && cc.email.toLowerCase() !== to.email.toLowerCase() ? { cc: [cc] } : {}),
+            to,
+            ...(cc.length ? { cc } : {}),
           },
         ],
         from: parseAddress(from),
