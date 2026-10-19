@@ -598,4 +598,8 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - **Access checks:** Projects and Marketing pages already check themselves; the Design board, list and My jobs now do too.
 - **Console 404 from the click-through:** not reproduced on home, customers, quotes, design or projects (no failed requests). Probably an old-release mix-up, which #37 now handles.
 - Checks: build, type check, lint clean. Not yet checked on the live site.
-- After merge: check the Supabase check passed on the merge commit; tick a Wave 0 roadmap task for this.
+- **LIVE 19 October 2026:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#38](https://github.com/TobyJacobs/Footprint-CRM/pull/38), `ebbafc6`). Supabase update on the merge commit: **success**. Live deploy went out 14:03 BST.
+- Checked live (nothing saved): wrong staff-sync key refused in 0.9s; new invoice for Hamble Electrical (14-day terms) due 2 November 2026, Riverside Bakery (30 days) 18 November 2026; new quote dated 19 October 2026, valid to 18 November 2026; 14 pages using the date code load with no errors. Not tested live: converting a quote to an invoice (would create records).
+- Roadmap Wave 0: added ticked task "Health-check leftovers: UK dates, customer payment terms, staff sync key check, package updates".
+- Tip: Netlify doesn't report the live deploy back to GitHub. To see when the live site changed, read the `dpl=` value in the page source: after the first 64 characters it's the Netlify deploy id in hex, whose first 8 hex digits are the deploy time.
+- Next: Wave 5, Magazines (start by agreeing the Mag Manager feature list with the magazine team).
