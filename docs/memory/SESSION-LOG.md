@@ -4,6 +4,11 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 16–19 October 2026: New laptop, merges and invoice safety (cloud session)
+- The owner merged #32 and #33 and tested the quote flow live: works well.
+- Owner moved to a new laptop; checked GitHub has everything and explained what must be set up again (`.env.local`, Claude settings, Chrome extension). Flagged that the GitHub repository is public.
+- Built invoice safety (fixed status rules, no double conversion, failed email leaves a draft) and the UK summer-time fix for follow-up times, in one pull request.
+
 ## 15 October 2026: Repository health check (cloud session)
 - Checked build, type-check, lint and package security on `main`: all clean, no known vulnerabilities.
 - Reviewed the code for obvious bugs and the memory files for out-of-date notes.
