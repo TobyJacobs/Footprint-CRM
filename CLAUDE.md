@@ -55,7 +55,7 @@ Rules:
 ## Keeping the roadmap up to date (owner's rule, 5 October 2026)
 The platform has a live **Roadmap** (Admin → Roadmap; tables `roadmap_waves`, `roadmap_tasks`, `feedback_requests`). It must always match reality, with no one having to remind you.
 - **At the start of a session:** read the roadmap: un-ticked tasks (`roadmap_tasks where not done`) and approved requests (`feedback_requests where status = 'approved'`, whose tasks have `request_id` set). Approved requests are work the owner wants done.
-- **When you finish something:** tick it off (`update public.roadmap_tasks set done = true where ...`) in the same piece of work, once it's built and tested. A task from a request also marks that request done automatically. Do this through the Supabase SQL editor.
+- **When you finish something:** tick it off (`update public.roadmap_tasks set done = true where ...`) in the same piece of work, once it's built and tested. A task from a request also marks that request done automatically. Do this yourself through the Supabase data API using `SUPABASE_SECRET_KEY` from `.env.local` (on the owner's laptop only; never print it). Use the Supabase SQL editor only for anything the API can't do.
 - **When you build something that isn't on the list:** add it to the right wave as a ticked task. **New work the owner asks for:** add it as an un-ticked task first.
 - A wave put on hold stays "On hold" until the owner says otherwise.
 - Mention what you ticked off in your plain-English summary.

@@ -4,6 +4,10 @@ Every important decision, dated, with the reason. Never delete entries — if a 
 
 ---
 
+## 19 October 2026 — Claude updates the roadmap with a Supabase secret key
+**Decision:** The owner saved a Supabase secret key as `SUPABASE_SECRET_KEY` in `.env.local` on their laptop, so Claude can tick roadmap tasks itself instead of the owner pasting SQL.
+**Why:** Saves the owner a manual step every time. `.env.local` is ignored by Git, so the key never reaches GitHub. The app doesn't use this key. Claude still asks before changing any other live data. If it might have leaked, replace it in Supabase → Project Settings → API Keys.
+
 ## 29 September 2026 — Keep Claude's memory inside the repository
 **Decision:** Claude's memory lives in `docs/memory/` and is pushed to GitHub.
 **Why:** It's backed up automatically, has full history, and isn't lost if a computer or chat session is.
