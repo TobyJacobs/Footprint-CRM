@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 import { clearLineGpOverride, convertDocument, deleteDocument, setDocumentStatus, setLineGpOverride } from "../actions";
 import { raisePurchaseOrders } from "../purchase-orders/actions";
 import EmailCard from "../EmailCard";
+import DesignJobsPanel from "@/components/DesignJobsPanel";
 
 export async function generateMetadata(props: PageProps<"/sales/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -395,6 +396,8 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 ))}
             </dl>
           </Card>
+
+          {type === "sales_order" && <DesignJobsPanel order={id} />}
 
           {(pos ?? []).length > 0 && (
             <Card title="Purchase orders">
