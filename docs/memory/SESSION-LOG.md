@@ -7,7 +7,7 @@ One short entry per session. Newest at the top.
 ## 19 October 2026: Wave 4 Part 4b, online proof approval
 - Part 4a (#35) had been merged by the owner.
 - Built Part 4b: the design team emails a proof (or makes a link), and the customer approves it or asks for changes on a private page. The answer moves the job and is noted on the job and the customer.
-- Tested the database rules on a temporary PGlite database (all 21 checks passed). Build, types and lint clean. Pull request opened; browser click-through after merge.
+- Tested the database rules on a temporary PGlite database (all 21 checks passed). Build, types and lint clean. Pull request #36 opened and, at the owner's request, merged by Claude (`d740a7f`). Browser click-through still to do.
 
 ## 16–19 October 2026: New laptop, merges and invoice safety (cloud session)
 - The owner merged #32 and #33 and tested the quote flow live: works well.
