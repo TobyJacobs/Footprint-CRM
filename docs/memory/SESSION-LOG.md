@@ -4,11 +4,16 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 19 October 2026: Friendly message after a new release
+- Staff with a page open during a release got "Something went wrong" on their next click (an old page calling a button the new release no longer knows). Seen on /login after #36.
+- Fix on branch `fix/friendly-update-message`: switched on Netlify's skew protection in `netlify.toml` (old open pages keep talking to the old release, so most clicks just work), and the error page now says "FootprintOS has just been updated" with a Refresh button for any that slip through (not sent to Sentry). Build, types and lint clean. Pull request opened, not merged.
+- To check after merging: open a page, wait for the next release, then click a button. It should work, or show the new message.
+
 ## 19 October 2026: Wave 4 Part 4b, online proof approval
 - Part 4a (#35) had been merged by the owner.
 - Built Part 4b: the design team emails a proof (or makes a link), and the customer approves it or asks for changes on a private page. The answer moves the job and is noted on the job and the customer.
 - Tested the database rules on a temporary PGlite database (all 21 checks passed). Build, types and lint clean. Pull request #36 opened and, at the owner's request, merged by Claude (`d740a7f`).
-- Click-through found the Design tables missing live: Supabase's automatic update had failed since 15 October 2026 because seven hand-applied migrations weren't recorded. Recorded them (owner approved), the update then applied 4a and 4b. Full click-through passed (email, request changes, link only, approve). Roadmap Wave 4 ticked. Test job DJ-1001 kept for the owner to check the email.
+- Click-through found the Design tables missing live: Supabase's automatic update had failed since 15 October 2026 because seven hand-applied migrations weren't recorded. Recorded them (owner approved), the update then applied 4a and 4b. Full click-through passed (email, request changes, link only, approve). Roadmap Wave 4 ticked. The owner checked the test email; test job DJ-1001 then deleted.
 
 ## 16–19 October 2026: New laptop, merges and invoice safety (cloud session)
 - The owner merged #32 and #33 and tested the quote flow live: works well.

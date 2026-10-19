@@ -11,6 +11,10 @@
   # environment values, which tripped Netlify's secret scanner. Skip only that
   # cache folder; everything that is published is still scanned.
   SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache/**"
+  # Skew protection: someone who still has a page open from the previous
+  # release keeps talking to that release until they next load a page, so
+  # their buttons and forms carry on working after a new version goes live.
+  NETLIFY_NEXT_SKEW_PROTECTION = "true"
 
 # Turns the Next.js build into a working Netlify site (server pages, login
 # checks, etc.). Netlify didn't detect Next.js automatically because the site
