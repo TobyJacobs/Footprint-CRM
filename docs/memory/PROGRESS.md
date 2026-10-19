@@ -1,6 +1,6 @@
 # Progress — where we are right now
 
-_Last updated: 19 October 2026_
+_Last updated: 19 October 2026 (Part 4b)_
 
 ## Current stage
 **Waves 0, 1, 2 (2a/2b/2c) and the Wave 3 building work are LIVE** on https://footprintgroupos.netlify.app, along with the Marketing workspace, Dashboards, profit after time and the 15 October 2026 health-check fixes. The live site still uses the **test database** (Frankfurt); the move to the London database, every Zoho import and the switch-offs all sit in the final Go-live stage.
@@ -557,4 +557,15 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - Screens: `/design` board (column per stage, "Move to …" button, late jobs flagged, done jobs shown for 14 days), `/design/list` (filters, include finished), `/design/mine` (assigned to me + jobs I asked for), `/design/new` (pre-filled from `?order=`, `?project=`, `?customer=`), `/design/[id]` (stage buttons incl. "Customer wants changes", brief, proofs with preview of the latest, uploader, notes, details form). A "Design jobs" card on sales order, project and customer pages.
   - Checks: build, type check, lint clean. Migration run on a temporary local PostgreSQL with Supabase stand-ins and permissions tested as salesperson, designer and no-access user (all as intended). Not clicked through in a browser.
 - **Part 4b next:** online proof approval by the customer (private link, Approve / Request changes) and the monday.com import (owner exports the board as a spreadsheet).
+- **Part 4a LIVE:** owner merged PR [TobyJacobs/Footprint-CRM#35](https://github.com/TobyJacobs/Footprint-CRM/pull/35) as `47c971a`. Not yet clicked through in a browser; roadmap tick still to do.
+
+## 19 October 2026 - Wave 4 Part 4b: online proof approval (branch `feature/design-proof-approval`, PR waiting for the owner)
+- Migration `20261029120000_design_proof_approval.sql`: table `design_proof_approvals` (one row per proof sent: private token, 30-day file link, sent to, status waiting / approved / changes / withdrawn, customer's name, comment, IP, time); `design_job_notes.from_customer`. Two functions open without sign-in, token only: `get_proof_by_token`, `respond_to_proof` (needs a name; "Request changes" needs a comment; only the latest, unexpired, unanswered link works).
+- Customer's answer moves the job: Approve → Approved; Request changes → Amends (unless the team has already moved it further). It's added to the job's notes ("Customer (online)") and the customer's timeline.
+- Customer page `/p/[token]` (added to the no-sign-in list in `src/proxy.ts`): shows the proof (image, or PDF in a frame, plus "Open full size"), then name + comments + Approve / Request changes.
+- Job page: new "Customer approval" box. "Email proof for approval" (pre-filled with the customer's main contact, via SendGrid) or "Just make a link" to paste into your own email. Sends the newest proof; older waiting links are withdrawn; job moves to "With customer". History of every link with Copy link, "See what the customer sees" and Withdraw. If the email fails, the link is deleted.
+- How the customer sees a private file without signing in: when sending, FootprintOS makes a 30-day private link to that one file and stores it with the request (see DECISIONS, 19 October 2026). No new secret keys.
+- Checks: build, type check, lint clean. Database rules tested on a temporary PGlite database (21 checks: permissions, withdrawal of older links, answering once, expiry, stage moves, notes, timeline). **Not clicked through in a browser**: the test database only gets the new table when the PR is merged.
+- After merge: click-through (send a proof to yourself, approve and request changes), then tick the roadmap (Wave 4: "Design Workload: job board, files and notes" and "Design Workload: online proof approval").
+- Still to do in Wave 4: monday.com import (owner exports the board as a spreadsheet); monday.com renewal date.
 - Roadmap ticks needed (cloud session can't reach Supabase): add/tick "Design Workload: job board, files and notes" in Wave 4 once live.

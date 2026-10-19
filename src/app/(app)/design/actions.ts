@@ -1,9 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
-import { DESIGN_BUCKET, DESIGN_FILE_MAX_BYTES, DESIGN_FILE_TYPES, isDesignStage } from "@/lib/design/options";
+import { brandedHtml, isEmailTestMode, sendEmail } from "@/lib/email/sendgrid";
+import {
+  APPROVAL_LINK_DAYS,
+  DESIGN_BUCKET,
+  DESIGN_FILE_MAX_BYTES,
+  DESIGN_FILE_TYPES,
+  isDesignStage,
+  jobNumber,
+} from "@/lib/design/options";
 import { bool, str } from "@/lib/forms";
 import { isDateIso } from "@/lib/projects/options";
 import { createClient } from "@/lib/supabase/server";
@@ -170,4 +179,127 @@ export async function deleteFile(jobId: string, fileId: string) {
   if (error) fail(back, error.message);
   revalidatePath(back);
   redirect(`${back}?deleted=1#files`);
+}
+
+// ─── Customer approval ──────────────────────────────────────────────────────
+
+const EMAIL_RE = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
+
+// Send the latest proof to the customer with a private link where they can
+// approve it or ask for changes. Any older link for this job is withdrawn, so
+// the customer can only answer the newest proof. With "link only", no email
+// is sent and the link is shown on the job page to copy into your own email.
+export async function sendProofForApproval(jobId: string, fd: FormData) {
+  const user = await requirePermission("design", "edit");
+  const back = `/design/${jobId}`;
+  const linkOnly = str(fd, "mode") === "link";
+  const to = (str(fd, "to") ?? "").split(/[,;]+/).map((a) => a.trim()).filter(Boolean);
+  const subject = str(fd, "subject");
+  const message = str(fd, "message");
+  if (!linkOnly) {
+    if (to.length === 0 || !to.every((a) => EMAIL_RE.test(a))) fail(`${back}#approval`, "Please enter a valid email address to send to");
+    if (!subject || !message) fail(`${back}#approval`, "Please add a subject and a message");
+  }
+
+  const supabase = await createClient();
+  const { data: job } = await supabase.from("design_jobs").select("id, number, title, stage, customer_id").eq("id", jobId).maybeSingle();
+  if (!job) fail(back, "Job not found");
+  const { data: proof } = await supabase
+    .from("design_job_files")
+    .select("id, path, version")
+    .eq("job_id", jobId)
+    .eq("kind", "proof")
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!proof) fail(`${back}#approval`, "Upload a proof first");
+
+  // A private link to the file that lasts as long as the approval link.
+  const { data: signed, error: signError } = await supabase.storage
+    .from(DESIGN_BUCKET)
+    .createSignedUrl(proof.path as string, APPROVAL_LINK_DAYS * 86400);
+  if (signError || !signed) fail(`${back}#approval`, `The proof file couldn't be prepared: ${signError?.message ?? "unknown problem"}`);
+
+  const { data: approval, error } = await supabase
+    .from("design_proof_approvals")
+    .insert({
+      job_id: jobId,
+      file_id: proof.id,
+      file_url: signed.signedUrl,
+      expires_at: new Date(Date.now() + APPROVAL_LINK_DAYS * 86400000).toISOString(),
+      sent_to: linkOnly ? "Link only (not emailed)" : to.join(", "),
+      message: linkOnly ? null : message,
+      created_by: user.id,
+    })
+    .select("id, token")
+    .single();
+  if (error) fail(`${back}#approval`, error.message);
+
+  const h = await headers();
+  const link = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}/p/${approval.token}`;
+
+  let emailStatus: "sent" | "test" | null = null;
+  if (!linkOnly) {
+    const { data: settings } = await supabase.from("company_settings").select("company_name").single();
+    const company = settings?.company_name ?? "Footprint Group";
+    const buttonLabel = "View and approve your proof";
+    const result = await sendEmail({
+      to: to.join(", "),
+      subject: subject!,
+      text: `${message}\n\n${buttonLabel}: ${link}`,
+      html: brandedHtml({ text: message!, buttonLabel, buttonUrl: link, companyName: company }),
+      tag: "design_proof",
+    });
+    if (!result.ok) {
+      // Nobody received it, so don't leave a live link behind.
+      await supabase.from("design_proof_approvals").delete().eq("id", approval.id);
+      fail(`${back}#approval`, `The email wasn't sent: ${result.error}`);
+    }
+    emailStatus = isEmailTestMode() ? "test" : "sent";
+    if (job.customer_id) {
+      await supabase.from("customer_activity").insert({
+        customer_id: job.customer_id,
+        kind: "email",
+        body: `Proof v${proof.version} for design job ${jobNumber(job.number)} emailed to ${to.join(", ")} for approval by ${user.fullName ?? user.email}${emailStatus === "test" ? " (test mode — not actually delivered)" : ""}.`,
+      });
+    }
+  }
+
+  // Only now that the new link is live, withdraw the older ones.
+  await supabase
+    .from("design_proof_approvals")
+    .update({ status: "withdrawn" })
+    .eq("job_id", jobId)
+    .eq("status", "waiting")
+    .neq("id", approval.id);
+
+  if (["todo", "in_design", "amends"].includes(job.stage as string)) {
+    await supabase.from("design_jobs").update({ stage: "with_customer" }).eq("id", jobId);
+  }
+  await supabase.from("design_job_notes").insert({
+    job_id: jobId,
+    author_id: user.id,
+    body: linkOnly
+      ? `Made an approval link for proof v${proof.version}.`
+      : `Sent proof v${proof.version} to ${to.join(", ")} for approval${emailStatus === "test" ? " (test mode — not actually delivered)" : ""}.`,
+  });
+
+  revalidatePath("/design", "layout");
+  redirect(`${back}?${linkOnly ? "linkmade=1" : `emailed=${emailStatus}`}#approval`);
+}
+
+// Stop a sent approval link working (e.g. it went to the wrong person).
+export async function withdrawApproval(jobId: string, approvalId: string) {
+  await requirePermission("design", "edit");
+  const back = `/design/${jobId}`;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("design_proof_approvals")
+    .update({ status: "withdrawn" })
+    .eq("id", approvalId)
+    .eq("job_id", jobId)
+    .eq("status", "waiting");
+  if (error) fail(`${back}#approval`, error.message);
+  revalidatePath(back);
+  redirect(`${back}#approval`);
 }

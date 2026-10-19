@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FileText } from "lucide-react";
@@ -13,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import { addNote, deleteFile, deleteJob, deleteNote, saveJob, setJobStage } from "../actions";
 import JobForm from "../JobForm";
 import { DueDate, PriorityFlag } from "../parts";
+import ApprovalCard, { type ApprovalRow } from "./ApprovalCard";
 import FileUploader from "./FileUploader";
 
 export const metadata: Metadata = { title: "Design job" };
@@ -30,19 +32,50 @@ export default async function DesignJobPage(props: PageProps<"/design/[id]">) {
   const today = todayIso();
   const supabase = await createClient();
 
-  const [{ data: job }, { pickable, nameOf }, files, { data: notes }] = await Promise.all([
+  const [{ data: job }, { pickable, nameOf }, files, { data: notes }, { data: approvalRows }, { data: settings }] = await Promise.all([
     supabase
       .from("design_jobs")
       .select(
-        "id, number, title, brief, stage, due_date, high_priority, designer_id, requested_by, stage_changed_at, completed_at, created_at, customers(id, name), sales_order:sales_documents(id, number, title), project:projects(id, number, name)",
+        "id, number, title, brief, stage, due_date, high_priority, designer_id, requested_by, stage_changed_at, completed_at, created_at, customer_id, customers(id, name), sales_order:sales_documents(id, number, title), project:projects(id, number, name)",
       )
       .eq("id", id)
       .maybeSingle(),
     loadPeople(supabase),
     loadJobFiles(supabase, id),
-    supabase.from("design_job_notes").select("id, body, author_id, created_at").eq("job_id", id).order("created_at"),
+    supabase.from("design_job_notes").select("id, body, author_id, from_customer, created_at").eq("job_id", id).order("created_at"),
+    supabase
+      .from("design_proof_approvals")
+      .select("id, token, sent_to, status, expires_at, created_at, response_name, response_note, responded_at, file:design_job_files(version)")
+      .eq("job_id", id)
+      .order("created_at", { ascending: false }),
+    supabase.from("company_settings").select("company_name").maybeSingle(),
   ]);
   if (!job) notFound();
+  // The customer's main contact, to pre-fill the approval email.
+  const { data: contact } = job.customer_id
+    ? await supabase
+        .from("contacts")
+        .select("first_name, email")
+        .eq("customer_id", job.customer_id)
+        .not("email", "is", null)
+        .order("is_primary", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : { data: null };
+  const h = await headers();
+  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const approvals: ApprovalRow[] = (approvalRows ?? []).map((a) => ({
+    id: a.id as string,
+    token: a.token as string,
+    version: (a.file as unknown as { version: number | null } | null)?.version ?? null,
+    sent_to: a.sent_to as string,
+    status: a.status as string,
+    expires_at: a.expires_at as string,
+    created_at: a.created_at as string,
+    response_name: a.response_name as string | null,
+    response_note: a.response_note as string | null,
+    responded_at: a.responded_at as string | null,
+  }));
   const customer = job.customers as unknown as { id: string; name: string } | null;
   const order = job.sales_order as unknown as { id: string; number: string; title: string | null } | null;
   const project = job.project as unknown as { id: string; number: string; name: string } | null;
@@ -111,6 +144,15 @@ export default async function DesignJobPage(props: PageProps<"/design/[id]">) {
       </div>
 
       <Notice searchParams={sp} />
+      {(sp.emailed === "sent" || sp.emailed === "test" || sp.linkmade) && (
+        <p role="status" className="rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-4 py-3 text-sm text-fp-teal-deep">
+          {sp.linkmade
+            ? "Approval link made. Copy it from Customer approval below."
+            : sp.emailed === "test"
+              ? "Proof sent in test mode (not actually delivered)."
+              : "Proof emailed to the customer for approval."}
+        </p>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="grid content-start gap-6">
@@ -144,6 +186,20 @@ export default async function DesignJobPage(props: PageProps<"/design/[id]">) {
             </Card>
           </section>
 
+          <ApprovalCard
+            jobId={job.id}
+            jobNumber={job.number}
+            jobTitle={job.title}
+            latestVersion={latest?.version ?? null}
+            canEdit={canEdit}
+            contactEmail={(contact?.email as string | null) ?? null}
+            contactFirstName={(contact?.first_name as string | null) ?? null}
+            senderName={user.fullName ?? user.email}
+            companyName={settings?.company_name ?? "Footprint Group"}
+            origin={origin}
+            approvals={approvals}
+          />
+
           <section id="notes">
             <Card title={`Notes (${(notes ?? []).length})`}>
               {(notes ?? []).length > 0 ? (
@@ -152,7 +208,10 @@ export default async function DesignJobPage(props: PageProps<"/design/[id]">) {
                     <li key={n.id} className="rounded-md bg-fp-offwhite p-3 text-sm">
                       <div className="mb-1 flex items-center justify-between gap-2 text-xs text-fp-mid">
                         <span>
-                          <strong className="text-fp-dark">{n.author_id ? nameOf.get(n.author_id) ?? "Someone" : "Someone"}</strong> · {shortDateTime(n.created_at)}
+                          <strong className="text-fp-dark">
+                            {n.from_customer ? "Customer (online)" : n.author_id ? nameOf.get(n.author_id) ?? "Someone" : "Someone"}
+                          </strong>{" "}
+                          · {shortDateTime(n.created_at)}
                         </span>
                         {(n.author_id === user.id || canDelete) && (
                           <form action={deleteNote.bind(null, job.id, n.id)}>
