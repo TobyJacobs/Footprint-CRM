@@ -21,7 +21,9 @@ import { createClient } from "@/lib/supabase/server";
 // person, so the database's own rules apply as well.
 
 function fail(path: string, message: string): never {
-  redirect(`${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}`);
+  // The message goes before any "#section", or the page never sees it.
+  const [base, section] = path.split("#");
+  redirect(`${base}${base.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}${section ? `#${section}` : ""}`);
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

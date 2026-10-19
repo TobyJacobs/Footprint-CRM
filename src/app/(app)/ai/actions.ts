@@ -13,7 +13,9 @@ import { createClient } from "@/lib/supabase/server";
 // signed-in person, so the database's own rules apply as well.
 
 function fail(path: string, message: string): never {
-  redirect(`${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}`);
+  // The message goes before any "#section", or the page never sees it.
+  const [base, section] = path.split("#");
+  redirect(`${base}${base.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}${section ? `#${section}` : ""}`);
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -96,10 +98,15 @@ export async function saveScorecard(projectId: string, fd: FormData) {
   for (const c of criteria) {
     const status = str(fd, `status_${c.value}`) ?? "not_started";
     if (!isScoreStatus(status) || !isCriterion(c.value)) fail(`${back}#scorecard`, "Unknown scorecard value");
-    const { error } = await supabase
+    // The seven rows are made with the project, so this only ever updates.
+    const { data, error } = await supabase
       .from("ai_scores")
-      .upsert({ project_id: projectId, criterion: c.value, status, evidence: text(fd, `evidence_${c.value}`) }, { onConflict: "project_id,criterion" });
+      .update({ status, evidence: text(fd, `evidence_${c.value}`) })
+      .eq("project_id", projectId)
+      .eq("criterion", c.value)
+      .select("criterion");
     if (error) fail(`${back}#scorecard`, error.message);
+    if (!data?.length) fail(`${back}#scorecard`, "The scorecard couldn't be saved");
   }
   revalidatePath("/ai", "layout");
   redirect(`${back}?saved=1#scorecard`);

@@ -10,7 +10,9 @@ import { createClient } from "@/lib/supabase/server";
 // so the database's own rules apply too.
 
 function fail(path: string, message: string): never {
-  redirect(`${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}`);
+  // The message goes before any "#section", or the page never sees it.
+  const [base, section] = path.split("#");
+  redirect(`${base}${base.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}${section ? `#${section}` : ""}`);
 }
 
 // Collects numbered rows from a form, e.g. "web_0_domain", "web_1_domain".
