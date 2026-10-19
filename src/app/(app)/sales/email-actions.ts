@@ -30,7 +30,7 @@ export async function sendDocumentEmail(documentId: string, fd: FormData) {
 
   const { data: doc } = await supabase
     .from("sales_documents")
-    .select("id, doc_type, number, status, customer_id, contact_id, public_token")
+    .select("id, doc_type, number, status, sent_at, customer_id, contact_id, public_token")
     .eq("id", documentId)
     .single();
   if (!doc) fail(back, "Document not found");
@@ -51,7 +51,8 @@ export async function sendDocumentEmail(documentId: string, fd: FormData) {
     const { error } = await supabase
       .from("sales_documents")
       .update({ status: newStatus, sent_at: new Date().toISOString() })
-      .eq("id", documentId);
+      .eq("id", documentId)
+      .eq("status", "draft");
     if (error) fail(back, error.message);
   }
 
@@ -86,7 +87,17 @@ export async function sendDocumentEmail(documentId: string, fd: FormData) {
     error: result.ok ? null : result.error,
   });
 
-  if (!result.ok) fail(back, `The email wasn't sent: ${result.error}`);
+  if (!result.ok) {
+    // Nobody received it, so don't leave it issued (and locked): put it back to draft.
+    if (newStatus) {
+      await supabase
+        .from("sales_documents")
+        .update({ status: doc.status, sent_at: doc.sent_at })
+        .eq("id", documentId)
+        .eq("status", newStatus);
+    }
+    fail(back, `The email wasn't sent${newStatus ? `, so it's still a draft` : ""}: ${result.error}`);
+  }
 
   await supabase.from("customer_activity").insert({
     customer_id: doc.customer_id,

@@ -31,8 +31,30 @@ export function list(fd: FormData, name: string): string[] {
     .filter(Boolean);
 }
 
-// <input type="datetime-local"> gives local time; store it as a full timestamp.
+// How far UK clocks are ahead of UTC at a moment (0, or 1 hour in summer).
+function londonOffsetMs(ms: number): number {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  }).formatToParts(new Date(ms));
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? 0);
+  return Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") % 24, get("minute"), get("second")) - (ms - (ms % 1000));
+}
+
+// <input type="datetime-local"> gives UK wall-clock time with no zone. The
+// server runs on UTC, so read it as UK time explicitly (otherwise it moves an
+// hour every save in British Summer Time).
 export function dateTime(fd: FormData, name: string): string | null {
   const v = str(fd, name);
-  return v ? new Date(v).toISOString() : null;
+  if (!v) return null;
+  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (!m) {
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  }
+  const wall = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] ?? 0));
+  // Check the offset again at the answer, in case the clocks change in between.
+  let ms = wall - londonOffsetMs(wall);
+  ms = wall - londonOffsetMs(ms);
+  return new Date(ms).toISOString();
 }

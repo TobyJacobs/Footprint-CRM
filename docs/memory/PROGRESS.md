@@ -539,3 +539,11 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - The owner is on a new laptop. GitHub holds everything; `.env.local` and personal Claude settings must be set up again on it (not on GitHub by design). Cloud sessions can do code and pull requests but not Chrome, Supabase or the Roadmap ticks; those need Claude Code on the laptop with the Chrome extension (installed by the owner 16 October 2026).
 - **The GitHub repository is public.** Claude recommended making it private (16 October 2026); waiting on the owner.
 - Next suggested build: invoice safety (no moving issued invoices back to draft, no double conversion, mark issued only after the email is sent), then the British Summer Time follow-up fix. Full list of bigger issues in PR #33's description.
+
+## 19 October 2026 - Invoice safety and UK time fix (branch `claude/charming-lovelace-5i9y13`, PR waiting for the owner)
+- Owner asked for "the small but important ones". Built, NOT yet live:
+  - **Status changes follow fixed rules** (`allowedMoves` in `src/app/(app)/sales/actions.ts`, matching the screen buttons): quote draft→sent→accepted/declined; order open→completed/cancelled; invoice draft→issued→paid/void; credit note draft→issued→void. An issued invoice can no longer be moved back to draft. Changes only apply if the status hasn't changed since it was read (two tabs).
+  - **No double conversion:** the source quote/order is marked converted/invoiced *first*, only if still in an allowed status, so a double-click can't create two orders or invoices. Put back if creating the new document fails. Double-clicking "Raise credit note" can still make two *draft* credit notes (deletable; left as is).
+  - **Failed email = still a draft:** the document is still issued just before sending (customer links refuse drafts), but if SendGrid fails it goes back to draft with its old sent date.
+  - **UK time fix:** `dateTime()` in `src/lib/forms.ts` reads form times as Europe/London, so follow-up and timeline times no longer move an hour on each save in summer. Tested with a UTC server clock, including both clock-change days.
+- Build, type check and lint clean. Not clicked through (no test database in the cloud session).

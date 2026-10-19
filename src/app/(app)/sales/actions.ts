@@ -16,6 +16,23 @@ function fail(path: string, message: string): never {
   redirect(`${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}`);
 }
 
+// The only status changes allowed by hand. Anything else (for example an
+// issued invoice back to draft) is refused, so legal records stay locked.
+// Converting to another document sets "converted"/"invoiced" separately.
+const allowedMoves: Record<DocType, Record<string, string[]>> = {
+  quote: { draft: ["sent"], sent: ["accepted", "declined"] },
+  sales_order: { open: ["completed", "cancelled"] },
+  invoice: { draft: ["issued"], issued: ["paid", "void"] },
+  credit_note: { draft: ["issued"], issued: ["void"] },
+};
+
+// What each document can be converted into, and from which statuses.
+const conversions: Partial<Record<DocType, Partial<Record<DocType, string[]>>>> = {
+  quote: { sales_order: ["sent", "accepted", "declined"] },
+  sales_order: { invoice: ["open", "completed"] },
+  invoice: { credit_note: ["issued", "paid"] },
+};
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type LineIn = {
@@ -142,8 +159,10 @@ export async function saveDocument(docType: DocType, documentId: string | null, 
   const supabase = await createClient();
   let id = documentId;
   if (documentId) {
-    const { data: existing } = await supabase.from("sales_documents").select("status").eq("id", documentId).single();
-    if (existing && (isFinalised(existing.status) || isLockedRecord(docType, existing.status))) {
+    const { data: existing } = await supabase.from("sales_documents").select("doc_type, status").eq("id", documentId).single();
+    if (!existing) fail(back, "Document not found");
+    // Use the document's real type, not the one the form says it is.
+    if (isFinalised(existing.status) || isLockedRecord(existing.doc_type as DocType, existing.status)) {
       fail(back, "This document is finalised and can no longer be changed");
     }
     const { error } = await supabase.from("sales_documents").update(fields).eq("id", documentId);
@@ -174,14 +193,27 @@ export async function saveDocument(docType: DocType, documentId: string | null, 
 export async function setDocumentStatus(documentId: string, status: string) {
   await requirePermission("quotes", "edit");
   const supabase = await createClient();
-  const { data: doc } = await supabase.from("sales_documents").select("doc_type").eq("id", documentId).single();
+  const { data: doc } = await supabase.from("sales_documents").select("doc_type, status").eq("id", documentId).single();
   if (!doc || !isDocType(doc.doc_type)) fail(`/sales/${documentId}`, "Document not found");
-  if (!statuses[doc.doc_type as DocType].some((s) => s.value === status)) fail(`/sales/${documentId}`, "Unknown status");
+  const type = doc.doc_type as DocType;
+  if (!statuses[type].some((s) => s.value === status)) fail(`/sales/${documentId}`, "Unknown status");
+  if (!(allowedMoves[type][doc.status] ?? []).includes(status)) {
+    const from = statuses[type].find((s) => s.value === doc.status)?.label ?? doc.status;
+    const to = statuses[type].find((s) => s.value === status)?.label ?? status;
+    fail(`/sales/${documentId}`, `A ${docTypes[type].label.toLowerCase()} can't go from "${from}" to "${to}"`);
+  }
 
   const patch: Record<string, unknown> = { status };
   if (status === "sent" || status === "issued") patch.sent_at = new Date().toISOString();
-  const { error } = await supabase.from("sales_documents").update(patch).eq("id", documentId);
+  // Only change it if nobody else has changed it since we looked (e.g. two tabs).
+  const { data: updated, error } = await supabase
+    .from("sales_documents")
+    .update(patch)
+    .eq("id", documentId)
+    .eq("status", doc.status)
+    .select("id");
   if (error) fail(`/sales/${documentId}`, error.message);
+  if (!updated?.length) fail(`/sales/${documentId}`, "This document was changed by someone else — please check it and try again");
 
   revalidatePath("/sales", "layout");
   redirect(`/sales/${documentId}?saved=1`);
@@ -194,11 +226,35 @@ export async function convertDocument(documentId: string, to: DocType) {
   const supabase = await createClient();
   const back = `/sales/${documentId}`;
 
+  if (!isDocType(to)) fail(back, "Unknown document type");
   const { data: src } = await supabase.from("sales_documents").select("*").eq("id", documentId).single();
   if (!src) fail(back, "Document not found");
   if (to === "credit_note" && !(src.doc_type === "invoice" && ["issued", "paid"].includes(src.status))) {
     fail(back, "Credit notes can only be raised against an issued or paid invoice");
   }
+  const allowedFrom = conversions[src.doc_type as DocType]?.[to];
+  if (!allowedFrom) fail(back, "This document can't be converted to that");
+  if (!allowedFrom.includes(src.status)) {
+    fail(back, src.status === "converted" || src.status === "invoiced" ? "This has already been converted" : "This document can't be converted in its current status");
+  }
+
+  // Claim the source first, so a double-click or a second tab can't convert
+  // it twice: only one request can move it on from its current status.
+  const sourceStatus = src.doc_type === "quote" ? "converted" : src.doc_type === "sales_order" && to === "invoice" ? "invoiced" : null;
+  if (sourceStatus) {
+    const { data: claimed, error: claimError } = await supabase
+      .from("sales_documents")
+      .update({ status: sourceStatus })
+      .eq("id", src.id)
+      .eq("status", src.status)
+      .select("id");
+    if (claimError) fail(back, claimError.message);
+    if (!claimed?.length) fail(back, "This has already been converted");
+  }
+  // If anything below fails, put the source back as it was.
+  const undoClaim = async () => {
+    if (sourceStatus) await supabase.from("sales_documents").update({ status: src.status }).eq("id", src.id).eq("status", sourceStatus);
+  };
   const { data: srcLines } = await supabase
     .from("sales_document_lines")
     .select("product_id, description, quantity, unit_price, unit_cost, discount_percent, tax_rate_id, tax_rate, position")
@@ -210,6 +266,7 @@ export async function convertDocument(documentId: string, to: DocType) {
   try {
     number = await nextNumber(to);
   } catch (e) {
+    await undoClaim();
     fail(back, e instanceof Error ? e.message : "Couldn't get a document number");
   }
 
@@ -254,20 +311,21 @@ export async function convertDocument(documentId: string, to: DocType) {
     })
     .select("id")
     .single();
-  if (error) fail(back, error.message);
+  if (error) {
+    await undoClaim();
+    fail(back, error.message);
+  }
 
   if (srcLines?.length) {
     const { error: lineError } = await supabase
       .from("sales_document_lines")
       .insert(srcLines.map((l) => ({ ...l, document_id: created.id })));
-    if (lineError) fail(back, lineError.message);
+    // The new document exists now, so send them to it to check the lines.
+    if (lineError) fail(`/sales/${created.id}`, `Created, but its lines couldn't be copied: ${lineError.message}`);
     // Keep any line GP overrides from the source document.
-    await supabase.rpc("copy_line_overrides", { p_from: documentId, p_to: created.id });
+    const { error: overrideError } = await supabase.rpc("copy_line_overrides", { p_from: documentId, p_to: created.id });
+    if (overrideError) fail(`/sales/${created.id}`, `Created, but line GP overrides couldn't be copied: ${overrideError.message}`);
   }
-
-  // Mark the source as moved on.
-  const sourceStatus = src.doc_type === "quote" ? "converted" : src.doc_type === "sales_order" && to === "invoice" ? "invoiced" : null;
-  if (sourceStatus) await supabase.from("sales_documents").update({ status: sourceStatus }).eq("id", src.id);
 
   revalidatePath("/sales", "layout");
   redirect(`/sales/${created.id}?saved=1`);
