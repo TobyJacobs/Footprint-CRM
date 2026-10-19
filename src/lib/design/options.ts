@@ -48,3 +48,15 @@ export const jobNumber = (n: number | string) => `DJ-${n}`;
 export const DESIGN_FILE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf"];
 export const DESIGN_FILE_MAX_BYTES = 25 * 1024 * 1024;
 export const DESIGN_BUCKET = "design-files";
+
+// How long a customer's proof approval link (and its file link) works.
+export const APPROVAL_LINK_DAYS = 30;
+
+export const approvalStatusLabel: Record<string, string> = {
+  waiting: "Waiting for customer",
+  approved: "Approved",
+  changes: "Changes requested",
+  withdrawn: "Withdrawn",
+};
+
+export const isPast = (iso: string) => new Date(iso).getTime() < Date.now();

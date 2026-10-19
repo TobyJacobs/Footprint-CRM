@@ -237,3 +237,9 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 **Decision (the owner's request, recorded in `PROGRESS.md` on 14 and 15 October 2026; written here during the 15 October 2026 health check):** all Zoho, monday.com and Mag Manager imports, every "switch off" task (Zoho One, Vault, Cliq, the Zoho billing trial) and "Move the website to the London database" belong in the final **Go-live** stage of the roadmap.
 **Updates the 1 October 2026 entry "Live database and real data on hold":** the London "FootprintOS - Live" database now exists (creation date not recorded), but nothing uses it yet. The live website still runs on the test database until the Go-live move. Note: "made-up data only" no longer holds fully, because the daily Microsoft 365 sync puts real staff details into the test database (see `PROGRESS.md`, 14 October 2026). No real customers have been imported (the real product list was copied from Zoho on 5 October 2026).
+
+## 19 October 2026 - Customers see design proofs through a 30-day file link
+
+**Decision:** When a proof is sent for approval, FootprintOS makes a private link to that one file, valid for **30 days**, and stores it with the approval request. The customer's approval page shows the file through that link. After 30 days the page says the link has expired and asks the customer to get in touch.
+**Why:** Proof files are in private storage, and the website deliberately has no "master" database key. This keeps it that way: no new secret in Netlify, and the customer can only ever reach the one file they were sent. Sending a newer proof, or pressing Withdraw, stops the old approval page showing the file. (The file link itself keeps working until it expires, but nobody else has it.)
+**Alternative not chosen:** adding Supabase's master key to Netlify so the page could fetch files on demand. More flexible, but a much bigger risk if it ever leaked.
