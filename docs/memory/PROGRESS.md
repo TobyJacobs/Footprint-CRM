@@ -589,3 +589,13 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 
 ## 19 October 2026 - Roadmap: backup restore test only at Go-live
 - At the owner's request, deleted the Wave 0 task "Test restoring a backup" (test database roadmap): Go-live already has "Test restoring a backup of the live database", which covers it. Wave 0 now has no open tasks. Health-check item #5 (backup restore test) therefore happens at Go-live, on the London database with real data.
+
+## 19 October 2026 - Health-check leftovers (branch `fix/health-check-leftovers`, PR waiting for the owner)
+- **UK "today" everywhere:** new `src/lib/dates.ts` (`ukToday`, `ukMonth`, `addDaysTo`, `addMonthsTo`, `ukDaysFromToday`, `customerDueDate`). The shared helpers (`todayIso`, sales `addDays`, dashboards `isoDate`/`getMonth`/`recentMonths`, `getSalesStats`) and the direct spots (converting documents, new quote/invoice/PO/recurring pages, project template due dates, timer log date, quote expiry on `/q/`, GDPR export filename, renewals month) now use Europe/London. Tested with a UTC clock incl. just after midnight in BST and the clock-change day.
+- **Customer payment terms:** invoices made from a quote/order, and a new invoice started from a customer, use the customer's `invoice_due_days` + `invoice_due_terms` (Zoho wordings: after bill date / after bill month / of the current month / of the following month); company terms if the customer has none. **Not changed:** recurring invoices still use the company's terms (made in the database; the health check wrongly said they used the customer's).
+- **Staff sync key checked first:** migration `20261030120000_directory_sync_key_check.sql` adds `check_directory_sync_key`; `/api/cron/directory-sync` turns a wrong key away before contacting Microsoft. Tested on PGlite (5 checks).
+- **Packages:** Next 16.4.2, React 19.3.1, Sentry 11.8, Supabase 2.118, Netlify plugin 5.16.3, lucide 1.59, @types/node 24 (matches Netlify's Node 24). Skipped on purpose: TypeScript 7, ESLint 10. `npm audit`: 0 vulnerabilities.
+- **Access checks:** Projects and Marketing pages already check themselves; the Design board, list and My jobs now do too.
+- **Console 404 from the click-through:** not reproduced on home, customers, quotes, design or projects (no failed requests). Probably an old-release mix-up, which #37 now handles.
+- Checks: build, type check, lint clean. Not yet checked on the live site.
+- After merge: check the Supabase check passed on the merge commit; tick a Wave 0 roadmap task for this.

@@ -16,6 +16,9 @@ export async function POST(request: NextRequest) {
   const supabase = createClient(supabaseUrl, supabasePublishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  // Check the key before contacting Microsoft, so a wrong key costs nothing.
+  const { data: keyOk } = await supabase.rpc("check_directory_sync_key", { p_key: key });
+  if (keyOk !== true) return NextResponse.json({ ok: false, error: "Not allowed" }, { status: 401 });
   const result = await runDirectorySync(supabase, key);
   return NextResponse.json(result, { status: result.ok ? 200 : result.error === "Not allowed" ? 401 : 500 });
 }

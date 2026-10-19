@@ -1,5 +1,7 @@
 // Shared lists and helpers for Projects & Time.
 
+import { ukToday } from "@/lib/dates";
+
 export const projectStatuses = [
   { value: "active", label: "Active" },
   { value: "on_hold", label: "On hold" },
@@ -29,7 +31,8 @@ export const isOpenProject = (s: string) => s === "active" || s === "on_hold";
 
 // Dates are handled as plain YYYY-MM-DD text, so time zones never shift a day.
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-export const todayIso = () => iso(new Date());
+// Today in UK time (the server clock is UTC).
+export const todayIso = () => ukToday();
 
 export function addDays(date: string, n: number) {
   const d = new Date(`${date}T12:00:00`);

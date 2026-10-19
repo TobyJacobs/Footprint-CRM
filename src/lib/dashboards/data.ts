@@ -1,4 +1,5 @@
 import "server-only";
+import { addMonthsTo, ukDaysFromToday, ukMonth, ukToday } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 
 // Shared figures for the role dashboards (home page) and the Staff hub.
@@ -37,28 +38,25 @@ export type Month = { key: string; from: string; to: string; label: string; days
 
 // A calendar month. `key` is "2026-10"; anything invalid means this month.
 export function getMonth(key?: string | null): Month {
-  const now = new Date();
-  const m = key && /^\d{4}-\d{2}$/.test(key) ? key : now.toISOString().slice(0, 7);
+  const today = ukToday();
+  const m = key && /^\d{4}-\d{2}$/.test(key) ? key : today.slice(0, 7);
   const [y, mo] = m.split("-").map(Number);
   const first = new Date(Date.UTC(y, mo - 1, 1));
   const last = new Date(Date.UTC(y, mo, 0));
-  const isCurrent = m === now.toISOString().slice(0, 7);
+  const isCurrent = m === today.slice(0, 7);
   return {
     key: m,
     from: first.toISOString().slice(0, 10),
     to: last.toISOString().slice(0, 10),
     label: first.toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }),
     daysInMonth: last.getUTCDate(),
-    dayOfMonth: isCurrent ? now.getUTCDate() : null,
+    dayOfMonth: isCurrent ? Number(today.slice(8, 10)) : null,
   };
 }
 
 export function recentMonths(count: number): Month[] {
-  const now = new Date();
-  return Array.from({ length: count }, (_, i) => {
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
-    return getMonth(d.toISOString().slice(0, 7));
-  });
+  const thisMonth = ukMonth();
+  return Array.from({ length: count }, (_, i) => getMonth(addMonthsTo(thisMonth, -i)));
 }
 
 const toOwnerStats = (rows: unknown) =>
@@ -171,7 +169,5 @@ export async function getRecurringSummary() {
   };
 }
 
-// Today's date (or a number of days from today) as "2026-10-02".
-export function isoDate(daysFromToday = 0) {
-  return new Date(Date.now() + daysFromToday * 86400000).toISOString().slice(0, 10);
-}
+// Today's UK date (or a number of days from today) as "2026-10-02".
+export const isoDate = (daysFromToday = 0) => ukDaysFromToday(daysFromToday);

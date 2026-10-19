@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
+import { requirePermission } from "@/lib/auth";
 import { loadJobs, loadPeople } from "@/lib/design/jobs";
 import { designStages, isDesignStage } from "@/lib/design/options";
 import { todayIso } from "@/lib/projects/options";
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: "Design jobs" };
 const UUID = /^[0-9a-f-]{36}$/i;
 
 export default async function DesignListPage(props: PageProps<"/design/list">) {
+  await requirePermission("design", "view");
   const sp = await props.searchParams;
   const designer = typeof sp.designer === "string" && UUID.test(sp.designer) ? sp.designer : "";
   const customer = typeof sp.customer === "string" && UUID.test(sp.customer) ? sp.customer : "";

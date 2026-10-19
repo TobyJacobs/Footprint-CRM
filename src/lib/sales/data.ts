@@ -1,4 +1,5 @@
 import "server-only";
+import { ukDaysFromToday } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 
 // Income accounts (same codes as Zoho Books / Xero) for a product's sales account.
@@ -55,7 +56,7 @@ export async function getDocumentLines(documentId: string) {
 export async function getCustomerWithContacts(customerId: string) {
   const supabase = await createClient();
   const [{ data: customer }, { data: contacts }] = await Promise.all([
-    supabase.from("customers").select("id, name, credit_status").eq("id", customerId).maybeSingle(),
+    supabase.from("customers").select("id, name, credit_status, invoice_due_days, invoice_due_terms").eq("id", customerId).maybeSingle(),
     supabase
       .from("contacts")
       .select("id, first_name, last_name, email, is_primary")
@@ -115,8 +116,5 @@ export async function getRecurringLines(recurringId: string) {
   }));
 }
 
-export function addDays(days: number, from = new Date()) {
-  const d = new Date(from);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-}
+// The UK date a number of days from today, e.g. a quote's "valid until".
+export const addDays = (days: number) => ukDaysFromToday(days);
