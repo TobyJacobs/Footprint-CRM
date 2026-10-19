@@ -570,3 +570,8 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - After merge: click-through (send a proof to yourself, approve and request changes), then tick the roadmap (Wave 4: "Design Workload: job board, files and notes" and "Design Workload: online proof approval").
 - Still to do in Wave 4: monday.com import (owner exports the board as a spreadsheet); monday.com renewal date.
 - Roadmap ticks needed (cloud session can't reach Supabase): add/tick "Design Workload: job board, files and notes" in Wave 4 once live.
+
+## 19 October 2026 - Design tables were missing on the live site (fixed)
+- Found during the Part 4b click-through: "Could not find the table public.design_jobs". Supabase's automatic update had **failed on every merge since 15 October 2026** ("content_items already exists"), because migrations `20261021…` to `20261027…` were applied by hand in the SQL editor but **not recorded** in `supabase_migrations.schema_migrations`. So Part 4a's tables never reached the database, and the Design section was broken live after #35 was merged.
+- Fix (owner approved, done by Claude in Chrome): checked all seven really were in the test database, then recorded them in `schema_migrations`; pushed to `main` to re-run the automatic update for `20261028…` (Design) and `20261029…` (proof approval).
+- **Rule from now on:** any migration applied by hand must also be recorded (`insert into supabase_migrations.schema_migrations (version, name) values (…)`). After every merge with a migration, check the "Supabase Preview" check on the merge commit passed: `gh api repos/TobyJacobs/Footprint-CRM/commits/<sha>/check-runs`.
