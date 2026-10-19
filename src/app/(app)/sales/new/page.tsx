@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { getSalespersonOptions } from "@/lib/customers/staff";
+import { customerDueDate, ukToday } from "@/lib/dates";
 import { addDays, getCompanySettings, getCustomerWithContacts, getTaxRates } from "@/lib/sales/data";
 import { docTypes, isDocType } from "@/lib/sales/options";
 import { saveDocument } from "../actions";
@@ -23,7 +24,7 @@ export default async function NewDocumentPage(props: PageProps<"/sales/new">) {
     customerId ? getCustomerWithContacts(customerId) : Promise.resolve({ customer: null, contacts: [] }),
   ]);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = ukToday();
   const terms =
     docType === "invoice" ? settings?.invoice_terms : docType === "sales_order" ? settings?.order_terms : settings?.quote_terms;
 
@@ -44,7 +45,9 @@ export default async function NewDocumentPage(props: PageProps<"/sales/new">) {
         defaults={{
           issue_date: today,
           valid_until: addDays(settings?.quote_valid_days ?? 30),
-          due_date: addDays(settings?.invoice_due_days ?? 30),
+          // The customer's own payment terms if they have any, else the company's.
+          due_date:
+            customerDueDate(today, picked.customer?.invoice_due_days, picked.customer?.invoice_due_terms) ?? addDays(settings?.invoice_due_days ?? 30),
           terms,
           notes: docType === "invoice" ? settings?.invoice_notes : null,
           owner_id: user.id,

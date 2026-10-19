@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin, requirePermission } from "@/lib/auth";
+import { addDaysTo, ukToday } from "@/lib/dates";
 import { bool, int, num, str } from "@/lib/forms";
 import { isDateIso, projectStatuses, taskStatuses } from "@/lib/projects/options";
 import { createClient } from "@/lib/supabase/server";
@@ -78,7 +79,7 @@ export async function saveProject(projectId: string | null, fd: FormData) {
     // Start the project with the template's standard stages and steps.
     if (templateId) {
       const { data: steps } = await supabase.from("project_template_tasks").select("stage, position, title, due_offset_days, estimated_minutes").eq("template_id", templateId);
-      const start = fields.start_date ?? new Date().toISOString().slice(0, 10);
+      const start = (fields.start_date as string | undefined) ?? ukToday();
       if (steps?.length) {
         const { error: stepsError } = await supabase.from("project_tasks").insert(
           steps.map((s) => ({
@@ -87,7 +88,7 @@ export async function saveProject(projectId: string | null, fd: FormData) {
             position: s.position,
             title: s.title,
             estimated_minutes: s.estimated_minutes,
-            due_date: s.due_offset_days === null ? null : new Date(new Date(`${start}T12:00:00`).getTime() + s.due_offset_days * 86400000).toISOString().slice(0, 10),
+            due_date: s.due_offset_days === null ? null : addDaysTo(start, s.due_offset_days),
           })),
         );
         // The project itself is saved, so send them to it rather than back to the form.
@@ -220,7 +221,7 @@ export async function stopTimer(logId: string, fd: FormData) {
   const elapsed = Math.round((Date.now() - new Date(running.started_at).getTime()) / 60000);
   const { error } = await supabase
     .from("time_logs")
-    .update({ minutes: Math.min(24 * 60, Math.max(1, elapsed)), started_at: null, log_date: new Date().toISOString().slice(0, 10), notes: str(fd, "notes") })
+    .update({ minutes: Math.min(24 * 60, Math.max(1, elapsed)), started_at: null, log_date: ukToday(), notes: str(fd, "notes") })
     .eq("id", logId);
   if (error) fail(back, error.message);
   revalidatePath("/projects", "layout");

@@ -3,6 +3,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import PrintableDocument, { type PrintableData } from "@/components/PrintableDocument";
 import { inputClass } from "@/components/ui";
 import { longDate } from "@/lib/customers/display";
+import { ukToday } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 import { respondToQuote } from "./actions";
 
@@ -60,7 +61,7 @@ export default async function PublicQuotePage(props: PageProps<"/q/[token]">) {
     );
   }
 
-  const expired = quote.status === "sent" && quote.valid_until !== null && quote.valid_until < new Date().toISOString().slice(0, 10);
+  const expired = quote.status === "sent" && quote.valid_until !== null && quote.valid_until < ukToday();
   const canRespond = quote.status === "sent" && !expired;
   const error = typeof sp.error === "string" ? sp.error : null;
   const done = sp.done === "accepted" || sp.done === "declined" ? sp.done : null;

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Notice, secondaryButton } from "@/components/ui";
-import { getCurrentUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { loadJobs, loadPeople } from "@/lib/design/jobs";
 import { todayIso } from "@/lib/projects/options";
 import { createClient } from "@/lib/supabase/server";
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "My design jobs" };
 
 // The jobs assigned to me, and the ones I asked for.
 export default async function MyDesignJobsPage(props: PageProps<"/design/mine">) {
-  const user = await getCurrentUser();
+  const user = await requirePermission("design", "view");
   const sp = await props.searchParams;
   const today = todayIso();
   const supabase = await createClient();

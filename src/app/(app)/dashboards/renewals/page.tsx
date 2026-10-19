@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Tile, money } from "@/components/dashboards/parts";
 import { Badge, Card } from "@/components/ui";
 import { longDate } from "@/lib/customers/display";
+import { ukMonth } from "@/lib/dates";
 import { addDays, todayIso } from "@/lib/projects/options";
 import { createClient } from "@/lib/supabase/server";
 import { requireTab } from "../guard";
@@ -71,7 +72,7 @@ export default async function RenewalsDashboard() {
   }
 
   // Hosting plans renew in a named month (domain / SSL renewal), no day.
-  const thisMonth = new Date().getMonth();
+  const thisMonth = Number(ukMonth().slice(5, 7)) - 1;
   const nextThree = [0, 1, 2].map((i) => MONTHS[(thisMonth + i) % 12]);
   const activeHosting = (hosting ?? []).filter((h) => (h.status ?? "").toLowerCase() !== "cancelled");
   const hostingByMonth = nextThree.map((month) => ({

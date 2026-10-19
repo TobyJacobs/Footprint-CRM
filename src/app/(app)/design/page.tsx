@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
-import { getCurrentUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { loadJobs, loadPeople } from "@/lib/design/jobs";
 import { designStages, jobNumber, nextStage, designStageLabel } from "@/lib/design/options";
 import { todayIso } from "@/lib/projects/options";
@@ -14,7 +14,7 @@ const UUID = /^[0-9a-f-]{36}$/i;
 // The board: one column per stage, like monday.com. Finished jobs show for
 // two weeks, then drop off (they're still in the List).
 export default async function DesignBoardPage(props: PageProps<"/design">) {
-  const user = await getCurrentUser();
+  const user = await requirePermission("design", "view");
   const sp = await props.searchParams;
   const designer = typeof sp.designer === "string" && UUID.test(sp.designer) ? sp.designer : "";
   const priority = sp.priority === "1";

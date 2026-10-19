@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
+import { addDaysTo, customerDueDate, ukToday } from "@/lib/dates";
 import { bool, int, num, str } from "@/lib/forms";
 import { defaultStatus, docTypes, isDocType, isLockedRecord, statuses, type DocType } from "@/lib/sales/options";
 
@@ -270,9 +271,13 @@ export async function convertDocument(documentId: string, to: DocType) {
     fail(back, e instanceof Error ? e.message : "Couldn't get a document number");
   }
 
-  const today = new Date();
-  const due = new Date(today);
-  due.setDate(due.getDate() + (settings?.invoice_due_days ?? 30));
+  // Due date: the customer's own payment terms if they have any, else the company's.
+  const today = ukToday();
+  let due: string | null = null;
+  if (to === "invoice") {
+    const { data: customer } = await supabase.from("customers").select("invoice_due_days, invoice_due_terms").eq("id", src.customer_id).maybeSingle();
+    due = customerDueDate(today, customer?.invoice_due_days, customer?.invoice_due_terms) ?? addDaysTo(today, settings?.invoice_due_days ?? 30);
+  }
 
   const { data: created, error } = await supabase
     .from("sales_documents")
@@ -286,8 +291,8 @@ export async function convertDocument(documentId: string, to: DocType) {
       source_document_id: src.id,
       title: to === "credit_note" ? `Credit for invoice ${src.number}` : src.title,
       customer_reference: src.response_po ?? src.customer_reference,
-      issue_date: today.toISOString().slice(0, 10),
-      due_date: to === "invoice" ? due.toISOString().slice(0, 10) : null,
+      issue_date: today,
+      due_date: due,
       business_unit: src.business_unit,
       delivery_type: to === "invoice" || to === "credit_note" ? null : src.delivery_type,
       labour_cost: to === "credit_note" ? null : src.labour_cost,

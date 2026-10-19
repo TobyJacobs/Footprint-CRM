@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import type { CurrentUser } from "@/lib/auth";
+import { ukToday } from "@/lib/dates";
 
 // Wraps exported data in a downloadable JSON file with a short explanation,
 // suitable for answering a subject access request.
@@ -18,7 +19,7 @@ export function exportResponse(user: CurrentUser, filenameStem: string, subject:
     ...data,
   };
   const safeName = filenameStem.replace(/[^a-z0-9-]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "export";
-  const date = new Date().toISOString().slice(0, 10);
+  const date = ukToday();
   return new NextResponse(JSON.stringify(body, null, 2), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",

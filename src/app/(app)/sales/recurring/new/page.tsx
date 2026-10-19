@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { getSalespersonOptions } from "@/lib/customers/staff";
+import { addMonthsTo, ukMonth } from "@/lib/dates";
 import { getCustomerWithContacts, getTaxRates } from "@/lib/sales/data";
 import { frequencyFromHosting } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
@@ -72,8 +73,7 @@ export default async function NewRecurringPage(props: PageProps<"/sales/recurrin
   }
 
   const picked = customerId ? await getCustomerWithContacts(customerId) : { customer: null, contacts: [] };
-  const firstOfNextMonth = new Date();
-  firstOfNextMonth.setMonth(firstOfNextMonth.getMonth() + 1, 1);
+  const firstOfNextMonth = `${addMonthsTo(ukMonth(), 1)}-01`;
 
   return (
     <>
@@ -91,7 +91,7 @@ export default async function NewRecurringPage(props: PageProps<"/sales/recurrin
         defaults={{
           name,
           frequency,
-          next_date: firstOfNextMonth.toISOString().slice(0, 10),
+          next_date: firstOfNextMonth,
           owner_id: user.id,
           hosting_plan_id: isId(sp.hosting) ? sp.hosting : null,
           retainer_id: isId(sp.retainer) ? sp.retainer : null,

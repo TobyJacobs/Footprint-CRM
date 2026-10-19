@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { getSalespersonOptions } from "@/lib/customers/staff";
+import { ukToday } from "@/lib/dates";
 import { getSuppliers, getTaxRates } from "@/lib/sales/data";
 import { savePurchaseOrder } from "../actions";
 import PoForm from "../PoForm";
@@ -26,7 +27,7 @@ export default async function NewPurchaseOrderPage(props: PageProps<"/sales/purc
         taxRates={taxRates}
         staff={staff}
         defaults={{
-          issue_date: new Date().toISOString().slice(0, 10),
+          issue_date: ukToday(),
           owner_id: user.id,
           supplier_id: typeof sp.supplier === "string" ? sp.supplier : null,
         }}

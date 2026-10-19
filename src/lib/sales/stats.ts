@@ -1,4 +1,5 @@
 import "server-only";
+import { addMonthsTo, ukMonth } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 
 // Figures for the charts in Sales & Operations. The adding-up happens in the
@@ -46,11 +47,10 @@ const pct = (profit: number, sales: number) => (sales > 0 ? Math.round((profit /
 
 export async function getSalesStats({ months = 12, ownerId }: { months?: number; ownerId?: string | null }): Promise<SalesStats> {
   const supabase = await createClient();
-  const today = new Date();
-  const start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - (months - 1), 1));
+  const startMonth = addMonthsTo(ukMonth(), -(months - 1));
 
   const { data, error } = await supabase.rpc("sales_stats", {
-    p_from: start.toISOString().slice(0, 10),
+    p_from: `${startMonth}-01`,
     p_owner: ownerId ?? null,
   });
   if (error) throw new Error(`Couldn't load figures: ${error.message}`);
@@ -61,8 +61,7 @@ export async function getSalesStats({ months = 12, ownerId }: { months?: number;
   let totalCost = 0;
   const monthList: MonthStats[] = [];
   for (let i = 0; i < months; i++) {
-    const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + i, 1));
-    const key = d.toISOString().slice(0, 7);
+    const key = addMonthsTo(startMonth, i);
     const r = found.get(key);
     const invoiced = r ? Number(r.invoiced) - Number(r.credited) : 0;
     const cost = r ? Number(r.cost) : 0;
@@ -70,7 +69,7 @@ export async function getSalesStats({ months = 12, ownerId }: { months?: number;
     totalCost += cost;
     monthList.push({
       month: key,
-      label: d.toLocaleDateString("en-GB", { month: "short", year: "2-digit", timeZone: "UTC" }),
+      label: new Date(`${key}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "short", year: "2-digit", timeZone: "UTC" }),
       quoted: round(Number(r?.quoted ?? 0)),
       won: round(Number(r?.won ?? 0)),
       lost: round(Number(r?.lost ?? 0)),
