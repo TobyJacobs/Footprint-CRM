@@ -14,7 +14,8 @@ One short entry per session. Newest at the top.
 - Built Part 4b: the design team emails a proof (or makes a link), and the customer approves it or asks for changes on a private page. The answer moves the job and is noted on the job and the customer.
 - Tested the database rules on a temporary PGlite database (all 21 checks passed). Build, types and lint clean. Pull request #36 opened and, at the owner's request, merged by Claude (`d740a7f`).
 - Click-through found the Design tables missing live: Supabase's automatic update had failed since 15 October 2026 because seven hand-applied migrations weren't recorded. Recorded them (owner approved), the update then applied 4a and 4b. Full click-through passed (email, request changes, link only, approve). Roadmap Wave 4 ticked. The owner checked the test email; test job DJ-1001 then deleted.
-- Later: moved the backup-restore test to Go-live only, and did the health-check leftovers in one PR (UK dates, customer payment terms, sync key check, package updates, Design page access checks).
+- Later: moved the backup-restore test to Go-live only, and did the health-check leftovers in one PR (UK dates, customer payment terms, sync key check, package updates, Design page access checks). Merged and checked live.
+- Built the invite-only FootprintAI section from Mitch's Footprint AI brief: agents and systems with progress, live scorecard, test log and updates; admin-managed invite list. PR opened.
 
 ## 16–19 October 2026: New laptop, merges and invoice safety (cloud session)
 - The owner merged #32 and #33 and tested the quote flow live: works well.

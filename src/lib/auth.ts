@@ -47,7 +47,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
   if (!userId) redirect("/login");
   const auth = { user: { id: userId } };
 
-  const [{ data: profile }, { data: perms }, { data: dashboards }, { data: seesAll }] = await Promise.all([
+  const [{ data: profile }, { data: perms }, { data: dashboards }, { data: seesAll }, { data: aiMember }] = await Promise.all([
     supabase
       .from("profiles")
       .select("email, full_name, is_admin, is_active")
@@ -56,6 +56,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
     supabase.rpc("my_permissions"),
     supabase.rpc("my_dashboards"),
     supabase.rpc("sees_all_sales"),
+    supabase.rpc("is_ai_member"),
   ]);
 
   if (!profile || !profile.is_active) redirect("/login?error=inactive");
@@ -63,6 +64,8 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
   let granted = new Set(
     (perms ?? []).map((p: { feature: string; action: string }) => `${p.feature}:${p.action}`),
   );
+  // FootprintAI is invite only: being on its list (not a role) gives view and edit.
+  if (aiMember === true) granted.add("ai:view").add("ai:edit");
   let isAdmin = profile.is_admin;
   let myDashboards = (dashboards as string[] | null) ?? [];
   let seesAllSales = isAdmin || seesAll === true;

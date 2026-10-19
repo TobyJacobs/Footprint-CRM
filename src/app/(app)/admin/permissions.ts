@@ -11,4 +11,5 @@ export const actionLabels: Record<(typeof ACTIONS)[number], string> = {
 
 // Admin access is controlled by the separate "admin" switch on each user,
 // not by roles, so it's left out of the permission grid.
-export const permissionFeatures = features.filter((f) => f.key !== "admin");
+// FootprintAI is left out: access comes only from its invite list (Admin adds people there).
+export const permissionFeatures = features.filter((f) => f.key !== "admin" && f.key !== "ai");
