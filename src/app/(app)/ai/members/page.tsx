@@ -75,7 +75,7 @@ export default async function AiMembersPage(props: PageProps<"/ai/members">) {
             </button>
           </form>
         ) : (
-          <p className="text-sm text-fp-mid">Everyone who has signed in is already on the list.</p>
+          <p className="text-sm text-fp-mid">Everyone who has signed in so far is an admin or already on the list, so there&apos;s no one to add yet.</p>
         )}
         <p className="mt-3 text-xs text-fp-mid">Only staff who have signed in to FootprintOS at least once can be added.</p>
       </Card>
