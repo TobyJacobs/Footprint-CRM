@@ -22,7 +22,8 @@ export type RoadmapRequest = {
 export type Comment = { id: string; request_id: string; author_id: string; body: string; created_at: string };
 
 // The pages a request can be about.
-export const pageOptions = ["Home", ...features.map((f) => f.label), "Sign-in / login", "Other"];
+// FootprintAI is invite only, so it isn't named to everyone here.
+export const pageOptions = ["Home", ...features.filter((f) => f.key !== "ai").map((f) => f.label), "Sign-in / login", "Other"];
 
 export const waveLabel = (w: Wave) => (/^\d/.test(w.code) ? `Wave ${w.code}: ${w.title}` : w.title);
 

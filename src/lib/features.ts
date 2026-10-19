@@ -9,6 +9,7 @@ import {
   Palette,
   Map,
   Settings,
+  Sparkles,
   Target,
   Users,
   type LucideIcon,
@@ -92,6 +93,14 @@ export const features: Feature[] = [
       "Design work items with status, priority markers, attached drafts and notes.",
     wave: 4,
     replaces: "monday.com",
+  },
+  {
+    key: "ai",
+    label: "FootprintAI",
+    href: "/ai",
+    icon: Sparkles,
+    description: "The Footprint AI programme: the agents and systems we're building, their progress and live scorecards. Invite only.",
+    wave: 4,
   },
   {
     key: "magazines",

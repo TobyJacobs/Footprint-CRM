@@ -247,3 +247,9 @@ This refines the "Supabase, London region" part of the technical foundations dec
 **Decision:** When a proof is sent for approval, FootprintOS makes a private link to that one file, valid for **30 days**, and stores it with the approval request. The customer's approval page shows the file through that link. After 30 days the page says the link has expired and asks the customer to get in touch.
 **Why:** Proof files are in private storage, and the website deliberately has no "master" database key. This keeps it that way: no new secret in Netlify, and the customer can only ever reach the one file they were sent. Sending a newer proof, or pressing Withdraw, stops the old approval page showing the file. (The file link itself keeps working until it expires, but nobody else has it.)
 **Alternative not chosen:** adding Supabase's master key to Netlify so the page could fetch files on demand. More flexible, but a much bigger risk if it ever leaked.
+
+## 19 October 2026 - FootprintAI is invite only, outside the role system
+
+**Decision (owner):** FootprintAI can be seen by admins and by people an admin adds to its invite list. Roles never give access. Updates are by hand and by Claude Code for now; a proper connector for the company's Claude comes later.
+**Why:** It holds the Footprint AI programme's plans and results before launch, so it should be visible only to named people. Keeping it off the role system means adding someone to a role (for example, Sales) can never accidentally reveal it.
+**How:** an `ai_members` list and an `is_ai_member()` check used by every FootprintAI data rule; the section is left out of Admin → Roles and the feedback page list.
