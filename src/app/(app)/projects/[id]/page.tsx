@@ -10,6 +10,7 @@ import { isOpenProject, minutesText, minutesToHours, projectStatusLabel, project
 import { createClient } from "@/lib/supabase/server";
 import { addTask, deleteProject, deleteTask, deleteTimeLog, logTime, startTimer, stopTimer, updateTask } from "../actions";
 import TimeForm from "../TimeForm";
+import DesignJobsPanel from "@/components/DesignJobsPanel";
 
 export async function generateMetadata(props: PageProps<"/projects/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -301,6 +302,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
         </div>
 
         <div className="grid content-start gap-6">
+          <DesignJobsPanel project={project.id} />
           <Card title="Details">
             <dl className="grid gap-3 text-sm">
               <div>

@@ -8,6 +8,8 @@ One short entry per session. Newest at the top.
 - The owner merged #32 and #33 and tested the quote flow live: works well.
 - Owner moved to a new laptop; checked GitHub has everything and explained what must be set up again (`.env.local`, Claude settings, Chrome extension). Flagged that the GitHub repository is public.
 - Built invoice safety (fixed status rules, no double conversion, failed email leaves a draft) and the UK summer-time fix for follow-up times, in one pull request.
+- The owner merged it (#34). Owner chose to leave the 100% margin display as it is.
+- Started Wave 4 (Design Workload). Owner's answers recorded in PROGRESS. Built Part 4a (job board, list, my jobs, files with proof versions, notes, links from orders/projects/customers) and tested the database rules on a temporary local database.
 
 ## 15 October 2026: Repository health check (cloud session)
 - Checked build, type-check, lint and package security on `main`: all clean, no known vulnerabilities.

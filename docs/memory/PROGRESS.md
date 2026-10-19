@@ -1,6 +1,6 @@
 # Progress — where we are right now
 
-_Last updated: 16 October 2026_
+_Last updated: 19 October 2026_
 
 ## Current stage
 **Waves 0, 1, 2 (2a/2b/2c) and the Wave 3 building work are LIVE** on https://footprintgroupos.netlify.app, along with the Marketing workspace, Dashboards, profit after time and the 15 October 2026 health-check fixes. The live site still uses the **test database** (Frankfurt); the move to the London database, every Zoho import and the switch-offs all sit in the final Go-live stage.
@@ -547,3 +547,14 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   - **Failed email = still a draft:** the document is still issued just before sending (customer links refuse drafts), but if SendGrid fails it goes back to draft with its old sent date.
   - **UK time fix:** `dateTime()` in `src/lib/forms.ts` reads form times as Europe/London, so follow-up and timeline times no longer move an hour on each save in summer. Tested with a UTC server clock, including both clock-change days.
 - Build, type check and lint clean. Not clicked through (no test database in the cloud session).
+- **LIVE 19 October 2026:** owner merged PR [TobyJacobs/Footprint-CRM#34](https://github.com/TobyJacobs/Footprint-CRM/pull/34) (invoice safety + UK time fix) as `ec29b9f`.
+- Margin showing 100%: explained to the owner (lines with no cost price count as £0 cost). **Owner decided (19 October 2026) to leave it as it is** — don't raise it again unless asked.
+
+## 19 October 2026 - Wave 4 started: Design Workload (replaces monday.com)
+- Owner's answers: jobs come from **sales orders, projects and ad-hoc requests**; **standard stages** (To do → In design → With customer → Amends → Approved → Sent to production → Done); **online proof approval now** (Part 4b); earlier monday.com replacement code not found, so built fresh. monday.com renewal date: asked, not yet answered.
+- **Part 4a built** (branch `claude/charming-lovelace-5i9y13`, PR waiting for the owner):
+  - Migration `20261028120000_design_workload.sql`: `design_jobs` (number DJ-1001…, brief, customer, sales order, project, designer, due date, high priority, stage, stage/finished stamps), `design_job_files` (proofs numbered v1, v2… automatically; brief files), `design_job_notes`; private storage bucket `design-files` (images and PDF, 25 MB). Permissions: Design view = see all jobs, raise jobs, add notes and brief files; edit = change jobs and add proofs; delete = delete jobs/files/any note. Marketing team + Directors: view/edit/delete; Operations: view/edit; **Sales team now gets Design view**. Applies to the TEST database automatically when merged (Supabase GitHub integration).
+  - Screens: `/design` board (column per stage, "Move to …" button, late jobs flagged, done jobs shown for 14 days), `/design/list` (filters, include finished), `/design/mine` (assigned to me + jobs I asked for), `/design/new` (pre-filled from `?order=`, `?project=`, `?customer=`), `/design/[id]` (stage buttons incl. "Customer wants changes", brief, proofs with preview of the latest, uploader, notes, details form). A "Design jobs" card on sales order, project and customer pages.
+  - Checks: build, type check, lint clean. Migration run on a temporary local PostgreSQL with Supabase stand-ins and permissions tested as salesperson, designer and no-access user (all as intended). Not clicked through in a browser.
+- **Part 4b next:** online proof approval by the customer (private link, Approve / Request changes) and the monday.com import (owner exports the board as a spreadsheet).
+- Roadmap ticks needed (cloud session can't reach Supabase): add/tick "Design Workload: job board, files and notes" in Wave 4 once live.

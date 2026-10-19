@@ -15,6 +15,7 @@ import { addActivity, deleteActivity, markNotDuplicate } from "../actions";
 import EmailComposer from "../EmailComposer";
 import { sendCustomerEmail } from "../email-actions";
 import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
+import DesignJobsPanel from "@/components/DesignJobsPanel";
 
 export async function generateMetadata(props: PageProps<"/customers/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -397,6 +398,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
           </div>
 
           <div className="grid content-start gap-6">
+            <DesignJobsPanel customer={id} />
             <Card title="Accounts & credit">
               <dl className="grid gap-4">
                 <Detail label="Credit status">
