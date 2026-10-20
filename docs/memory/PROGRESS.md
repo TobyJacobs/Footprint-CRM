@@ -632,3 +632,9 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Checked locally (no saving): new contact for Chalk Hill Electrical defaults to "48 Example Street, Locks Heath…"; switching options and typing behave as above; an existing contact with no address defaults to the company address. Build, type check, lint clean.
 - Removed from OPEN-QUESTIONS (details now given).
 - **LIVE 20 October 2026:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#42](https://github.com/TobyJacobs/Footprint-CRM/pull/42), `f05d00b`), live from 12:09 BST. Checked live (no saving): new contact and an existing contact with no address both default to Chalk Hill Electrical's billing address. Saving not tried live (would change test data); the form sends the same fields as before.
+
+## 20 October 2026 - Improvement list item 3: action buttons on each customer (branch `feature/customer-actions`, PR waiting for the owner)
+- Owner's choices: all four groups, as a button bar under the customer's name.
+- `customers/[id]/CustomerActions.tsx`: **Sell** (New quote / New sales order / New invoice, with quotes edit; "Sell ads" greyed out "Coming with Magazines" until Wave 5 ad bookings), **Work** (New project with projects edit, New design job with design view, New content item with marketing edit), **Contact** (Email customer → #email, Log a call → `?log=call#timeline` with Call pre-selected, Add contact; customers edit). Each opens with the customer filled in. Hidden for erased (GDPR) customers.
+- When Wave 5 adds advert bookings, point "Sell ads" at the new booking page (it's a placeholder in CustomerActions).
+- Checked locally: every button opens its page with Chalk Hill Electrical filled in (200s); Log a call selects Call and scrolls to the timeline (fixed: dropdown is keyed so it updates when moving within the page); Email customer scrolls to the email box; phone width wraps neatly. Build, type check, lint clean.
