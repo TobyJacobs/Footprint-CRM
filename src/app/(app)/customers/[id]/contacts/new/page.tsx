@@ -15,7 +15,7 @@ export default async function NewContactPage(props: PageProps<"/customers/[id]/c
   const { id } = await props.params;
   const searchParams = await props.searchParams;
   const supabase = await createClient();
-  const { data: customer } = await supabase.from("customers").select("name").eq("id", id).maybeSingle();
+  const { data: customer } = await supabase.from("customers").select("name, billing_street, billing_city, billing_county, billing_postcode, billing_country, shipping_street, shipping_city, shipping_county, shipping_postcode, shipping_country").eq("id", id).maybeSingle();
   if (!customer) notFound();
 
   return (
@@ -27,7 +27,7 @@ export default async function NewContactPage(props: PageProps<"/customers/[id]/c
         </Link>
         <div className="mt-4">
           <Notice searchParams={searchParams} />
-          <ContactForm action={saveContact.bind(null, id, null)} cancelHref={`/customers/${id}`} />
+          <ContactForm customer={customer} action={saveContact.bind(null, id, null)} cancelHref={`/customers/${id}`} />
         </div>
       </div>
     </>

@@ -1,19 +1,27 @@
 import Link from "next/link";
 import { Card, Checkbox, CheckboxGroup, Field, Select, TextArea, TextInput, primaryButton, secondaryButton } from "@/components/ui";
 import { contactFinancialStatuses, leadSources, marketingLists, salutations } from "@/lib/customers/options";
+import ContactAddressFields, { type Address } from "./ContactAddressFields";
 
 type Contact = Record<string, unknown>;
 
 export default function ContactForm({
   contact,
+  customer,
   action,
   cancelHref,
 }: {
   contact?: Contact;
+  // The customer's own addresses, offered in the contact's address dropdown.
+  customer: Contact;
   action: (fd: FormData) => Promise<void>;
   cancelHref: string;
 }) {
   const v = (k: string) => (contact?.[k] as string | null | undefined) ?? null;
+  const addressFrom = (row: Contact | undefined, prefix: string): Address => {
+    const f = (k: string) => ((row?.[`${prefix}${k}`] as string | null | undefined) ?? "").toString();
+    return { street: f("street"), city: f("city"), county: f("county"), postcode: f("postcode"), country: f("country") };
+  };
 
   return (
     <form action={action} className="grid max-w-3xl gap-6">
@@ -59,21 +67,11 @@ export default function ContactForm({
             <TextInput name="home_phone" type="tel" defaultValue={v("home_phone")} />
           </Field>
           <div />
-          <Field label="Street" wide>
-            <TextArea name="street" rows={2} defaultValue={v("street")} />
-          </Field>
-          <Field label="Town / city">
-            <TextInput name="city" defaultValue={v("city")} />
-          </Field>
-          <Field label="County">
-            <TextInput name="county" defaultValue={v("county")} />
-          </Field>
-          <Field label="Postcode">
-            <TextInput name="postcode" defaultValue={v("postcode")} />
-          </Field>
-          <Field label="Country">
-            <TextInput name="country" defaultValue={v("country")} />
-          </Field>
+          <ContactAddressFields
+            current={addressFrom(contact, "")}
+            billing={addressFrom(customer, "billing_")}
+            shipping={addressFrom(customer, "shipping_")}
+          />
         </div>
       </Card>
 
