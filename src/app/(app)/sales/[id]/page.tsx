@@ -268,15 +268,17 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
         <Card title="Lines">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="w-full min-w-[860px] text-left text-sm">
               <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
                 <tr>
                   <th className="py-2 pr-3 font-semibold">Description</th>
                   <th className="py-2 pr-3 text-right font-semibold">Qty</th>
-                  <th className="py-2 pr-3 text-right font-semibold">Price</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Cost</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Sell</th>
                   <th className="py-2 pr-3 text-right font-semibold">Disc</th>
                   <th className="py-2 pr-3 text-right font-semibold">VAT</th>
-                  <th className="py-2 pr-3 text-right font-semibold">Net</th>
+                  <th className="py-2 pr-3 text-right font-semibold" title="Before VAT">Total</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Margin</th>
                   <th className="py-2 text-right font-semibold">GP</th>
                 </tr>
               </thead>
@@ -320,11 +322,16 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                       )}
                     </td>
                     <td className="py-2 pr-3 text-right">{l.quantity}</td>
+                    <td className="py-2 pr-3 text-right text-fp-dark/75">
+                      {/* With a GP override the cost is worked out from it, so show the per-unit figure that gives. */}
+                      {l.gp_override !== null ? (l.quantity ? gbp(l.line_cost / l.quantity) : "—") : l.unit_cost === null ? "—" : gbp(l.unit_cost)}
+                    </td>
                     <td className="py-2 pr-3 text-right">{gbp(l.unit_price)}</td>
                     <td className="py-2 pr-3 text-right">{l.discount_percent ? `${l.discount_percent}%` : ""}</td>
                     <td className="py-2 pr-3 text-right">{l.tax_rate}%</td>
                     <td className="py-2 pr-3 text-right font-semibold">{gbp(l.line_net)}</td>
-                    <td className="py-2 text-right">
+                    <td className="py-2 pr-3 text-right">{marginPercent(l.line_net, l.line_cost) === null ? "—" : `${marginPercent(l.line_net, l.line_cost)}%`}</td>
+                    <td className={`py-2 text-right ${l.line_net - l.line_cost < 0 ? "text-fp-error" : ""}`}>
                       {gbp(l.line_net - l.line_cost)}
                       {l.gp_override !== null && <span className="block text-[10px] font-semibold uppercase text-fp-amber">overridden</span>}
                     </td>
@@ -358,6 +365,10 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
             <dl className="grid grid-cols-2 gap-y-1 text-sm">
               <dt className="text-fp-dark/75">Cost</dt>
               <dd className="text-right">{gbp(Number(doc.cost_total))}</dd>
+              <dt className="font-semibold">GP</dt>
+              <dd className={`text-right font-semibold ${Number(doc.subtotal) - Number(doc.cost_total) < 0 ? "text-fp-error" : ""}`}>
+                {gbp(Number(doc.subtotal) - Number(doc.cost_total))}
+              </dd>
               {doc.labour_cost !== null && (
                 <>
                   <dt className="text-fp-dark/75">Labour cost</dt>

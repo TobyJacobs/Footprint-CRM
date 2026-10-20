@@ -147,6 +147,24 @@ export function lineNet(l: LineInput) {
   return round2(l.quantity * l.unit_price * (1 - l.discount_percent / 100));
 }
 
+// A line's cost: quantity × unit cost, or (with a GP override) whatever makes
+// its gross profit the override.
+export function lineCost(l: LineInput) {
+  return l.gp_override != null ? round2(lineNet(l) - l.gp_override) : round2(l.quantity * (l.unit_cost ?? 0));
+}
+
+// A line's gross profit (£, before VAT) and margin (% of its net).
+export const lineGp = (l: LineInput) => round2(lineNet(l) - lineCost(l));
+export const lineMargin = (l: LineInput) => marginPercent(lineNet(l), lineCost(l));
+
+// The sell price per unit that gives a margin (%) on a unit cost, after the
+// line's discount: price × (1 − discount) × (1 − margin) = cost. Null when it
+// can't be worked out (no cost, or a margin of 100% or more).
+export function priceForMargin(unitCost: number | null, marginPct: number, discountPct = 0) {
+  if (unitCost === null || !(unitCost > 0) || !(marginPct < 100) || !(discountPct < 100)) return null;
+  return round2(unitCost / ((1 - marginPct / 100) * (1 - discountPct / 100)));
+}
+
 export function totals(lines: LineInput[]) {
   let subtotal = 0;
   let vat = 0;
@@ -155,8 +173,7 @@ export function totals(lines: LineInput[]) {
     const net = lineNet(l);
     subtotal += net;
     vat += round2((net * l.tax_rate) / 100);
-    // An overridden line's cost is whatever makes its gross profit the override.
-    cost += l.gp_override != null ? round2(net - l.gp_override) : round2(l.quantity * (l.unit_cost ?? 0));
+    cost += lineCost(l);
   }
   subtotal = round2(subtotal);
   vat = round2(vat);

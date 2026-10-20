@@ -6,7 +6,7 @@ import { inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { quickAddCustomer, type QuickCustomerInput } from "../customers/actions";
 import { DuplicateCheck } from "../customers/DuplicateCheck";
 import ProductDropdown, { productLineText } from "./ProductDropdown";
-import { totals, lineNet, marginPercent } from "@/lib/sales/options";
+import { lineGp, lineMargin, lineNet, marginPercent, priceForMargin, totals } from "@/lib/sales/options";
 
 type TaxRate = { id: string; name: string; rate: number };
 type Contact = { id: string; first_name: string | null; last_name: string; email: string | null; is_primary: boolean };
@@ -34,6 +34,8 @@ export type EditorLine = {
   tax_rate_id: string | null;
   tax_rate: number;
   gp_override?: number | null;
+  // What's being typed in the margin box (screen only, never saved).
+  margin_input?: string;
 };
 
 const money = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" });
@@ -303,6 +305,13 @@ export default function DocumentEditor({
   const update = (key: string, patch: Partial<EditorLine>) =>
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
 
+  // Typing a margin works out the sell price from the cost (after discount).
+  const setMargin = (l: EditorLine, value: string) => {
+    const m = Number(value);
+    const price = value.trim() === "" || !Number.isFinite(m) ? null : priceForMargin(l.unit_cost, m, l.discount_percent);
+    update(l.key, price === null ? { margin_input: value } : { margin_input: value, unit_price: price });
+  };
+
   const t = totals(lines);
   const margin = marginPercent(t.subtotal, t.cost);
 
@@ -379,16 +388,18 @@ export default function DocumentEditor({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] text-left text-sm">
+        <table className="w-full min-w-[1100px] text-left text-sm">
           <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
             <tr>
               <th className="py-2 pr-2 font-semibold">Item</th>
               <th className="w-20 py-2 pr-2 font-semibold">Qty</th>
-              <th className="w-28 py-2 pr-2 font-semibold">Price £</th>
               <th className="w-28 py-2 pr-2 font-semibold">Cost £</th>
+              <th className="w-28 py-2 pr-2 font-semibold">Sell £</th>
               <th className="w-20 py-2 pr-2 font-semibold">Disc %</th>
               <th className="w-36 py-2 pr-2 font-semibold">VAT</th>
-              <th className="w-28 py-2 pr-2 text-right font-semibold">Net</th>
+              <th className="w-28 py-2 pr-2 text-right font-semibold" title="Before VAT">Total £</th>
+              <th className="w-24 py-2 pr-2 font-semibold" title="Type a margin to work out the sell price">Margin %</th>
+              <th className="w-24 py-2 pr-2 text-right font-semibold" title="Gross profit, before VAT">GP £</th>
               <th className="w-8" />
             </tr>
           </thead>
@@ -423,14 +434,22 @@ export default function DocumentEditor({
                   <input type="number" step="any" value={l.quantity} onChange={(e) => update(l.key, { quantity: num(e.target.value) })} className={inputClass} />
                 </td>
                 <td className="py-2 pr-2">
-                  <input type="number" step="0.01" value={l.unit_price} onChange={(e) => update(l.key, { unit_price: num(e.target.value) })} className={inputClass} />
+                  <input
+                    type="number"
+                    step="0.01"
+                    aria-label="Cost per unit"
+                    value={l.unit_cost ?? ""}
+                    onChange={(e) => update(l.key, { unit_cost: e.target.value === "" ? null : num(e.target.value), margin_input: undefined })}
+                    className={inputClass}
+                  />
                 </td>
                 <td className="py-2 pr-2">
                   <input
                     type="number"
                     step="0.01"
-                    value={l.unit_cost ?? ""}
-                    onChange={(e) => update(l.key, { unit_cost: e.target.value === "" ? null : num(e.target.value) })}
+                    aria-label="Sell price per unit"
+                    value={l.unit_price}
+                    onChange={(e) => update(l.key, { unit_price: num(e.target.value), margin_input: undefined })}
                     className={inputClass}
                   />
                 </td>
@@ -441,7 +460,7 @@ export default function DocumentEditor({
                     min={0}
                     max={100}
                     value={l.discount_percent}
-                    onChange={(e) => update(l.key, { discount_percent: Math.min(100, Math.max(0, num(e.target.value))) })}
+                    onChange={(e) => update(l.key, { discount_percent: Math.min(100, Math.max(0, num(e.target.value))), margin_input: undefined })}
                     className={inputClass}
                   />
                 </td>
@@ -462,6 +481,27 @@ export default function DocumentEditor({
                   </select>
                 </td>
                 <td className="py-2 pr-2 pt-4 text-right font-semibold">{money.format(lineNet(l))}</td>
+                <td className="py-2 pr-2">
+                  {l.gp_override != null ? (
+                    // A GP override (operations team) fixes the profit, so the margin can't be typed here.
+                    <span className="block pt-2 text-right" title="GP overridden">
+                      {lineMargin(l) === null ? "—" : `${lineMargin(l)}%`}
+                    </span>
+                  ) : (
+                    <input
+                      type="number"
+                      step="0.1"
+                      max={99.9}
+                      aria-label="Margin %"
+                      title={l.unit_cost ? "Type a margin to work out the sell price" : "Add a cost first to set the price from a margin"}
+                      value={l.margin_input ?? lineMargin(l) ?? ""}
+                      onChange={(e) => setMargin(l, e.target.value)}
+                      onBlur={() => update(l.key, { margin_input: undefined })}
+                      className={inputClass}
+                    />
+                  )}
+                </td>
+                <td className={`py-2 pr-2 pt-4 text-right ${lineGp(l) < 0 ? "text-fp-error" : ""}`}>{money.format(lineGp(l))}</td>
                 <td className="py-2 pt-3">
                   <button
                     type="button"
@@ -495,6 +535,8 @@ export default function DocumentEditor({
           <dd className="text-right font-bold">{money.format(t.total)}</dd>
           <dt className="mt-2 text-fp-mid">Cost</dt>
           <dd className="mt-2 text-right text-fp-mid">{money.format(t.cost)}</dd>
+          <dt className="font-semibold text-fp-teal-deep">GP</dt>
+          <dd className={`text-right font-semibold ${t.profit < 0 ? "text-fp-error" : "text-fp-teal-deep"}`}>{money.format(t.profit)}</dd>
           <dt className="font-semibold text-fp-teal-deep">Margin</dt>
           <dd className="text-right font-semibold text-fp-teal-deep">{margin === null ? "—" : `${margin}%`}</dd>
         </dl>
