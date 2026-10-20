@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { Card, Checkbox, Field, Select, TextArea, TextInput, primaryButton, secondaryButton } from "@/components/ui";
 import {
-  businessUnits, creditReasons, deliveryTypes, docTypes, expectedDates, lossReasons, probabilities, productionSteps,
+  businessUnits, quoteBusinessUnits, creditReasons, deliveryTypes, docTypes, expectedDates, lossReasons, probabilities, productionSteps,
   type DocType,
 } from "@/lib/sales/options";
 import DocumentEditor, { type EditorLine } from "./DocumentEditor";
@@ -85,7 +85,7 @@ export default async function DocumentForm({
             </Field>
           )}
           <Field label="Business unit">
-            <Select name="business_unit" options={businessUnits} defaultValue={v("business_unit") as string} />
+            <Select name="business_unit" options={docType === "quote" ? quoteBusinessUnits : businessUnits} defaultValue={v("business_unit") as string} />
           </Field>
           {docType === "quote" && (
             <>

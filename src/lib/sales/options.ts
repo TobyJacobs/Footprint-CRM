@@ -117,7 +117,10 @@ export function statusToneFor(status: string) {
 }
 
 // Footprint's own fields, worded as in Zoho Books.
+// Orders, invoices, recurring invoices and products keep Zoho's list.
 export const businessUnits = ["Print", "Account Sales", "Digital"];
+// Quotes use Footprint's own business units (owner, 20 October 2026).
+export const quoteBusinessUnits = ["Print/Merch", "Advertising", "Footprint AI", "Signage"];
 export const probabilities = ["Low", "Confident", "Definite"];
 export const expectedDates = ["This Month", "Next Month", "Future"];
 export const deliveryTypes = ["Direct to Customer", "Pick up from Footprint", "Swindon Office", "Footprint Delivery"];
