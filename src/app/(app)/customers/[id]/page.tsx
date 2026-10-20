@@ -7,6 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import { Badge, Card, Notice, Select, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { address, gbp, longDate, personName, shortDateTime, statusTone, toLocalInput } from "@/lib/customers/display";
+import { loadGlance } from "@/lib/customers/glance";
 import { activityKinds } from "@/lib/customers/options";
 import { statusLabel as salesStatus, statusToneFor as salesTone, type DocType } from "@/lib/sales/options";
 import { projectStatusLabel, projectTone } from "@/lib/projects/options";
@@ -16,6 +17,7 @@ import EmailComposer from "../EmailComposer";
 import { sendCustomerEmail } from "../email-actions";
 import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import DesignJobsPanel from "@/components/DesignJobsPanel";
+import CustomerGlance from "./CustomerGlance";
 
 export async function generateMetadata(props: PageProps<"/customers/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -90,6 +92,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
         .order("issue_date", { ascending: false })
         .limit(20)
     : { data: [] };
+  const glance = canSeeSales ? await loadGlance(supabase, id) : null;
 
   const staffName = (pid: string | null) => {
     const p = (staff ?? []).find((s) => s.id === pid);
@@ -150,6 +153,12 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {glance && (
+          <div className="mb-6">
+            <CustomerGlance g={glance} customerName={c.name} />
           </div>
         )}
 

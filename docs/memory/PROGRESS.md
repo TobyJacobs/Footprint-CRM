@@ -616,3 +616,10 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - **Claude connector ON HOLD until later in the project** (owner, 19 October 2026). A session had started researching Claude connector sign-in; stopped before any plan or code. Roadmap task marked on hold. Don't start it again unless the owner asks.
 - Database after clean-up: 7 projects, 49 scorecard rows (all not started), no test runs or updates.
 - Later (owner agreed): a Claude connector so the company's Claude can read and update FootprintAI with its own key. Brief items not built yet: phase plan, open questions, documents.
+
+## 20 October 2026 - Owner's improvement list, item 1: customer graphs (branch `feature/customer-glance`, PR waiting for the owner)
+- The owner has a list of improvements from recent work, to be done one at a time. Item 1: graphs/figures on each customer.
+- Owner's choices: total spend tiles, owed and overdue, quotes and services; at the top of the customer page (not on the list).
+- Built "Customer at a glance" (`src/lib/customers/glance.ts`, `customers/[id]/CustomerGlance.tsx`), shown to people who can see sales: lifetime / this year / last year spend (invoices issued or paid minus issued credit notes, before VAT, same rule as Dashboards); owed now and overdue (unpaid invoices less credit notes against them, incl. VAT, linking to the invoice list searched by customer); average days to pay (from `paid_at`); quote win rate and won value; spend by service (`business_unit`) bar chart.
+- Checks: 11 calculation tests, build, type check, lint; viewed locally with test data (Chalk Hill Electrical). Test invoices have no service set, so the chart shows "Not set".
+- Added `.claude/launch.json` (local dev server "footprintos-dev" on port 3000) for local previews.
