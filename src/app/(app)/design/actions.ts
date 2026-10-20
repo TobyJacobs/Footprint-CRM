@@ -58,19 +58,15 @@ export async function saveJob(jobId: string | null, fd: FormData) {
   if (user.can("design", "edit")) fields.stage = stage;
 
   if (!jobId) {
-    // Links to the order and project are set once, when the job is raised from them.
-    const orderId = uuid(str(fd, "sales_order_id"));
+    // Every new job is started from a project (the owner's rule, 20 October
+    // 2026). Its customer and sales order come from the project, set once.
     const projectId = uuid(str(fd, "project_id"));
-    if (orderId) {
-      const { data: order } = await supabase.from("sales_documents").select("id, doc_type").eq("id", orderId).maybeSingle();
-      if (!order || order.doc_type !== "sales_order") fail(back, "That sales order couldn't be found");
-    }
-    if (projectId) {
-      const { data: project } = await supabase.from("projects").select("id").eq("id", projectId).maybeSingle();
-      if (!project) fail(back, "That project couldn't be found");
-    }
-    fields.sales_order_id = orderId;
-    fields.project_id = projectId;
+    if (!projectId) fail("/design/new", "Design jobs are started from a project. Please choose one.");
+    const { data: project } = await supabase.from("projects").select("id, customer_id, sales_document_id").eq("id", projectId).maybeSingle();
+    if (!project) fail("/design/new", "That project couldn't be found");
+    fields.project_id = project.id;
+    fields.customer_id = project.customer_id;
+    fields.sales_order_id = project.sales_document_id;
 
     const { data, error } = await supabase.from("design_jobs").insert(fields).select("id").single();
     if (error) fail(back, error.message);

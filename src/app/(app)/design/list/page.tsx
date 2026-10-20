@@ -74,7 +74,7 @@ export default async function DesignListPage(props: PageProps<"/design/list">) {
             Filter
           </button>
         </form>
-        <Link href={`/design/new${customer ? `?customer=${customer}` : ""}`} className={`${primaryButton} inline-flex items-center gap-2`}>
+        <Link href="/design/new" className={`${primaryButton} inline-flex items-center gap-2`}>
           <Plus size={16} aria-hidden /> New design job
         </Link>
       </div>

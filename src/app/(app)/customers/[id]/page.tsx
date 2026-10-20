@@ -137,7 +137,6 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
             can={{
               sales: user.can("quotes", "edit"),
               projects: user.can("projects", "edit"),
-              design: user.can("design", "view"),
               marketing: user.can("marketing", "edit"),
               customers: canEdit,
             }}
