@@ -211,6 +211,34 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
               {c.description && <p className="mt-4 whitespace-pre-line text-sm text-fp-dark/80">{c.description}</p>}
             </Card>
 
+            {canSeeProjects && (
+              <Card
+                title="Projects"
+                action={
+                  user.can("projects", "edit") ? (
+                    <Link href={`/projects/new?customer=${id}`} className={`${secondaryButton} inline-flex items-center gap-1.5`}>
+                      <Plus size={14} aria-hidden /> New project
+                    </Link>
+                  ) : undefined
+                }
+              >
+                {(customerProjects ?? []).length === 0 ? (
+                  <p className="text-sm text-fp-dark/70">No projects for this customer yet.</p>
+                ) : (
+                  <ul className="grid gap-2 text-sm">
+                    {(customerProjects ?? []).map((pr) => (
+                      <li key={pr.id} className="flex flex-wrap items-center justify-between gap-2">
+                        <Link href={`/projects/${pr.id}`} className="font-semibold hover:text-fp-pink">
+                          {pr.name}
+                        </Link>
+                        <Badge tone={projectTone(pr.status)}>{projectStatusLabel(pr.status)}</Badge>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Card>
+            )}
+
             <Card
               title="Contacts"
               action={
@@ -459,34 +487,6 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                 <Detail label="Follow up">{shortDateTime(c.follow_up_at)}</Detail>
               </dl>
             </Card>
-
-            {canSeeProjects && (
-              <Card
-                title="Projects"
-                action={
-                  user.can("projects", "edit") ? (
-                    <Link href={`/projects/new?customer=${id}`} className="text-sm font-semibold text-fp-teal-deep hover:underline">
-                      New project
-                    </Link>
-                  ) : undefined
-                }
-              >
-                {(customerProjects ?? []).length === 0 ? (
-                  <p className="text-sm text-fp-dark/70">No projects for this customer yet.</p>
-                ) : (
-                  <ul className="grid gap-2 text-sm">
-                    {(customerProjects ?? []).map((pr) => (
-                      <li key={pr.id} className="flex flex-wrap items-center justify-between gap-2">
-                        <Link href={`/projects/${pr.id}`} className="font-semibold hover:text-fp-pink">
-                          {pr.name}
-                        </Link>
-                        <Badge tone={projectTone(pr.status)}>{projectStatusLabel(pr.status)}</Badge>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </Card>
-            )}
 
             <div id="email" className="-mt-4" />
             <Card title="Email this customer">
