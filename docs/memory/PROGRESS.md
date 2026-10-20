@@ -651,3 +651,10 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Owner: show Projects (with its action button) below the customer's Details, not in the side column. Moved the Projects card to straight after Details in the main column; "New project" is now a "+ New project" button. Order now: Customer at a glance, Details, Projects, Contacts, Quotes…, Hosting, Retainers; side column: Design jobs, Accounts & credit, Sales & marketing, Email, Timeline.
 - Checked locally on Hamble Electrical; build and lint clean. No database change.
 - **LIVE 20 October 2026:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#45](https://github.com/TobyJacobs/Footprint-CRM/pull/45), `27b36d0`), live from 14:02 BST; checked live: Details then Projects, New project button opens a project for the customer.
+
+## 20 October 2026 - Improvement list item 6: quote lines with cost first, margin % and GP (branch `feature/quote-lines-margin`, PR waiting for the owner)
+- Owner: swap cost and price; line columns Qty, Cost, Sell, Discount, VAT, Total, Margin % (type a margin → sell price, and the other way), GP £ per line + total.
+- `src/lib/sales/options.ts`: `lineCost`, `lineGp`, `lineMargin`, `priceForMargin(unitCost, margin%, discount%)` = cost / ((1 − margin) × (1 − discount)), null without a cost or at ≥100%. Totals use `lineCost` (same rule as before, incl. GP overrides).
+- Editor (`sales/DocumentEditor.tsx`, used for quotes, orders, invoices, credit notes): Item, Qty, Cost £, Sell £, Disc %, VAT, Total £ (before VAT), Margin % (editable; read-only on lines with a GP override), GP £ (red if negative); totals box adds GP. The margin typed is screen-only (`margin_input`), never saved.
+- View page (`sales/[id]`): Qty, Cost (per unit; derived from the override when there is one), Sell, Disc, VAT, Total, Margin, GP; Margin box adds total GP. Customer print/online copies unchanged (no cost or margin).
+- Checks: 9 maths tests (discount, override, negative margin, totals), build, type check, lint; locally on QT-010185 (cost £20): 50% → £40.00, 35.5% → £31.01, not saved.
