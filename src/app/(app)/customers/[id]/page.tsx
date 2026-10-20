@@ -17,6 +17,7 @@ import EmailComposer from "../EmailComposer";
 import { sendCustomerEmail } from "../email-actions";
 import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import DesignJobsPanel from "@/components/DesignJobsPanel";
+import CustomerActions from "./CustomerActions";
 import CustomerGlance from "./CustomerGlance";
 
 export async function generateMetadata(props: PageProps<"/customers/[id]">): Promise<Metadata> {
@@ -77,6 +78,8 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
       .limit(5),
   ]);
   const emailed = typeof searchParams.emailed === "string" ? searchParams.emailed : null;
+  // "Log a call" opens the timeline form with Call chosen.
+  const logKind = activityKinds.some((k) => k.value === searchParams.log) ? (searchParams.log as string) : "note";
 
   const canSeeProjects = user.can("projects", "view");
   const { data: customerProjects } = canSeeProjects
@@ -127,6 +130,19 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
         </div>
 
         <Notice searchParams={searchParams} />
+
+        {!c.erased_at && (
+          <CustomerActions
+            customerId={id}
+            can={{
+              sales: user.can("quotes", "edit"),
+              projects: user.can("projects", "edit"),
+              design: user.can("design", "view"),
+              marketing: user.can("marketing", "edit"),
+              customers: canEdit,
+            }}
+          />
+        )}
 
         {(duplicates ?? []).length > 0 && (
           <div className="mb-6 rounded-lg border border-fp-amber bg-fp-amber/10 p-4 text-sm">
@@ -522,7 +538,8 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                 <form action={addActivity.bind(null, id)} className="mb-5 grid gap-2">
                   <textarea name="body" rows={3} required placeholder="Add a note, call or meeting…" className={inputClass} />
                   <div className="grid grid-cols-2 gap-2">
-                    <Select name="kind" options={activityKinds} defaultValue="note" blank={false} />
+                    {/* Keyed so "Log a call" picks Call even when moving within this page. */}
+                    <Select key={logKind} name="kind" options={activityKinds} defaultValue={logKind} blank={false} />
                     <Select
                       name="contact_id"
                       options={(contacts ?? []).map((p) => ({ value: p.id, label: personName(p) }))}
