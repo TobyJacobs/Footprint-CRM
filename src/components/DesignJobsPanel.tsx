@@ -7,8 +7,9 @@ import { designStageLabel, designStageTone, jobNumber } from "@/lib/design/optio
 import { createClient } from "@/lib/supabase/server";
 
 // "Design jobs" card for a sales order, project or customer page: the jobs
-// linked to it and a button to raise a new one. Hidden from people without
-// Design access.
+// linked to it. New jobs are always started from a project, so the button
+// shows on a project, and on a sales order that has a project. Hidden from
+// people without Design access.
 export default async function DesignJobsPanel({ order, project, customer }: { order?: string; project?: string; customer?: string }) {
   const user = await getCurrentUser();
   if (!user.can("design", "view")) return null;
@@ -19,16 +20,28 @@ export default async function DesignJobsPanel({ order, project, customer }: { or
     customerId: customer ?? null,
     includeAllDone: true,
   });
-  const newHref = `/design/new?${order ? `order=${order}` : project ? `project=${project}` : `customer=${customer}`}`;
+  // A sales order raises jobs through its project.
+  const orderProject = order
+    ? (await supabase.from("projects").select("id").eq("sales_document_id", order).maybeSingle()).data?.id ?? null
+    : null;
+  const fromProject = project ?? orderProject;
+  const newHref = fromProject ? `/design/new?project=${fromProject}` : null;
   return (
     <Card
       title="Design jobs"
       action={
-        <Link href={newHref} className="inline-flex items-center gap-1 text-sm font-semibold text-fp-teal-deep hover:underline">
-          <Plus size={14} aria-hidden /> Create design job
-        </Link>
+        newHref ? (
+          <Link href={newHref} className="inline-flex items-center gap-1 text-sm font-semibold text-fp-teal-deep hover:underline">
+            <Plus size={14} aria-hidden /> Create design job
+          </Link>
+        ) : undefined
       }
     >
+      {!newHref && (
+        <p className="mb-2 text-xs text-fp-mid">
+          {order ? "Design jobs are started from a project. Create a project for this order first." : "Design jobs are started from one of this customer's projects."}
+        </p>
+      )}
       {jobs.length === 0 ? (
         <p className="text-sm text-fp-mid">No design jobs yet.</p>
       ) : (

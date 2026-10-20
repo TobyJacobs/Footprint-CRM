@@ -253,3 +253,9 @@ This refines the "Supabase, London region" part of the technical foundations dec
 **Decision (owner):** FootprintAI can be seen by admins and by people an admin adds to its invite list. Roles never give access. Updates are by hand and by Claude Code for now; a proper connector for the company's Claude comes later.
 **Why:** It holds the Footprint AI programme's plans and results before launch, so it should be visible only to named people. Keeping it off the role system means adding someone to a role (for example, Sales) can never accidentally reveal it.
 **How:** an `ai_members` list and an `is_ai_member()` check used by every FootprintAI data rule; the section is left out of Admin → Roles and the feedback page list.
+
+## 20 October 2026 - Design jobs are started from projects
+
+**Decision (owner):** every new design job is started from a project; not from a customer, a sales order on its own, or the Design board as an ad-hoc job. Customer and sales order pages still list their jobs. Updates the 19 October 2026 answer ("jobs come from sales orders, projects and ad-hoc requests").
+**Why:** the owner's way of working: design work belongs to a project, so time, tasks and the job sit together.
+**How:** the job's customer and sales order are taken from its project when it's created.

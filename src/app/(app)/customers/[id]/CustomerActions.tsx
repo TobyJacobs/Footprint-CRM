@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Briefcase, FileText, Mail, Megaphone, Newspaper, Palette, Phone, Receipt, ShoppingCart, UserPlus } from "lucide-react";
+import { Briefcase, FileText, Mail, Megaphone, Newspaper, Phone, Receipt, ShoppingCart, UserPlus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 type Action = { href: string | null; label: string; icon: LucideIcon; note?: string };
@@ -12,7 +12,7 @@ export default function CustomerActions({
   can,
 }: {
   customerId: string;
-  can: { sales: boolean; projects: boolean; design: boolean; marketing: boolean; customers: boolean };
+  can: { sales: boolean; projects: boolean; marketing: boolean; customers: boolean };
 }) {
   const q = `customer=${customerId}`;
   const groups: { title: string; actions: Action[] }[] = [
@@ -32,7 +32,7 @@ export default function CustomerActions({
       title: "Work",
       actions: [
         ...(can.projects ? [{ href: `/projects/new?${q}`, label: "New project", icon: Briefcase }] : []),
-        ...(can.design ? [{ href: `/design/new?${q}`, label: "New design job", icon: Palette }] : []),
+        // Design jobs are started from a project, not from the customer.
         ...(can.marketing ? [{ href: `/marketing/content/new?${q}`, label: "New content item", icon: Megaphone }] : []),
       ],
     },

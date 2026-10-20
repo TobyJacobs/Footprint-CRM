@@ -37,9 +37,18 @@ export default function JobForm({
       <Field label="Title" hint="e.g. “Van livery for Smith & Sons” or “Forget Me Not advert, half page”">
         <TextInput name="title" required defaultValue={values.title} />
       </Field>
-      <Field label="Customer" hint="Leave empty for Footprint's own work.">
-        <CustomerSearchField initial={values.customer ?? null} />
-      </Field>
+      {values.project_id ? (
+        // A new job takes its customer from its project.
+        <div className="grid gap-1 text-sm">
+          <span className="font-semibold">Customer</span>
+          <span>{values.customer?.name ?? "Footprint (internal)"}</span>
+          <span className="text-xs text-fp-mid">From the project.</span>
+        </div>
+      ) : (
+        <Field label="Customer" hint="Leave empty for Footprint's own work.">
+          <CustomerSearchField initial={values.customer ?? null} />
+        </Field>
+      )}
       <Field label="Brief" hint="What's needed: sizes, wording, colours, deadlines, anything the designer should know.">
         <TextArea name="brief" rows={5} defaultValue={values.brief} />
       </Field>
