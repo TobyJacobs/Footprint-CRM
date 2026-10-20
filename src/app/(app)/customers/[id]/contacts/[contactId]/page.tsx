@@ -19,7 +19,7 @@ export default async function EditContactPage(props: PageProps<"/customers/[id]/
   const searchParams = await props.searchParams;
   const supabase = await createClient();
   const [{ data: customer }, { data: contact }] = await Promise.all([
-    supabase.from("customers").select("name").eq("id", id).maybeSingle(),
+    supabase.from("customers").select("name, billing_street, billing_city, billing_county, billing_postcode, billing_country, shipping_street, shipping_city, shipping_county, shipping_postcode, shipping_country").eq("id", id).maybeSingle(),
     supabase.from("contacts").select("*").eq("id", contactId).eq("customer_id", id).maybeSingle(),
   ]);
   if (!customer || !contact) notFound();
@@ -33,7 +33,7 @@ export default async function EditContactPage(props: PageProps<"/customers/[id]/
         </Link>
         <div className="mt-4">
           <Notice searchParams={searchParams} />
-          <ContactForm contact={contact} action={saveContact.bind(null, id, contactId)} cancelHref={`/customers/${id}`} />
+          <ContactForm contact={contact} customer={customer} action={saveContact.bind(null, id, contactId)} cancelHref={`/customers/${id}`} />
         </div>
         {user.isAdmin && (
           <div className="mt-10 max-w-3xl">
