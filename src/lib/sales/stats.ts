@@ -24,6 +24,7 @@ export type SalesStats = {
   topCustomers: { name: string; value: number }[];
   totals: {
     invoiced: number;
+    grossProfit: number;
     marginPct: number | null;
     quotesWon: number;
     quotesLost: number;
@@ -98,6 +99,7 @@ export async function getSalesStats({ months = 12, ownerId }: { months?: number;
     topCustomers: raw.top.map((t) => ({ name: t.name, value: round(Number(t.value)) })),
     totals: {
       invoiced: round(totalInvoiced),
+      grossProfit: round(totalInvoiced - totalCost),
       marginPct: pct(totalInvoiced - totalCost, totalInvoiced),
       quotesWon: won,
       quotesLost: lost,

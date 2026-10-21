@@ -46,7 +46,7 @@ export default async function FinanceDashboard() {
           example={budget?.is_example}
         />
         <GoalBar
-          title="Margin against target"
+          title={`Margin against target (${money(grossProfit(all))} this month)`}
           actual={margin ?? 0}
           target={marginTarget?.amount ?? null}
           format={(n) => `${n}%`}

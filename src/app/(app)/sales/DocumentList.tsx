@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { Badge, Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { gbp, longDate } from "@/lib/customers/display";
-import { docTypes, quoteKindLabel, statusLabel, statusToneFor, statuses, type DocType } from "@/lib/sales/options";
+import { docTypes, marginText, quoteKindLabel, statusLabel, statusToneFor, statuses, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 50;
@@ -103,12 +103,11 @@ export default async function DocumentList({
               <th className="px-4 py-3 font-semibold">Date</th>
               <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 text-right font-semibold">Total</th>
-              <th className="px-4 py-3 text-right font-semibold">GP</th>
+              <th className="px-4 py-3 text-right font-semibold">Margin</th>
             </tr>
           </thead>
           <tbody>
             {(docs ?? []).map((d) => {
-              const gp = Number(d.subtotal) - Number(d.cost_total);
               return (
                 <tr key={d.id} className="border-b border-fp-border last:border-0 hover:bg-fp-offwhite">
                   <td className="px-4 py-3">
@@ -128,7 +127,7 @@ export default async function DocumentList({
                     <Badge tone={statusToneFor(d.status)}>{statusLabel(docType, d.status)}</Badge>
                   </td>
                   <td className="px-4 py-3 text-right font-semibold">{gbp(Number(d.total))}</td>
-                  <td className="px-4 py-3 text-right text-fp-dark/70">{gbp(gp)}</td>
+                  <td className="px-4 py-3 text-right text-fp-dark/70">{marginText(Number(d.subtotal), Number(d.cost_total), gbp)}</td>
                 </tr>
               );
             })}

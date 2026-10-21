@@ -230,6 +230,12 @@ export function totals(lines: LineInput[]) {
   return { subtotal, vat, total: round2(subtotal + vat), cost, profit: round2(subtotal - cost) };
 }
 
+// Margin written in pounds and as a percentage, e.g. "£27.64 (58%)".
+export function marginText(net: number, cost: number, formatMoney: (n: number) => string | null) {
+  const pct = marginPercent(net, cost);
+  return `${formatMoney(Math.round((net - cost) * 100) / 100) ?? ""}${pct === null ? "" : ` (${pct}%)`}`;
+}
+
 export function marginPercent(net: number, cost: number) {
   return net > 0 ? Math.round(((net - cost) / net) * 1000) / 10 : null;
 }
