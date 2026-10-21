@@ -297,10 +297,10 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                   user.can("quotes", "edit") &&
                   !c.erased_at && (
                     <Link
-                      href={`/sales/new?type=quote&customer=${id}`}
+                      href={`/sales/opportunity?customer=${id}`}
                       className="inline-flex items-center gap-1 text-sm font-semibold text-fp-teal-deep hover:underline"
                     >
-                      <Plus size={14} aria-hidden /> New quote
+                      <Plus size={14} aria-hidden /> New opportunity
                     </Link>
                   )
                 }

@@ -665,3 +665,14 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - `quoteBusinessUnits` in `src/lib/sales/options.ts`; DocumentForm uses it for quotes. Migration `20261101120000_quote_business_units.sql` converts quote "Print" → "Print/Merch" (0 test quotes had a business unit, so nothing changes today). **Go-live import: map quote "Print" to "Print/Merch" too.**
 - A quote's business unit is copied to its order/invoice, where the new names show as "(from Zoho)" in the older list; owner aware.
 - Item 7b (choose Quote / Advertising / Proposal when creating a new opportunity, each its own page, based on Zoho CRM Deals) is next: looking in Zoho first (read only).
+
+## 20–21 October 2026 - Improvement list item 7b: opportunity types (branch `feature/opportunity-types`, built on #47, PR waiting for the owner)
+- Owner: when creating a new opportunity, choose **Quote, Advertising or Proposal**, each its own page. Owner said skip the Zoho login and **guess**, then preview (Zoho CRM Deals not checked, so details are a first guess).
+- Migration `20261102120000_quote_kinds.sql`: `sales_documents.quote_kind` ('quote' | 'advertising' | 'proposal', default 'quote'); carried over on conversion.
+- `/sales/opportunity` chooser (three cards; customer kept). "New quote" buttons (customer action bar, customer page quotes card, quotes list) now say "New opportunity" and open it. `/sales/new?type=quote&kind=…` shows "New quote / New advertising quote / New proposal".
+- **Advertising:** business unit Advertising, title "Advertising in Forget Me Not", an advert builder (`sales/AdvertBuilder.tsx`): ad size, first month, number of months, price per edition, optional cost, editions (Fareham, Hedge End + "other editions" text) → one line per month, quantity = editions. Sizes and editions are guesses in `adSizes` / `knownEditions` (src/lib/sales/options.ts): **need the 11 edition names and real sizes/prices from the magazine team.**
+- **Proposal:** title "Proposal", notes start with a template (Overview, What we'll deliver, Timeline, Next steps) labelled "The proposal (the customer sees this)".
+- Type shown as a pink badge in the quotes list and as "Type" in the quote's Details.
+- Not done: the customer's printed/online copy still says "Quote" for proposals and advertising quotes (possible follow-up).
+- Checked locally (not saved): chooser; advertising builder made 3 lines (Nov 2026–Jan 2027, 2 editions × £45 = £270, GP £210); proposal template. Build, type check, lint clean.
+- **The quote_kind column must be in the database before the quotes list works** with this code (it's added automatically when merged).

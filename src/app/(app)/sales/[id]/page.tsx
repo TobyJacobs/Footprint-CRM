@@ -10,7 +10,7 @@ import { requirePermission } from "@/lib/auth";
 import { gbp, longDate, personName, shortDateTime } from "@/lib/customers/display";
 import { getDocumentLines } from "@/lib/sales/data";
 import {
-  docTypes, isDocType, isLockedRecord, marginPercent, poStatusLabel, statusLabel, statusToneFor, type DocType,
+  docTypes, isDocType, isLockedRecord, marginPercent, poStatusLabel, quoteKindLabel, statusLabel, statusToneFor, type DocType,
 } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 import { clearLineGpOverride, convertDocument, deleteDocument, setDocumentStatus, setLineGpOverride } from "../actions";
@@ -388,6 +388,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 ["Production step", doc.production_step],
                 ["Customer reference", doc.customer_reference],
                 ["Salesperson", owner ? (owner.full_name ?? owner.email) : null],
+                ["Type", type === "quote" ? quoteKindLabel(doc.quote_kind) : null],
                 ["Business unit", doc.business_unit],
                 ["Probability", doc.probability],
                 ["Expected", doc.expected_date],

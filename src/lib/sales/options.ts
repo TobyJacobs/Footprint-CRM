@@ -121,6 +121,52 @@ export function statusToneFor(status: string) {
 export const businessUnits = ["Print", "Account Sales", "Digital"];
 // Quotes use Footprint's own business units (owner, 20 October 2026).
 export const quoteBusinessUnits = ["Print/Merch", "Advertising", "Footprint AI", "Signage"];
+
+// The three kinds of new opportunity (owner, 20 October 2026; Zoho CRM Deals
+// weren't checked, so the details below are a first guess for the owner to review).
+export const quoteKinds = [
+  {
+    value: "quote",
+    label: "Quote",
+    newLabel: "New quote",
+    description: "A standard quote: print, merch, signage and products, priced line by line.",
+  },
+  {
+    value: "advertising",
+    label: "Advertising",
+    newLabel: "New advertising quote",
+    description: "Advert space in Forget Me Not: choose the size, editions and months, and the lines are filled in for you.",
+  },
+  {
+    value: "proposal",
+    label: "Proposal",
+    newLabel: "New proposal",
+    description: "A bigger piece of work (Footprint AI, websites, campaigns): overview, what we'll deliver, timeline and investment.",
+  },
+] as const;
+export type QuoteKind = (typeof quoteKinds)[number]["value"];
+export const isQuoteKind = (v: unknown): v is QuoteKind => quoteKinds.some((k) => k.value === v);
+export const quoteKindLabel = (v: unknown) => quoteKinds.find((k) => k.value === v)?.label ?? "Quote";
+
+// Forget Me Not advertising (a first guess: sizes and edition names to confirm
+// with the magazine team; only Fareham and Hedge End are known so far).
+export const adSizes = ["Full page", "Half page", "Quarter page", "Eighth page", "Front cover", "Back cover", "Inside front cover"];
+export const knownEditions = ["Fareham", "Hedge End"];
+
+// What a new proposal's notes start with, ready to fill in.
+export const proposalTemplate = `Overview
+What the customer wants to achieve, in a few lines.
+
+What we'll deliver
+- 
+- 
+
+Timeline
+- Start: 
+- Finish: 
+
+Next steps
+Accept this proposal online and we'll be in touch to get started.`;
 export const probabilities = ["Low", "Confident", "Definite"];
 export const expectedDates = ["This Month", "Next Month", "Future"];
 export const deliveryTypes = ["Direct to Customer", "Pick up from Footprint", "Swindon Office", "Footprint Delivery"];

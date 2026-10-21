@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { addDaysTo, customerDueDate, ukToday } from "@/lib/dates";
 import { bool, int, num, str } from "@/lib/forms";
-import { defaultStatus, docTypes, isDocType, isLockedRecord, statuses, type DocType } from "@/lib/sales/options";
+import { defaultStatus, docTypes, isDocType, isLockedRecord, isQuoteKind, statuses, type DocType } from "@/lib/sales/options";
 
 const isFinalised = (status: string) => ["accepted", "converted", "paid", "void", "invoiced"].includes(status);
 import { createClient } from "@/lib/supabase/server";
@@ -80,6 +80,7 @@ function headerFields(fd: FormData, docType: DocType) {
     due_date: docType === "invoice" ? str(fd, "due_date") : null,
     deadline_date: docType === "sales_order" ? str(fd, "deadline_date") : null,
     business_unit: str(fd, "business_unit"),
+    ...(docType === "quote" ? { quote_kind: isQuoteKind(str(fd, "quote_kind")) ? str(fd, "quote_kind") : "quote" } : {}),
     probability: docType === "quote" ? str(fd, "probability") : null,
     expected_date: str(fd, "expected_date"),
     delivery_type: str(fd, "delivery_type"),
@@ -294,6 +295,7 @@ export async function convertDocument(documentId: string, to: DocType) {
       issue_date: today,
       due_date: due,
       business_unit: src.business_unit,
+      quote_kind: src.quote_kind ?? "quote",
       delivery_type: to === "invoice" || to === "credit_note" ? null : src.delivery_type,
       labour_cost: to === "credit_note" ? null : src.labour_cost,
       production_step: to === "sales_order" ? "New Sales Order" : null,

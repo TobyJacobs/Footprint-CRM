@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { Badge, Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { gbp, longDate } from "@/lib/customers/display";
-import { docTypes, statusLabel, statusToneFor, statuses, type DocType } from "@/lib/sales/options";
+import { docTypes, quoteKindLabel, statusLabel, statusToneFor, statuses, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 50;
@@ -25,7 +25,7 @@ export default async function DocumentList({
   const supabase = await createClient();
   let query = supabase
     .from("sales_documents")
-    .select("id, number, status, title, issue_date, valid_until, due_date, total, subtotal, cost_total, customers!sales_documents_customer_id_fkey(name)", {
+    .select("id, number, status, title, quote_kind, issue_date, valid_until, due_date, total, subtotal, cost_total, customers!sales_documents_customer_id_fkey(name)", {
       count: "exact",
     })
     .eq("doc_type", docType)
@@ -88,8 +88,8 @@ export default async function DocumentList({
           <p className="text-sm text-fp-dark/75">To raise a credit note, open the invoice and choose “Raise credit note”.</p>
         )}
         {user.can("quotes", "edit") && docType !== "credit_note" && (
-          <Link href={`/sales/new?type=${docType}`} className={`${primaryButton} inline-flex items-center gap-2`}>
-            <Plus size={16} aria-hidden /> New {label.toLowerCase()}
+          <Link href={docType === "quote" ? "/sales/opportunity" : `/sales/new?type=${docType}`} className={`${primaryButton} inline-flex items-center gap-2`}>
+            <Plus size={16} aria-hidden /> {docType === "quote" ? "New opportunity" : `New ${label.toLowerCase()}`}
           </Link>
         )}
       </div>
@@ -115,6 +115,11 @@ export default async function DocumentList({
                     <Link href={`/sales/${d.id}`} className="font-semibold hover:text-fp-pink">
                       {d.number}
                     </Link>
+                    {d.quote_kind && d.quote_kind !== "quote" && (
+                      <span className="ml-2">
+                        <Badge tone="pink">{quoteKindLabel(d.quote_kind)}</Badge>
+                      </span>
+                    )}
                     {d.title && <div className="text-xs text-fp-mid">{d.title}</div>}
                   </td>
                   <td className="px-4 py-3">{(d.customers as unknown as { name: string } | null)?.name}</td>

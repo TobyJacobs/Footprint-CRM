@@ -5,6 +5,8 @@ import { Plus, Trash2, UserPlus } from "lucide-react";
 import { inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { quickAddCustomer, type QuickCustomerInput } from "../customers/actions";
 import { DuplicateCheck } from "../customers/DuplicateCheck";
+import { addMonthsTo, ukMonth } from "@/lib/dates";
+import AdvertBuilder, { type AdvertLine } from "./AdvertBuilder";
 import ProductDropdown, { productLineText } from "./ProductDropdown";
 import { lineGp, lineMargin, lineNet, marginPercent, priceForMargin, totals } from "@/lib/sales/options";
 
@@ -274,6 +276,7 @@ export default function DocumentEditor({
   taxRates,
   creditWarning,
   canAddCustomer = false,
+  kind = "quote",
 }: {
   initialCustomer: { id: string; name: string } | null;
   initialContacts: Contact[];
@@ -282,6 +285,8 @@ export default function DocumentEditor({
   taxRates: TaxRate[];
   creditWarning?: string | null;
   canAddCustomer?: boolean;
+  // "advertising" shows the advert builder above the lines.
+  kind?: string;
 }) {
   const defaultTax = taxRates[0];
   const [customer, setCustomer] = useState(initialCustomer);
@@ -311,6 +316,14 @@ export default function DocumentEditor({
     const price = value.trim() === "" || !Number.isFinite(m) ? null : priceForMargin(l.unit_cost, m, l.discount_percent);
     update(l.key, price === null ? { margin_input: value } : { margin_input: value, unit_price: price });
   };
+
+  // Advert lines replace any empty starting line.
+  const addAdvertLines = (adverts: AdvertLine[]) =>
+    setLines((ls) => [
+      ...ls.filter((l) => l.description.trim() || l.unit_price || l.product_id),
+      ...adverts.map((a) => ({ ...blankLine(defaultTax), ...a })),
+    ]);
+  const nextMonth = addMonthsTo(ukMonth(), 1);
 
   const t = totals(lines);
   const margin = marginPercent(t.subtotal, t.cost);
@@ -386,6 +399,8 @@ export default function DocumentEditor({
           </p>
         )}
       </div>
+
+      {kind === "advertising" && <AdvertBuilder firstMonth={nextMonth} onAdd={addAdvertLines} />}
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1100px] text-left text-sm">
