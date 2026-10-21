@@ -659,3 +659,9 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - View page (`sales/[id]`): Qty, Cost (per unit; derived from the override when there is one), Sell, Disc, VAT, Total, Margin, GP; Margin box adds total GP. Customer print/online copies unchanged (no cost or margin).
 - Checks: 9 maths tests (discount, override, negative margin, totals), build, type check, lint; locally on QT-010185 (cost £20): 50% → £40.00, 35.5% → £31.01, not saved.
 - **LIVE 20 October 2026:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#46](https://github.com/TobyJacobs/Footprint-CRM/pull/46), `6cd09ce`), live from 15:59 BST. Checked live on QT-010185: new columns on view and editor; typing 50% gave £40.00 / GP £20.00; left without saving. (A local build once failed with a one-off "Error while requesting resource" download error; re-runs passed.)
+
+## 20 October 2026 - Improvement list item 7a: quote business units (branch `feature/quote-business-units`, PR waiting for the owner)
+- Owner: quotes choose a business unit from **Print/Merch, Advertising, Footprint AI, Signage**. Owner chose **quotes only** (orders, invoices, recurring invoices and products keep Zoho's Print / Account Sales / Digital) and **convert existing quote "Print" to "Print/Merch"**.
+- `quoteBusinessUnits` in `src/lib/sales/options.ts`; DocumentForm uses it for quotes. Migration `20261101120000_quote_business_units.sql` converts quote "Print" → "Print/Merch" (0 test quotes had a business unit, so nothing changes today). **Go-live import: map quote "Print" to "Print/Merch" too.**
+- A quote's business unit is copied to its order/invoice, where the new names show as "(from Zoho)" in the older list; owner aware.
+- Item 7b (choose Quote / Advertising / Proposal when creating a new opportunity, each its own page, based on Zoho CRM Deals) is next: looking in Zoho first (read only).
