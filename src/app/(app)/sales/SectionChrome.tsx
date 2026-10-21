@@ -30,7 +30,16 @@ const sections = {
   },
 } as const;
 
-export default async function SectionChrome({ section, children }: { section: Section; children: React.ReactNode }) {
+export default async function SectionChrome({
+  section,
+  activeHref,
+  children,
+}: {
+  section: Section;
+  // The tab to highlight when the address doesn't say (e.g. a document page).
+  activeHref?: string;
+  children: React.ReactNode;
+}) {
   const s = sections[section];
   // The Pipeline tab only for people who can see the pipeline dashboard.
   const canPipeline = allowedTabs(await getCurrentUser()).includes("pipeline");
@@ -40,7 +49,7 @@ export default async function SectionChrome({ section, children }: { section: Se
       <div className="print:hidden">
         <PageHeader title={s.title} intro={s.intro} />
       </div>
-      <SectionTabs section={section} tabs={tabs} label={s.title} />
+      <SectionTabs section={section} tabs={tabs} label={s.title} activeHref={activeHref} />
       <div className="px-6 py-8 print:p-0 lg:px-10">{children}</div>
     </>
   );

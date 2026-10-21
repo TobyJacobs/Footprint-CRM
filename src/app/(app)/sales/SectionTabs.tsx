@@ -10,14 +10,24 @@ export type Section = "sales" | "operations";
 // The tabs under the Sales or Operations heading. Also tells the side menu
 // which of the two is open (both live under /sales, so the address alone
 // can't say for a document page).
-export default function SectionTabs({ section, tabs, label }: { section: Section; tabs: { href: string; label: string }[]; label: string }) {
+export default function SectionTabs({
+  section,
+  tabs,
+  label,
+  activeHref,
+}: {
+  section: Section;
+  tabs: { href: string; label: string }[];
+  label: string;
+  activeHref?: string;
+}) {
   const pathname = usePathname();
   const setSection = useSetSection();
   useEffect(() => setSection(section), [section, setSection]);
   return (
     <nav aria-label={label} className="no-scrollbar flex gap-1 overflow-x-auto border-b border-fp-border bg-white px-6 print:hidden lg:px-10">
       {tabs.map((t) => {
-        const active = pathname.startsWith(t.href);
+        const active = pathname.startsWith(t.href) || t.href === activeHref;
         return (
           <Link
             key={t.href}

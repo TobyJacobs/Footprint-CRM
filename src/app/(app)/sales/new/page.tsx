@@ -32,7 +32,7 @@ export default async function NewDocumentPage(props: PageProps<"/sales/new">) {
     docType === "invoice" ? settings?.invoice_terms : docType === "sales_order" ? settings?.order_terms : settings?.quote_terms;
 
   return (
-    <SectionChrome section={docType === "quote" ? "sales" : "operations"}>
+    <SectionChrome section={docType === "quote" ? "sales" : "operations"} activeHref={docTypes[docType].path}>
       <Link
         href={docType === "quote" ? `/sales/opportunity${customerId ? `?customer=${customerId}` : ""}` : docTypes[docType].path}
         className="text-sm font-semibold text-fp-teal-deep hover:underline"
