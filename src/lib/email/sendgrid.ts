@@ -40,6 +40,8 @@ export async function sendEmail(msg: {
   tag?: string;
   // Who replies go to, e.g. the salesperson who sent a quote.
   replyTo?: string | null;
+  // Files to attach, e.g. the quote as a PDF.
+  attachments?: { filename: string; content: Buffer; type: string }[];
 }): Promise<SendResult> {
   const key = process.env.SENDGRID_API_KEY;
   const from = process.env.EMAIL_FROM;
@@ -71,6 +73,16 @@ export async function sendEmail(msg: {
           { type: "text/html", value: msg.html },
         ],
         ...(msg.tag ? { categories: [msg.tag] } : {}),
+        ...(msg.attachments?.length
+          ? {
+              attachments: msg.attachments.map((a) => ({
+                content: a.content.toString("base64"),
+                filename: a.filename,
+                type: a.type,
+                disposition: "attachment",
+              })),
+            }
+          : {}),
         // No tracking: SendGrid would otherwise swap links for tracking links
         // on its own domain and add a tracking image, which spam filters
         // distrust (and customers' "View your quote" links should be ours).

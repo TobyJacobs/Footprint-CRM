@@ -172,10 +172,23 @@ export default async function DocumentForm({
         </div>
       </Card>
 
-      <div className="flex gap-3">
-        <button type="submit" className={primaryButton}>
-          {doc ? "Save changes" : `Create ${label.toLowerCase()}`}
-        </button>
+      <div className="flex flex-wrap items-center gap-3">
+        {!doc && docType === "quote" ? (
+          <>
+            {/* Send: saves and emails it (with its PDF) to the contact; with no
+                contact email it's saved as a draft and the email box opens. */}
+            <button type="submit" name="intent" value="send" className={primaryButton}>
+              Send {label.toLowerCase()}
+            </button>
+            <button type="submit" name="intent" value="draft" className={secondaryButton}>
+              Save as draft
+            </button>
+          </>
+        ) : (
+          <button type="submit" className={primaryButton}>
+            {doc ? "Save changes" : `Create ${label.toLowerCase()}`}
+          </button>
+        )}
         <Link href={cancelHref} className={secondaryButton}>
           Cancel
         </Link>

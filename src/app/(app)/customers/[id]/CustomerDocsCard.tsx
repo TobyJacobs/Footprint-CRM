@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { Badge, Card } from "@/components/ui";
 import { gbp, longDate } from "@/lib/customers/display";
 import { quoteKindLabel, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
@@ -62,6 +62,16 @@ export default function CustomerDocsCard({
                 {d.title && <span className="text-fp-mid"> · {d.title}</span>}
               </span>
               <span className="flex items-center gap-3">
+                {/* Opens the document's PDF in a new tab for staff to view. */}
+                <a
+                  href={`/sales/${d.id}/pdf?view=1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-fp-teal-deep hover:underline"
+                  title={`View ${d.number} as a PDF`}
+                >
+                  <FileText size={12} aria-hidden /> PDF
+                </a>
                 <span className="text-fp-mid">{longDate(d.issue_date)}</span>
                 <Badge tone={statusToneFor(d.status)}>{statusLabel(d.doc_type as DocType, d.status)}</Badge>
                 <span className="w-24 text-right font-semibold">{gbp(Number(d.total))}</span>

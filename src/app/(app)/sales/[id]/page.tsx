@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { Pencil, Printer } from "lucide-react";
+import { Download, Pencil, Printer } from "lucide-react";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import CopyButton from "@/components/CopyButton";
 import { Badge, Card, Notice, dangerButton, inputClass, primaryButton, secondaryButton } from "@/components/ui";
@@ -115,8 +115,12 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link href={`/sales/${id}/print`} className={`${secondaryButton} inline-flex items-center gap-2`}>
-            <Printer size={14} aria-hidden /> Print / PDF
+            <Printer size={14} aria-hidden /> Print
           </Link>
+          {/* A real file (a download, not a page), so a plain link rather than Link. */}
+          <a href={`/sales/${id}/pdf`} className={`${secondaryButton} inline-flex items-center gap-2`}>
+            <Download size={14} aria-hidden /> Download PDF
+          </a>
           {canEdit && !finalised && (
             <Link href={`/sales/${id}/edit`} className={`${secondaryButton} inline-flex items-center gap-2`}>
               <Pencil size={14} aria-hidden /> Edit
@@ -228,6 +232,12 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         </Card>
       )}
 
+      {sp.noemail && (
+        <p role="status" className="mt-6 rounded-md border border-fp-amber bg-fp-amber/10 px-4 py-3 text-sm">
+          Saved as a draft. The contact has no email address, so it hasn&apos;t been sent: enter an address below to send it.
+        </p>
+      )}
+
       {emailed && (
         <p role="status" className="mt-6 rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-4 py-3 text-sm text-fp-teal-deep">
           {emailed === "test" ? "Email accepted in test mode (not actually delivered)." : "Email sent."}
@@ -235,7 +245,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
       )}
 
       {canEdit && !["void", "cancelled"].includes(doc.status) && (
-        <div className="mt-6">
+        <div id="email" className="mt-6 scroll-mt-24">
           <EmailCard
             documentId={id}
             type={type}
@@ -246,6 +256,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
             contactFirstName={contact?.first_name ?? null}
             senderName={user.fullName ?? user.email}
             companyName={settings?.company_name ?? "Footprint Group"}
+            kindLabel={type === "quote" && doc.quote_kind && doc.quote_kind !== "quote" ? quoteKindLabel(doc.quote_kind) : null}
             log={emailLog ?? []}
           />
         </div>

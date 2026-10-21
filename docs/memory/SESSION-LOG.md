@@ -4,6 +4,11 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 21 October 2026: Improvement list items 10-13
+- Customer quotes/orders/invoices split (#51), no product number on quotes (#52), margin as £ and % everywhere (#53): all merged by Claude at the owner's request and checked live.
+- Urgent fix #54: the margin box blocked saving quotes with a no-cost line. Merged and checked live.
+- Built "Send quote" + PDFs (PDF attached to every document email, Download PDF button, PDF links on the customer page). Tested locally; PR waiting for the owner.
+
 ## 19 October 2026: Friendly message after a new release
 - Staff with a page open during a release got "Something went wrong" on their next click (an old page calling a button the new release no longer knows). Seen on /login after #36.
 - Fix on branch `fix/friendly-update-message`: switched on Netlify's skew protection in `netlify.toml` (old open pages keep talking to the old release, so most clicks just work), and the error page now says "FootprintOS has just been updated" with a Refresh button for any that slip through (not sent to Sentry). Build, types and lint clean. Pull request #37 merged by the owner on 19 October 2026 (`be428c9`). Owner then added a Supabase secret key to `.env.local`; Claude used it to add the ticked task to Roadmap Wave 4.

@@ -2,6 +2,7 @@ import { Mail, RotateCw } from "lucide-react";
 import { Badge, Card, Field, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import { shortDateTime } from "@/lib/customers/display";
+import { documentEmailText } from "@/lib/sales/email-text";
 import { docTypes, type DocType } from "@/lib/sales/options";
 import { sendDocumentEmail } from "./email-actions";
 
@@ -19,6 +20,7 @@ export default function EmailCard({
   contactFirstName,
   senderName,
   companyName,
+  kindLabel,
   log,
 }: {
   documentId: string;
@@ -30,22 +32,21 @@ export default function EmailCard({
   contactFirstName: string | null;
   senderName: string;
   companyName: string;
+  // "Proposal" or "Advertising" for those kinds of quote.
+  kindLabel?: string | null;
   log: LogRow[];
 }) {
   const label = docTypes[type].label;
-  const greeting = contactFirstName ? `Hi ${contactFirstName},` : "Hello,";
-  const middle =
-    type === "quote"
-      ? `Please find your quote ${number} for ${total} below. You can view it and accept it online using the link.`
-      : type === "invoice"
-        ? `Please find invoice ${number} for ${total}${dueDate ? `, due by ${dueDate}` : ""}. You can view and print it using the link.`
-        : type === "credit_note"
-          ? `Please find credit note ${number} for ${total}. You can view and print it using the link.`
-          : `Thank you for your order. Your order confirmation ${number} (${total}) is available using the link.`;
-  const signOff = `If you have any questions, just reply to this email.\n\nKind regards,\n${senderName}\n${companyName}`;
-  const message = `${greeting}\n\n${middle}\n\n${signOff}`;
-  const resendMessage = `${greeting}\n\nJust a reminder: ${middle.charAt(0).toLowerCase()}${middle.slice(1)}\n\n${signOff}`;
-  const subject = `${label} ${number} from ${companyName}`;
+  const { subject, message, resendMessage } = documentEmailText({
+    type,
+    label: kindLabel ?? undefined,
+    number,
+    total,
+    dueDate,
+    contactFirstName,
+    senderName,
+    companyName,
+  });
   const last = log.find((e) => e.status !== "failed");
   const configured = isEmailConfigured();
 
