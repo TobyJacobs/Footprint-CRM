@@ -743,3 +743,10 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Owner: move the "Email to customer" (Resend quote) box below the quote info. On every quote/order/invoice/credit note page the email box (and the "contact has no email" notice) now sits after the Lines / Margin / Details section, above Delete. The "Email sent" message stays at the top, where the page opens after sending. "Send quote" with no contact email still jumps down to the box (#email).
 - Type check, lint, build clean. No database change.
 - **LIVE 21 October 2026:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#57](https://github.com/TobyJacobs/Footprint-CRM/pull/57), `0f06d36`), live from 13:21 BST; checked live on QT-010191: Next steps, Lines, Margin/Details, then Email to customer, then Delete. Roadmap ticked.
+
+## 21 October 2026 - Improvement list item 16: Sales and Operations split (branch `feature/split-sales-operations`, PR waiting for the owner)
+- Owner: split out Sales (quotes, overview, pipeline) and Operations (everything else).
+- Side menu: "Sales & Operations" is now two links, **Sales** (→ /sales/overview) and **Operations** (→ /sales/orders), sharing the one "quotes" permission (the permissions screen still shows one row, "Sales & Operations"). `features.ts` gains `menuLinks`; `AppShell` highlights the open one via a small context set by the section tabs.
+- Headings/tabs (`sales/SectionChrome.tsx`, `SectionTabs.tsx`): Sales = Overview, Quotes, Pipeline (the pipeline dashboard, shown only to people allowed it; `/sales/pipeline` re-uses `dashboards/pipeline/page`). Operations = Sales orders, Invoices, Credit notes, Recurring, Purchase orders, Products, Suppliers.
+- Web addresses unchanged: pages moved into route groups `sales/(sales)` and `sales/(operations)` (folders in brackets don't change the address). A document page (`sales/[id]/layout.tsx`) opens under Sales for a quote, Operations otherwise; `sales/new` likewise by type.
+- Type check, lint, build clean. No database change.

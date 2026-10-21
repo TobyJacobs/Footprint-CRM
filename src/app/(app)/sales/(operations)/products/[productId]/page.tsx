@@ -5,7 +5,7 @@ import { Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { getSalesAccounts, getTaxRates } from "@/lib/sales/data";
 import { createClient } from "@/lib/supabase/server";
-import { saveProduct } from "../../actions";
+import { saveProduct } from "../../../actions";
 import ProductForm from "../ProductForm";
 
 export const metadata: Metadata = { title: "Edit product" };

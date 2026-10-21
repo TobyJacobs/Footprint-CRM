@@ -7,7 +7,7 @@ import { addMonthsTo, ukMonth } from "@/lib/dates";
 import { getCustomerWithContacts, getTaxRates } from "@/lib/sales/data";
 import { frequencyFromHosting } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
-import type { EditorLine } from "../../DocumentEditor";
+import type { EditorLine } from "../../../DocumentEditor";
 import { saveRecurring } from "../actions";
 import RecurringForm from "../RecurringForm";
 

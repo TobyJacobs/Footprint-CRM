@@ -3,10 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, createContext, useContext, useState } from "react";
 import { LogOut, Menu, X } from "lucide-react";
 import ActivityBar from "./ActivityBar";
 import { features, home, type Feature } from "@/lib/features";
+
+// Which of Sales / Operations is open, set by their tabs (both share /sales).
+const SectionContext = createContext<(section: string) => void>(() => {});
+export const useSetSection = () => useContext(SectionContext);
 
 function Wordmark() {
   // Logo taken from footprintgroup.uk until the official files arrive (see docs/BRAND.md).
@@ -48,16 +52,26 @@ function NavLink({ feature, active }: { feature: Feature; active: boolean }) {
   );
 }
 
-function Nav({ pathname, visible }: { pathname: string; visible: Feature[] }) {
+function Nav({ pathname, visible, section }: { pathname: string; visible: Feature[]; section: string | null }) {
   const isActive = (f: Feature) =>
     f.href === "/" ? pathname === "/" : pathname.startsWith(f.href);
   return (
     <nav aria-label="Main" className="flex flex-col gap-1">
       <NavLink feature={home} active={isActive(home)} />
       {visible.length > 0 && <div className="my-2 h-px bg-white/10" />}
-      {visible.map((f) => (
-        <NavLink key={f.key} feature={f} active={isActive(f)} />
-      ))}
+      {visible.map((f) =>
+        f.menuLinks ? (
+          f.menuLinks.map((l) => (
+            <NavLink
+              key={l.href}
+              feature={{ ...f, label: l.label, href: l.href, icon: l.icon }}
+              active={isActive(f) && section === l.section}
+            />
+          ))
+        ) : (
+          <NavLink key={f.key} feature={f} active={isActive(f)} />
+        ),
+      )}
     </nav>
   );
 }
@@ -93,6 +107,7 @@ export default function AppShell({
 }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [section, setSection] = useState<string | null>(null);
   const visible = features.filter((f) => visibleFeatureKeys.includes(f.key));
 
   return (
@@ -107,7 +122,7 @@ export default function AppShell({
           <Wordmark />
         </div>
         <div className="flex-1 overflow-y-auto px-3 pb-6">
-          <Nav pathname={pathname} visible={visible} />
+          <Nav pathname={pathname} visible={visible} section={section} />
         </div>
         <UserBox name={userName} email={userEmail} />
       </aside>
@@ -138,14 +153,16 @@ export default function AppShell({
             }}
           >
             <div className="px-3 pb-4">
-              <Nav pathname={pathname} visible={visible} />
+              <Nav pathname={pathname} visible={visible} section={section} />
             </div>
             <UserBox name={userName} email={userEmail} />
           </div>
         )}
       </header>
 
-      <main className="min-w-0 flex-1">{children}</main>
+      <main className="min-w-0 flex-1">
+        <SectionContext.Provider value={setSection}>{children}</SectionContext.Provider>
+      </main>
     </div>
   );
 }

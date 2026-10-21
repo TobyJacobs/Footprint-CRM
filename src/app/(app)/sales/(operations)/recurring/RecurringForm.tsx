@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { Card, Checkbox, Field, Select, TextArea, TextInput, primaryButton, secondaryButton } from "@/components/ui";
 import { businessUnits, frequencies, recurringStatuses } from "@/lib/sales/options";
-import DocumentEditor, { type EditorLine } from "../DocumentEditor";
+import DocumentEditor, { type EditorLine } from "../../DocumentEditor";
 
 export default async function RecurringForm({
   recurring,

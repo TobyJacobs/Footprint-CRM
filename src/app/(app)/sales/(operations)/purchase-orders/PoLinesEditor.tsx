@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { inputClass } from "@/components/ui";
-import ProductDropdown, { productLineText } from "../ProductDropdown";
+import ProductDropdown, { productLineText } from "../../ProductDropdown";
 
 type TaxRate = { id: string; name: string; rate: number };
 export type PoEditorLine = {
