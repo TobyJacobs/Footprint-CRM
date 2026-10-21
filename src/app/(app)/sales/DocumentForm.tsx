@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { Card, Checkbox, Field, Select, TextArea, TextInput, primaryButton, secondaryButton } from "@/components/ui";
 import {
-  businessUnits, quoteBusinessUnits, creditReasons, deliveryTypes, docTypes, expectedDates, lossReasons, probabilities, productionSteps,
+  businessUnits, quoteBusinessUnits, quoteKindLabel, creditReasons, deliveryTypes, docTypes, expectedDates, lossReasons, probabilities, productionSteps,
   type DocType,
 } from "@/lib/sales/options";
 import DocumentEditor, { type EditorLine } from "./DocumentEditor";
@@ -11,6 +11,7 @@ type Doc = Record<string, unknown>;
 
 export default async function DocumentForm({
   docType,
+  quoteKind,
   doc,
   lines,
   customer,
@@ -22,29 +23,43 @@ export default async function DocumentForm({
   cancelHref,
 }: {
   docType: DocType;
+  // For a new quote: standard, advertising or proposal (an existing one keeps its own).
+  quoteKind?: string;
   doc?: Doc;
   lines: EditorLine[];
   customer: { id: string; name: string; credit_status: string | null } | null;
   contacts: { id: string; first_name: string | null; last_name: string; email: string | null; is_primary: boolean }[];
   taxRates: { id: string; name: string; rate: number }[];
   staff: { id: string; name: string }[];
-  defaults: { issue_date: string; valid_until?: string; due_date?: string; terms?: string | null; notes?: string | null; owner_id?: string };
+  defaults: {
+    issue_date: string;
+    valid_until?: string;
+    due_date?: string;
+    terms?: string | null;
+    notes?: string | null;
+    owner_id?: string;
+    title?: string | null;
+    business_unit?: string | null;
+  };
   action: (fd: FormData) => Promise<void>;
   cancelHref: string;
 }) {
   const v = (k: string) => (doc?.[k] as string | number | null | undefined) ?? null;
-  const label = docTypes[docType].label;
+  const kind = (v("quote_kind") as string | null) ?? quoteKind ?? "quote";
+  const label = docType === "quote" && kind !== "quote" ? quoteKindLabel(kind) : docTypes[docType].label;
   const creditWarning =
     customer?.credit_status && /ON STOP|Up Front|before we order/i.test(customer.credit_status) ? customer.credit_status : null;
 
   return (
     <form action={action} className="grid max-w-6xl gap-6">
+      {docType === "quote" && <input type="hidden" name="quote_kind" value={kind} />}
       <Card title={label}>
         <DocumentEditor
           initialCustomer={customer ? { id: customer.id, name: customer.name } : null}
           initialContacts={contacts}
           initialContactId={(v("contact_id") as string) ?? contacts.find((p) => p.is_primary)?.id ?? null}
           initialLines={lines}
+          kind={docType === "quote" ? kind : "quote"}
           taxRates={taxRates}
           canAddCustomer={(await getCurrentUser()).can("customers", "edit")}
           creditWarning={creditWarning}
@@ -54,7 +69,7 @@ export default async function DocumentForm({
       <Card title="Details">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Title" wide>
-            <TextInput name="title" defaultValue={v("title")} placeholder="e.g. Spring leaflets & window vinyls" />
+            <TextInput name="title" defaultValue={v("title") ?? defaults.title ?? null} placeholder="e.g. Spring leaflets & window vinyls" />
           </Field>
           <Field label="Customer's reference / PO">
             <TextInput name="customer_reference" defaultValue={v("customer_reference")} />
@@ -85,7 +100,7 @@ export default async function DocumentForm({
             </Field>
           )}
           <Field label="Business unit">
-            <Select name="business_unit" options={docType === "quote" ? quoteBusinessUnits : businessUnits} defaultValue={v("business_unit") as string} />
+            <Select name="business_unit" options={docType === "quote" ? quoteBusinessUnits : businessUnits} defaultValue={(v("business_unit") as string) ?? defaults.business_unit ?? null} />
           </Field>
           {docType === "quote" && (
             <>
@@ -143,8 +158,12 @@ export default async function DocumentForm({
 
       <Card title="Notes">
         <div className="grid gap-4 lg:grid-cols-3">
-          <Field label="Notes for the customer">
-            <TextArea name="notes" rows={4} defaultValue={(v("notes") as string) ?? defaults.notes ?? null} />
+          <Field
+            label={kind === "proposal" ? "The proposal (the customer sees this)" : "Notes for the customer"}
+            hint={kind === "proposal" ? "Fill in each section; the pricing comes from the lines above." : undefined}
+            wide={kind === "proposal"}
+          >
+            <TextArea name="notes" rows={kind === "proposal" ? 14 : 4} defaultValue={(v("notes") as string) ?? defaults.notes ?? null} />
           </Field>
           <Field label="Terms">
             <TextArea name="terms" rows={4} defaultValue={(v("terms") as string) ?? defaults.terms ?? null} />

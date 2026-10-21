@@ -20,7 +20,7 @@ export default function CustomerActions({
       title: "Sell",
       actions: can.sales
         ? [
-            { href: `/sales/new?type=quote&${q}`, label: "New quote", icon: FileText },
+            { href: `/sales/opportunity?${q}`, label: "New opportunity", icon: FileText },
             { href: `/sales/new?type=sales_order&${q}`, label: "New sales order", icon: ShoppingCart },
             { href: `/sales/new?type=invoice&${q}`, label: "New invoice", icon: Receipt },
             // Advert bookings arrive with Magazines (Wave 5); until then this is a placeholder.
