@@ -742,3 +742,4 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 ## 21 October 2026 - Improvement list item 15: email box below the document (branch `feature/email-box-position`, PR waiting for the owner)
 - Owner: move the "Email to customer" (Resend quote) box below the quote info. On every quote/order/invoice/credit note page the email box (and the "contact has no email" notice) now sits after the Lines / Margin / Details section, above Delete. The "Email sent" message stays at the top, where the page opens after sending. "Send quote" with no contact email still jumps down to the box (#email).
 - Type check, lint, build clean. No database change.
+- **LIVE 21 October 2026:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#57](https://github.com/TobyJacobs/Footprint-CRM/pull/57), `0f06d36`), live from 13:21 BST; checked live on QT-010191: Next steps, Lines, Margin/Details, then Email to customer, then Delete. Roadmap ticked.
