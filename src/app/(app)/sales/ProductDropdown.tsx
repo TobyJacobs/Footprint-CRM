@@ -22,8 +22,11 @@ function loadProducts(): Promise<ProductHit[]> {
 
 // The text that goes on the quote line: product number first (Xero matches
 // items by it), then the name, then the product's own description if any.
-export function productLineText(p: ProductHit) {
-  const title = [p.sku, p.name].filter(Boolean).join(" – ");
+// The line text for a chosen product. Customer documents (quotes, orders,
+// invoices) show just the name; purchase orders also start with the product
+// number. The number is always saved on the line itself (product_code) for Xero.
+export function productLineText(p: ProductHit, { withNumber = false }: { withNumber?: boolean } = {}) {
+  const title = withNumber ? [p.sku, p.name].filter(Boolean).join(" – ") : p.name;
   return p.description && p.description.trim() !== p.name.trim() ? `${title}\n${p.description}` : title;
 }
 
