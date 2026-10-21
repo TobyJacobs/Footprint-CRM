@@ -72,6 +72,7 @@ export async function sendDocumentEmail(documentId: string, fd: FormData) {
     text,
     html: brandedHtml({ text: message, buttonLabel, buttonUrl: link, companyName: company }),
     tag: type,
+    replyTo: user.email,
   });
 
   const status = result.ok ? (isEmailTestMode() ? "test" : "sent") : "failed";

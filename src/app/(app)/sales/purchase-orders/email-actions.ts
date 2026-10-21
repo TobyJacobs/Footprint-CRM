@@ -24,7 +24,7 @@ function addressList(value: string | null): string[] | null {
 // Place an order with a supplier: emails the purchase order (with its lines in
 // the email itself) and marks a draft PO as "sent to supplier".
 export async function sendPurchaseOrderEmail(poId: string, fd: FormData) {
-  await requirePermission("quotes", "edit");
+  const user = await requirePermission("quotes", "edit");
   const back = `/sales/purchase-orders/${poId}`;
   const supabase = await createClient();
 
@@ -79,6 +79,7 @@ export async function sendPurchaseOrderEmail(poId: string, fd: FormData) {
       },
     }),
     tag: "purchase_order",
+    replyTo: user.email,
   });
 
   const status = result.ok ? (isEmailTestMode() ? "test" : "sent") : "failed";

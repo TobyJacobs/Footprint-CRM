@@ -8,7 +8,8 @@ import "server-only";
 //   EMAIL_FROM        - e.g. "Footprint Group <accounts@footprintgroup.uk>".
 //                       Must be a verified sender (or on an authenticated
 //                       domain) in SendGrid.
-//   EMAIL_REPLY_TO    - optional reply-to address.
+//   EMAIL_REPLY_TO    - optional reply-to address (used when a message doesn't
+//                       name its own, e.g. staff invites).
 //   EMAIL_TEST_MODE   - set to "true" to use SendGrid's sandbox: messages are
 //                       checked and accepted but never delivered.
 
@@ -37,6 +38,8 @@ export async function sendEmail(msg: {
   text: string;
   html: string;
   tag?: string;
+  // Who replies go to, e.g. the salesperson who sent a quote.
+  replyTo?: string | null;
 }): Promise<SendResult> {
   const key = process.env.SENDGRID_API_KEY;
   const from = process.env.EMAIL_FROM;
@@ -47,7 +50,7 @@ export async function sendEmail(msg: {
   // SendGrid rejects a message that lists the same address twice.
   const toEmails = new Set(to.map((a) => a.email.toLowerCase()));
   const cc = msg.cc ? parseAddressList(msg.cc).filter((a) => !toEmails.has(a.email.toLowerCase())) : [];
-  const replyTo = process.env.EMAIL_REPLY_TO;
+  const replyTo = (msg.replyTo && /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(msg.replyTo) ? msg.replyTo : null) ?? process.env.EMAIL_REPLY_TO;
 
   try {
     const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
@@ -68,6 +71,14 @@ export async function sendEmail(msg: {
           { type: "text/html", value: msg.html },
         ],
         ...(msg.tag ? { categories: [msg.tag] } : {}),
+        // No tracking: SendGrid would otherwise swap links for tracking links
+        // on its own domain and add a tracking image, which spam filters
+        // distrust (and customers' "View your quote" links should be ours).
+        tracking_settings: {
+          click_tracking: { enable: false, enable_text: false },
+          open_tracking: { enable: false },
+          subscription_tracking: { enable: false },
+        },
         ...(isEmailTestMode() ? { mail_settings: { sandbox_mode: { enable: true } } } : {}),
       }),
     });
