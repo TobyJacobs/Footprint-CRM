@@ -373,6 +373,10 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 <>
                   <dt className="text-fp-dark/75">Labour cost</dt>
                   <dd className="text-right">{gbp(Number(doc.labour_cost))}</dd>
+                  <dt className="font-semibold">GP after labour</dt>
+                  <dd className={`text-right font-semibold ${Number(doc.subtotal) - Number(doc.cost_total) - Number(doc.labour_cost) < 0 ? "text-fp-error" : ""}`}>
+                    {gbp(Number(doc.subtotal) - Number(doc.cost_total) - Number(doc.labour_cost))}
+                  </dd>
                 </>
               )}
             </dl>

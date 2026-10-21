@@ -60,6 +60,8 @@ export default async function DocumentForm({
           initialContactId={(v("contact_id") as string) ?? contacts.find((p) => p.is_primary)?.id ?? null}
           initialLines={lines}
           kind={docType === "quote" ? kind : "quote"}
+          // Labour is entered with the lines (not on credit notes).
+          initialLabour={docType === "credit_note" ? undefined : ((v("labour_cost") as number | null) ?? null)}
           taxRates={taxRates}
           canAddCustomer={(await getCurrentUser()).can("customers", "edit")}
           creditWarning={creditWarning}
@@ -130,13 +132,9 @@ export default async function DocumentForm({
               <Select name="delivery_type" options={deliveryTypes} defaultValue={v("delivery_type") as string} />
             </Field>
           )}
-          {docType === "credit_note" ? (
+          {docType === "credit_note" && (
             <Field label="Reason for credit">
               <Select name="credit_reason" options={creditReasons} defaultValue={v("credit_reason") as string} />
-            </Field>
-          ) : (
-            <Field label="Labour cost (£)">
-              <TextInput name="labour_cost" type="number" step="0.01" defaultValue={v("labour_cost")} />
             </Field>
           )}
           {docType === "sales_order" && (
