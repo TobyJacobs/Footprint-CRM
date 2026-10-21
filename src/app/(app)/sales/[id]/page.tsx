@@ -211,22 +211,17 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
             <div className="mt-5 rounded-md bg-fp-offwhite p-4 text-sm">
               <p className="font-semibold">Customer approval link</p>
               <p className="mb-2 text-fp-dark/75">
-                Send this private link to the customer. They can view the quote and accept or decline it — no login needed.
+                Copy this private link to send to the customer. They can view the quote and accept or decline it — no login needed.
               </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <code className="break-all rounded bg-white px-2 py-1 text-xs">{approvalLink}</code>
-                <CopyButton text={approvalLink} label="Copy link" />
-              </div>
+              {/* The address itself isn't shown, only copied. */}
+              <CopyButton text={approvalLink} label="Copy approval link" />
             </div>
           )}
           {type !== "quote" && doc.status !== "draft" && (
             <div className="mt-5 rounded-md bg-fp-offwhite p-4 text-sm">
               <p className="font-semibold">Customer view link</p>
               <p className="mb-2 text-fp-dark/75">A private, read-only link the customer can open and print — no login needed.</p>
-              <div className="flex flex-wrap items-center gap-2">
-                <code className="break-all rounded bg-white px-2 py-1 text-xs">{viewLink}</code>
-                <CopyButton text={viewLink} label="Copy link" />
-              </div>
+              <CopyButton text={viewLink} label="Copy customer link" />
             </div>
           )}
         </Card>
