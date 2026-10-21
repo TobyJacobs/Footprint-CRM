@@ -738,3 +738,7 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Quote/order/invoice page (`sales/[id]/page.tsx`): the visible web address is gone; quotes show **Copy approval link**, orders/invoices/credit notes **Copy customer link**. Design job "Customer approval" already showed only Copy link (plus "See what the customer sees" for staff) — unchanged. Emails to customers still contain the link (they need it).
 - Build, type check, lint clean. No database change. Not clicked through locally: the test browser lost its sign-in after the owner's computer update.
 - **LIVE 21 October 2026:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#56](https://github.com/TobyJacobs/Footprint-CRM/pull/56), `32442fb`), live from 13:13 BST. Checked live after the owner signed in again: QT-010191 shows only "Copy approval link" (no address), five invoices show "Copy customer link" with no address. Roadmap task ticked.
+
+## 21 October 2026 - Improvement list item 15: email box below the document (branch `feature/email-box-position`, PR waiting for the owner)
+- Owner: move the "Email to customer" (Resend quote) box below the quote info. On every quote/order/invoice/credit note page the email box (and the "contact has no email" notice) now sits after the Lines / Margin / Details section, above Delete. The "Email sent" message stays at the top, where the page opens after sending. "Send quote" with no contact email still jumps down to the box (#email).
+- Type check, lint, build clean. No database change.
