@@ -277,6 +277,7 @@ export default function DocumentEditor({
   creditWarning,
   canAddCustomer = false,
   kind = "quote",
+  initialLabour,
 }: {
   initialCustomer: { id: string; name: string } | null;
   initialContacts: Contact[];
@@ -287,6 +288,8 @@ export default function DocumentEditor({
   canAddCustomer?: boolean;
   // "advertising" shows the advert builder above the lines.
   kind?: string;
+  // Labour cost (staff time) for the whole job; undefined hides the box.
+  initialLabour?: number | null;
 }) {
   const defaultTax = taxRates[0];
   const [customer, setCustomer] = useState(initialCustomer);
@@ -295,6 +298,7 @@ export default function DocumentEditor({
   const [credit, setCredit] = useState<string | null>(creditWarning ?? null);
   const [lines, setLines] = useState<EditorLine[]>(initialLines.length ? initialLines : [blankLine(defaultTax)]);
   const [adding, setAdding] = useState<string | null>(null);
+  const [labour, setLabour] = useState(initialLabour == null ? "" : String(initialLabour));
   // Bumped to redraw the customer box with the chosen customer's proper name.
   const [pickerVersion, setPickerVersion] = useState(0);
 
@@ -327,6 +331,8 @@ export default function DocumentEditor({
 
   const t = totals(lines);
   const margin = marginPercent(t.subtotal, t.cost);
+  const labourCost = Number(labour) > 0 ? Math.round(Number(labour) * 100) / 100 : 0;
+  const gpAfterLabour = Math.round((t.profit - labourCost) * 100) / 100;
 
   return (
     <div className="grid gap-6">
@@ -534,13 +540,22 @@ export default function DocumentEditor({
       </div>
 
       <div className="flex flex-wrap items-start justify-between gap-6">
-        <button
-          type="button"
-          onClick={() => setLines((ls) => [...ls, blankLine(defaultTax)])}
-          className="inline-flex items-center gap-1 text-sm font-semibold text-fp-teal-deep hover:underline"
-        >
-          <Plus size={14} /> Add line
-        </button>
+        <div className="grid content-start gap-4">
+          <button
+            type="button"
+            onClick={() => setLines((ls) => [...ls, blankLine(defaultTax)])}
+            className="inline-flex items-center gap-1 text-sm font-semibold text-fp-teal-deep hover:underline"
+          >
+            <Plus size={14} /> Add line
+          </button>
+          {initialLabour !== undefined && (
+            <label className="grid max-w-xs gap-1 text-sm">
+              <span className="font-semibold">Labour cost £</span>
+              <input name="labour_cost" type="number" step="0.01" min={0} value={labour} onChange={(e) => setLabour(e.target.value)} className={inputClass} />
+              <span className="text-xs text-fp-mid">Staff time for the whole job. Never shown to the customer.</span>
+            </label>
+          )}
+        </div>
         <dl className="grid min-w-[260px] grid-cols-2 gap-x-6 gap-y-1 text-sm">
           <dt className="text-fp-dark/75">Subtotal</dt>
           <dd className="text-right">{money.format(t.subtotal)}</dd>
@@ -554,6 +569,14 @@ export default function DocumentEditor({
           <dd className={`text-right font-semibold ${t.profit < 0 ? "text-fp-error" : "text-fp-teal-deep"}`}>{money.format(t.profit)}</dd>
           <dt className="font-semibold text-fp-teal-deep">Margin</dt>
           <dd className="text-right font-semibold text-fp-teal-deep">{margin === null ? "—" : `${margin}%`}</dd>
+          {labourCost > 0 && (
+            <>
+              <dt className="mt-2 text-fp-mid">Labour</dt>
+              <dd className="mt-2 text-right text-fp-mid">{money.format(labourCost)}</dd>
+              <dt className="font-semibold">GP after labour</dt>
+              <dd className={`text-right font-semibold ${gpAfterLabour < 0 ? "text-fp-error" : ""}`}>{money.format(gpAfterLabour)}</dd>
+            </>
+          )}
         </dl>
       </div>
     </div>

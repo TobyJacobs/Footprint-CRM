@@ -678,3 +678,8 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - **The quote_kind column must be in the database before the quotes list works** with this code (it's added automatically when merged).
 - **LIVE 21 October 2026:** owner said "deploy both". Merged #47 (`ccc473d`) and #48 (`a13b3bb`, after resolving a merge clash in DocumentForm, options and PROGRESS by keeping the #48 side); both Supabase updates succeeded; live from 10:21 BST. Checked live: `quote_kind` column present (219 quotes = 'quote'); quotes list loads with "New opportunity"; chooser, advertising (builder) and proposal pages load with the new business units; sales orders keep the old list; customer page buttons go to the chooser. Saving an opportunity not tried live (would create a record).
 - Preview links were given for #47 and #48 before merging (previews share the test database).
+
+## 21 October 2026 - Improvement list item 8: labour cost in the quote (branch `feature/labour-cost-in-quote`, PR waiting for the owner)
+- Owner: put labour costs in the quote instead of in Details. The "Labour cost £" box moved from the Details card into the lines box (DocumentEditor, under "Add line"; not on credit notes), with "Staff time for the whole job. Never shown to the customer."
+- Totals now add **Labour** and **GP after labour** (GP − labour) when a labour cost is entered; the quote page's Margin box adds "GP after labour" too. The existing GP / margin / cost figures and the Dashboards are unchanged (labour still isn't part of `cost_total`).
+- Same field name (`labour_cost`), so saving and copying to orders are unchanged. Checked locally on QT-010185 (not saved): £12.50 labour → GP after labour £15.14. Build, type check, lint clean.
