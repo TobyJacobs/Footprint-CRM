@@ -703,3 +703,7 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
   4. Supabase Auth (test now, London at Go-live): add `https://os.footprintgroup.uk/**` to redirect URLs, then make it the Site URL. Microsoft Entra needs no change (sign-in goes through Supabase).
   5. Code: build email links (quotes, invoices, proofs) from the main address (`process.env.URL`) instead of the browser's host. `netlify/functions/directory-sync.mts` already uses `process.env.URL`.
   6. Staff sign in once on the new address; send a test quote. Free, ~30–45 min with the owner signed in to 20i; reversible.
+
+## 21 October 2026 - Improvement list item 10: customer's quotes and sales orders shown separately (branch `feature/customer-docs-split`, PR waiting for the owner)
+- The customer page's single "Quotes, orders & invoices" box is now three: **Quotes**, **Sales orders**, **Invoices & credit notes** (`customers/[id]/CustomerDocsCard.tsx`). Each shows the latest 10 with the total in the title, its own button (New opportunity / New sales order / New invoice) and "See all N" (list searched by customer name) when there are more. Quote type badge and "(credit note)" label shown.
+- Checked locally: Chalk Hill Electrical (Quotes 6, Sales orders none, Invoices & credit notes 5), Hamble Electrical (QT-010039, SO-010928). Build, type check, lint clean. No database change.
