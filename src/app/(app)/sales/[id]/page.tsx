@@ -227,34 +227,10 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         </Card>
       )}
 
-      {sp.noemail && (
-        <p role="status" className="mt-6 rounded-md border border-fp-amber bg-fp-amber/10 px-4 py-3 text-sm">
-          Saved as a draft. The contact has no email address, so it hasn&apos;t been sent: enter an address below to send it.
-        </p>
-      )}
-
       {emailed && (
         <p role="status" className="mt-6 rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-4 py-3 text-sm text-fp-teal-deep">
           {emailed === "test" ? "Email accepted in test mode (not actually delivered)." : "Email sent."}
         </p>
-      )}
-
-      {canEdit && !["void", "cancelled"].includes(doc.status) && (
-        <div id="email" className="mt-6 scroll-mt-24">
-          <EmailCard
-            documentId={id}
-            type={type}
-            number={doc.number}
-            total={gbp(Number(doc.total)) ?? ""}
-            dueDate={type === "invoice" ? longDate(doc.due_date) : null}
-            contactEmail={contact?.email ?? null}
-            contactFirstName={contact?.first_name ?? null}
-            senderName={user.fullName ?? user.email}
-            companyName={settings?.company_name ?? "Footprint Group"}
-            kindLabel={type === "quote" && doc.quote_kind && doc.quote_kind !== "quote" ? quoteKindLabel(doc.quote_kind) : null}
-            log={emailLog ?? []}
-          />
-        </div>
       )}
 
       {doc.responded_at && (
@@ -470,6 +446,31 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
           )}
         </div>
       </div>
+
+      {/* Email to customer: below the document so the quote itself comes first. */}
+      {sp.noemail && (
+        <p role="status" className="mt-6 rounded-md border border-fp-amber bg-fp-amber/10 px-4 py-3 text-sm">
+          Saved as a draft. The contact has no email address, so it hasn&apos;t been sent: enter an address below to send it.
+        </p>
+      )}
+
+      {canEdit && !["void", "cancelled"].includes(doc.status) && (
+        <div id="email" className="mt-6 scroll-mt-24">
+          <EmailCard
+            documentId={id}
+            type={type}
+            number={doc.number}
+            total={gbp(Number(doc.total)) ?? ""}
+            dueDate={type === "invoice" ? longDate(doc.due_date) : null}
+            contactEmail={contact?.email ?? null}
+            contactFirstName={contact?.first_name ?? null}
+            senderName={user.fullName ?? user.email}
+            companyName={settings?.company_name ?? "Footprint Group"}
+            kindLabel={type === "quote" && doc.quote_kind && doc.quote_kind !== "quote" ? quoteKindLabel(doc.quote_kind) : null}
+            log={emailLog ?? []}
+          />
+        </div>
+      )}
 
       {user.can("quotes", "delete") && !isLockedRecord(type, doc.status) && (
         <form action={deleteDocument.bind(null, id)} className="mt-10 border-t border-fp-border pt-6">
