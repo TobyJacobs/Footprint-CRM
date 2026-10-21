@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Briefcase,
+  ClipboardList,
   FileText,
   Home,
   LayoutDashboard,
@@ -26,6 +27,9 @@ export type Feature = {
   description: string;
   wave: number;
   replaces?: string;
+  // Shown in the menu as separate links that share this feature's permission
+  // (e.g. Sales and Operations, which both live under /sales).
+  menuLinks?: { label: string; href: string; icon: LucideIcon; section: string }[];
 };
 
 export const home: Feature = {
@@ -65,6 +69,10 @@ export const features: Feature[] = [
       "Quotes approved online, sales orders, purchase orders, invoices, subscription billing and payments, sent to Xero.",
     wave: 2,
     replaces: "Zoho Books",
+    menuLinks: [
+      { label: "Sales", href: "/sales/overview", icon: FileText, section: "sales" },
+      { label: "Operations", href: "/sales/orders", icon: ClipboardList, section: "operations" },
+    ],
   },
   {
     key: "projects",

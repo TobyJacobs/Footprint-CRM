@@ -8,6 +8,7 @@ import { addDays, getCompanySettings, getCustomerWithContacts, getTaxRates } fro
 import { docTypes, isDocType, isQuoteKind, proposalTemplate, quoteKinds } from "@/lib/sales/options";
 import { saveDocument } from "../actions";
 import DocumentForm from "../DocumentForm";
+import SectionChrome from "../SectionChrome";
 
 export const metadata: Metadata = { title: "New document" };
 
@@ -31,7 +32,7 @@ export default async function NewDocumentPage(props: PageProps<"/sales/new">) {
     docType === "invoice" ? settings?.invoice_terms : docType === "sales_order" ? settings?.order_terms : settings?.quote_terms;
 
   return (
-    <>
+    <SectionChrome section={docType === "quote" ? "sales" : "operations"} activeHref={docTypes[docType].path}>
       <Link
         href={docType === "quote" ? `/sales/opportunity${customerId ? `?customer=${customerId}` : ""}` : docTypes[docType].path}
         className="text-sm font-semibold text-fp-teal-deep hover:underline"
@@ -65,6 +66,6 @@ export default async function NewDocumentPage(props: PageProps<"/sales/new">) {
         action={saveDocument.bind(null, docType, null)}
         cancelHref={docTypes[docType].path}
       />
-    </>
+    </SectionChrome>
   );
 }

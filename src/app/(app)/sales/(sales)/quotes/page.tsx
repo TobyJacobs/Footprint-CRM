@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import ChartStrip from "../ChartStrip";
-import DocumentList from "../DocumentList";
+import ChartStrip from "../../ChartStrip";
+import DocumentList from "../../DocumentList";
 
 export const metadata: Metadata = { title: "Quotes" };
 

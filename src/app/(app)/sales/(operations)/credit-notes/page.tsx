@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import DocumentList from "../DocumentList";
+import DocumentList from "../../DocumentList";
 
 export const metadata: Metadata = { title: "Credit notes" };
 

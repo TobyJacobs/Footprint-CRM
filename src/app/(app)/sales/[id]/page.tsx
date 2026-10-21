@@ -14,7 +14,7 @@ import {
 } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 import { clearLineGpOverride, convertDocument, deleteDocument, setDocumentStatus, setLineGpOverride } from "../actions";
-import { raisePurchaseOrders } from "../purchase-orders/actions";
+import { raisePurchaseOrders } from "../(operations)/purchase-orders/actions";
 import EmailCard from "../EmailCard";
 import DesignJobsPanel from "@/components/DesignJobsPanel";
 
