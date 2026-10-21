@@ -10,6 +10,7 @@ One short entry per session. Newest at the top.
 - "Send quote" + PDFs (#55): live after Claude retried a failed Netlify build (GitHub fetch glitch) with the owner's permission; checked live.
 - Customer links as Copy buttons only, no address shown (#56): merged and checked live.
 - Email to customer box moved below the document (#57): merged and checked live.
+- Sales & Operations split into Sales (overview, quotes, pipeline) and Operations (#58): clicked through locally, merged and checked live.
 
 ## 19 October 2026: Friendly message after a new release
 - Staff with a page open during a release got "Something went wrong" on their next click (an old page calling a button the new release no longer knows). Seen on /login after #36.
