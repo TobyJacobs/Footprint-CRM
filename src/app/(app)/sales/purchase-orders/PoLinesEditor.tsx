@@ -88,7 +88,7 @@ export default function PoLinesEditor({ initialLines, taxRates }: { initialLines
                       onPick={(p) =>
                         update(l.key, {
                           product_id: p.id,
-                          description: productLineText(p),
+                          description: productLineText(p, { withNumber: true }),
                           unit_cost: p.cost_price ?? 0,
                           tax_rate_id: p.tax_rate_id ?? l.tax_rate_id,
                           tax_rate: p.tax_rate_id ? p.tax_rate : l.tax_rate,

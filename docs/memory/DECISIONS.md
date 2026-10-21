@@ -259,3 +259,9 @@ This refines the "Supabase, London region" part of the technical foundations dec
 **Decision (owner):** every new design job is started from a project; not from a customer, a sales order on its own, or the Design board as an ad-hoc job. Customer and sales order pages still list their jobs. Updates the 19 October 2026 answer ("jobs come from sales orders, projects and ad-hoc requests").
 **Why:** the owner's way of working: design work belongs to a project, so time, tasks and the job sit together.
 **How:** the job's customer and sales order are taken from its project when it's created.
+
+## 21 October 2026 - Product numbers no longer shown on quotes
+
+**Decision (owner):** quote, order and invoice lines no longer start with the product number; they show the product name (and description). Updates the 5 October 2026 decision ("choosing a product puts its Zoho product number at the start of the line description").
+**Unchanged:** the product number is still saved on every line (`product_code`) for the Xero sync, and purchase orders to suppliers still show it in the line text.
+**Existing lines** (test data) keep their text; nothing in the database was changed.
