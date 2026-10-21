@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { Badge, Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { gbp } from "@/lib/customers/display";
-import { marginPercent } from "@/lib/sales/options";
+import { marginText } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Products" };
@@ -61,7 +61,6 @@ export default async function ProductsPage(props: PageProps<"/sales/products">) 
           </thead>
           <tbody>
             {(products ?? []).map((p) => {
-              const m = p.cost_price === null ? null : marginPercent(Number(p.sale_price), Number(p.cost_price));
               return (
                 <tr key={p.id} className="border-b border-fp-border last:border-0 hover:bg-fp-offwhite">
                   <td className="px-4 py-3">
@@ -77,7 +76,9 @@ export default async function ProductsPage(props: PageProps<"/sales/products">) 
                     {p.unit && <span className="text-xs text-fp-mid"> / {p.unit}</span>}
                   </td>
                   <td className="px-4 py-3 text-right">{p.cost_price === null ? "—" : gbp(Number(p.cost_price))}</td>
-                  <td className="px-4 py-3 text-right">{m === null ? "—" : `${m}%`}</td>
+                  <td className="px-4 py-3 text-right">
+                    {p.cost_price === null ? "—" : marginText(Number(p.sale_price), Number(p.cost_price), gbp)}
+                  </td>
                   <td className="px-4 py-3">{(p.tax_rates as unknown as { name: string } | null)?.name}</td>
                   <td className="px-4 py-3">
                     {p.sales_account_code ? (

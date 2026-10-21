@@ -75,8 +75,8 @@ export default async function RevenueDashboard(props: PageProps<"/dashboards/rev
                 <tr>
                   <th className="py-1.5">Person</th>
                   <th className="py-1.5 text-right">Invoiced</th>
-                  <th className="py-1.5 text-right">Gross profit</th>
-                  <th className="py-1.5 text-right">Margin</th>
+                  <th className="py-1.5 text-right">Margin £</th>
+                  <th className="py-1.5 text-right">Margin %</th>
                 </tr>
               </thead>
               <tbody>

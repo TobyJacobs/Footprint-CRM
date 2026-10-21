@@ -45,7 +45,7 @@ export default async function DirectorDashboard() {
         <Tile
           label="Margin"
           value={margin === null ? "—" : `${margin}%`}
-          note={marginGoal ? `Target ${marginGoal.amount}%${marginGoal.is_example ? " (example)" : ""}` : undefined}
+          note={`${money(grossProfit(all))} margin${marginGoal ? ` · target ${marginGoal.amount}%${marginGoal.is_example ? " (example)" : ""}` : ""}`}
           tone={margin !== null && marginGoal && margin < marginGoal.amount ? "amber" : "teal"}
         />
         <Tile
@@ -95,8 +95,8 @@ export default async function DirectorDashboard() {
                   <th className="py-2 pr-3 font-semibold">Salesperson</th>
                   <th className="py-2 pr-3 text-right font-semibold">Invoiced</th>
                   <th className="py-2 pr-3 text-right font-semibold">Target</th>
-                  <th className="py-2 pr-3 text-right font-semibold">Gross profit</th>
-                  <th className="py-2 pr-3 text-right font-semibold">Margin</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Margin £</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Margin %</th>
                   <th className="py-2 pr-3 text-right font-semibold">Quotes won</th>
                   <th className="py-2 text-right font-semibold">Commission</th>
                 </tr>

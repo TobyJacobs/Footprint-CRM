@@ -420,7 +420,7 @@ export default function DocumentEditor({
               <th className="w-36 py-2 pr-2 font-semibold">VAT</th>
               <th className="w-28 py-2 pr-2 text-right font-semibold" title="Before VAT">Total £</th>
               <th className="w-24 py-2 pr-2 font-semibold" title="Type a margin to work out the sell price">Margin %</th>
-              <th className="w-24 py-2 pr-2 text-right font-semibold" title="Gross profit, before VAT">GP £</th>
+              <th className="w-24 py-2 pr-2 text-right font-semibold" title="Margin in pounds (gross profit), before VAT">Margin £</th>
               <th className="w-8" />
             </tr>
           </thead>
@@ -565,16 +565,20 @@ export default function DocumentEditor({
           <dd className="text-right font-bold">{money.format(t.total)}</dd>
           <dt className="mt-2 text-fp-mid">Cost</dt>
           <dd className="mt-2 text-right text-fp-mid">{money.format(t.cost)}</dd>
-          <dt className="font-semibold text-fp-teal-deep">GP</dt>
-          <dd className={`text-right font-semibold ${t.profit < 0 ? "text-fp-error" : "text-fp-teal-deep"}`}>{money.format(t.profit)}</dd>
           <dt className="font-semibold text-fp-teal-deep">Margin</dt>
-          <dd className="text-right font-semibold text-fp-teal-deep">{margin === null ? "—" : `${margin}%`}</dd>
+          <dd className={`text-right font-semibold ${t.profit < 0 ? "text-fp-error" : "text-fp-teal-deep"}`}>
+            {money.format(t.profit)}
+            {margin === null ? "" : ` (${margin}%)`}
+          </dd>
           {labourCost > 0 && (
             <>
               <dt className="mt-2 text-fp-mid">Labour</dt>
               <dd className="mt-2 text-right text-fp-mid">{money.format(labourCost)}</dd>
-              <dt className="font-semibold">GP after labour</dt>
-              <dd className={`text-right font-semibold ${gpAfterLabour < 0 ? "text-fp-error" : ""}`}>{money.format(gpAfterLabour)}</dd>
+              <dt className="font-semibold">Margin after labour</dt>
+              <dd className={`text-right font-semibold ${gpAfterLabour < 0 ? "text-fp-error" : ""}`}>
+                {money.format(gpAfterLabour)}
+                {t.subtotal > 0 ? ` (${Math.round((gpAfterLabour / t.subtotal) * 1000) / 10}%)` : ""}
+              </dd>
             </>
           )}
         </dl>

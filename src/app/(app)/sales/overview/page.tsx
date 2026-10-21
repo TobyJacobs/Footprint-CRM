@@ -52,7 +52,7 @@ export default async function SalesOverviewPage(props: PageProps<"/sales/overvie
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Tile label="Invoiced" value={money(t.invoiced)} note={`Last ${months} months, after credit notes`} />
-        <Tile label="Margin" value={t.marginPct === null ? "—" : `${t.marginPct}%`} note="On invoices in the period" tone="teal" />
+        <Tile label="Margin" value={t.marginPct === null ? "—" : `${t.marginPct}%`} note={`${money(t.grossProfit)} on invoices in the period`} tone="teal" />
         <Tile
           label="Quotes won"
           value={t.winRate === null ? "—" : `${t.winRate}%`}

@@ -10,7 +10,7 @@ import { requirePermission } from "@/lib/auth";
 import { gbp, longDate, personName, shortDateTime } from "@/lib/customers/display";
 import { getDocumentLines } from "@/lib/sales/data";
 import {
-  docTypes, isDocType, isLockedRecord, marginPercent, poStatusLabel, quoteKindLabel, statusLabel, statusToneFor, type DocType,
+  docTypes, isDocType, isLockedRecord, marginPercent, marginText, poStatusLabel, quoteKindLabel, statusLabel, statusToneFor, type DocType,
 } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 import { clearLineGpOverride, convertDocument, deleteDocument, setDocumentStatus, setLineGpOverride } from "../actions";
@@ -278,8 +278,8 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                   <th className="py-2 pr-3 text-right font-semibold">Disc</th>
                   <th className="py-2 pr-3 text-right font-semibold">VAT</th>
                   <th className="py-2 pr-3 text-right font-semibold" title="Before VAT">Total</th>
-                  <th className="py-2 pr-3 text-right font-semibold">Margin</th>
-                  <th className="py-2 text-right font-semibold">GP</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Margin %</th>
+                  <th className="py-2 text-right font-semibold">Margin £</th>
                 </tr>
               </thead>
               <tbody>
@@ -360,12 +360,15 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
 
         <div className="grid content-start gap-6">
           <Card title="Margin">
-            <p className="text-3xl font-black text-fp-teal-deep">{margin === null ? "—" : `${margin}%`}</p>
+            <p className="text-3xl font-black text-fp-teal-deep">
+              {margin === null ? "—" : `${margin}%`}
+              <span className="ml-2 text-lg font-bold">{gbp(Number(doc.subtotal) - Number(doc.cost_total))}</span>
+            </p>
             <p className="mb-3 text-xs text-fp-mid">Staff only — customers never see cost or margin.</p>
             <dl className="grid grid-cols-2 gap-y-1 text-sm">
               <dt className="text-fp-dark/75">Cost</dt>
               <dd className="text-right">{gbp(Number(doc.cost_total))}</dd>
-              <dt className="font-semibold">GP</dt>
+              <dt className="font-semibold">Margin £</dt>
               <dd className={`text-right font-semibold ${Number(doc.subtotal) - Number(doc.cost_total) < 0 ? "text-fp-error" : ""}`}>
                 {gbp(Number(doc.subtotal) - Number(doc.cost_total))}
               </dd>
@@ -373,9 +376,9 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 <>
                   <dt className="text-fp-dark/75">Labour cost</dt>
                   <dd className="text-right">{gbp(Number(doc.labour_cost))}</dd>
-                  <dt className="font-semibold">GP after labour</dt>
+                  <dt className="font-semibold">Margin after labour</dt>
                   <dd className={`text-right font-semibold ${Number(doc.subtotal) - Number(doc.cost_total) - Number(doc.labour_cost) < 0 ? "text-fp-error" : ""}`}>
-                    {gbp(Number(doc.subtotal) - Number(doc.cost_total) - Number(doc.labour_cost))}
+                    {marginText(Number(doc.subtotal), Number(doc.cost_total) + Number(doc.labour_cost), gbp)}
                   </dd>
                 </>
               )}
