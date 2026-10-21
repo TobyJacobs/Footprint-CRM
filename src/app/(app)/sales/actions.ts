@@ -5,7 +5,10 @@ import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { addDaysTo, customerDueDate, ukToday } from "@/lib/dates";
 import { bool, int, num, str } from "@/lib/forms";
-import { defaultStatus, docTypes, isDocType, isLockedRecord, isQuoteKind, statuses, type DocType } from "@/lib/sales/options";
+import { defaultStatus, docTypes, isDocType, isLockedRecord, isQuoteKind, quoteKindLabel, statuses, type DocType } from "@/lib/sales/options";
+import { gbp } from "@/lib/customers/display";
+import { documentEmailText } from "@/lib/sales/email-text";
+import { deliverDocument } from "@/lib/sales/send-document";
 
 const isFinalised = (status: string) => ["accepted", "converted", "paid", "void", "invoiced"].includes(status);
 import { createClient } from "@/lib/supabase/server";
@@ -14,7 +17,9 @@ import { createClient } from "@/lib/supabase/server";
 // person, so the database's own rules apply as well.
 
 function fail(path: string, message: string): never {
-  redirect(`${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}`);
+  // The message goes before any "#section", or the page never sees it.
+  const [base, section] = path.split("#");
+  redirect(`${base}${base.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}${section ? `#${section}` : ""}`);
 }
 
 // The only status changes allowed by hand. Anything else (for example an
@@ -187,8 +192,33 @@ export async function saveDocument(docType: DocType, documentId: string | null, 
 
   const lineError = await replaceLines(id!, lines);
   if (lineError) fail(`/sales/${id}/edit`, lineError);
-
   revalidatePath("/sales", "layout");
+
+  // "Send quote": email it straight away to the contact, with its PDF.
+  if (!documentId && docType === "quote" && str(fd, "intent") === "send") {
+    const [{ data: doc }, { data: settings }] = await Promise.all([
+      supabase.from("sales_documents").select("number, total, quote_kind, contacts(first_name, email)").eq("id", id!).single(),
+      supabase.from("company_settings").select("company_name").single(),
+    ]);
+    const contact = doc?.contacts as unknown as { first_name: string | null; email: string | null } | null;
+    const email = contact?.email?.trim() ?? "";
+    // No (valid) contact email: it stays a draft and the email box opens.
+    if (!doc || !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(email)) redirect(`/sales/${id}?saved=1&noemail=1#email`);
+    const { subject, message } = documentEmailText({
+      type: "quote",
+      label: doc.quote_kind && doc.quote_kind !== "quote" ? quoteKindLabel(doc.quote_kind) : undefined,
+      number: doc.number,
+      total: gbp(Number(doc.total)) ?? "",
+      dueDate: null,
+      contactFirstName: contact?.first_name ?? null,
+      senderName: user.fullName ?? user.email,
+      companyName: settings?.company_name ?? "Footprint Group",
+    });
+    const result = await deliverDocument(id!, { to: [email], cc: [], subject, message }, user);
+    if (!result.ok) fail(`/sales/${id}#email`, result.error);
+    redirect(`/sales/${id}?emailed=${result.status}`);
+  }
+
   redirect(`/sales/${id}?saved=1`);
 }
 
