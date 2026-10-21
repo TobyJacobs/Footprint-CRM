@@ -9,7 +9,6 @@ import { requirePermission } from "@/lib/auth";
 import { address, gbp, longDate, personName, shortDateTime, statusTone, toLocalInput } from "@/lib/customers/display";
 import { loadGlance } from "@/lib/customers/glance";
 import { activityKinds } from "@/lib/customers/options";
-import { statusLabel as salesStatus, statusToneFor as salesTone, type DocType } from "@/lib/sales/options";
 import { projectStatusLabel, projectTone } from "@/lib/projects/options";
 import { createClient } from "@/lib/supabase/server";
 import { addActivity, deleteActivity, markNotDuplicate } from "../actions";
@@ -18,6 +17,7 @@ import { sendCustomerEmail } from "../email-actions";
 import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import DesignJobsPanel from "@/components/DesignJobsPanel";
 import CustomerActions from "./CustomerActions";
+import CustomerDocsCard, { type CustomerDoc } from "./CustomerDocsCard";
 import CustomerGlance from "./CustomerGlance";
 
 export async function generateMetadata(props: PageProps<"/customers/[id]">): Promise<Metadata> {
@@ -87,14 +87,20 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
     : { data: null };
 
   const canSeeSales = user.can("quotes", "view");
-  const { data: salesDocs } = canSeeSales
-    ? await supabase
-        .from("sales_documents")
-        .select("id, doc_type, number, status, issue_date, total, title")
-        .eq("customer_id", id)
-        .order("issue_date", { ascending: false })
-        .limit(20)
-    : { data: [] };
+  // Quotes, sales orders, and invoices with credit notes, each in its own box:
+  // the latest 10 of each, plus how many there are in all.
+  const docsOf = (types: string[]) =>
+    supabase
+      .from("sales_documents")
+      .select("id, doc_type, number, status, issue_date, total, title, quote_kind", { count: "exact" })
+      .eq("customer_id", id)
+      .in("doc_type", types)
+      .order("issue_date", { ascending: false })
+      .order("number", { ascending: false })
+      .limit(10);
+  const [quotes, orders, invoices] = canSeeSales
+    ? await Promise.all([docsOf(["quote"]), docsOf(["sales_order"]), docsOf(["invoice", "credit_note"])])
+    : [null, null, null];
   const glance = canSeeSales ? await loadGlance(supabase, id) : null;
 
   const staffName = (pid: string | null) => {
@@ -291,42 +297,33 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
             </Card>
 
             {canSeeSales && (
-              <Card
-                title="Quotes, orders & invoices"
-                action={
-                  user.can("quotes", "edit") &&
-                  !c.erased_at && (
-                    <Link
-                      href={`/sales/opportunity?customer=${id}`}
-                      className="inline-flex items-center gap-1 text-sm font-semibold text-fp-teal-deep hover:underline"
-                    >
-                      <Plus size={14} aria-hidden /> New opportunity
-                    </Link>
-                  )
-                }
-              >
-                {(salesDocs ?? []).length === 0 ? (
-                  <p className="text-sm text-fp-mid">None yet.</p>
-                ) : (
-                  <ul className="divide-y divide-fp-border">
-                    {(salesDocs ?? []).map((d) => (
-                      <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
-                        <span>
-                          <Link href={`/sales/${d.id}`} className="font-semibold hover:text-fp-pink">
-                            {d.number}
-                          </Link>
-                          {d.title && <span className="text-fp-mid"> · {d.title}</span>}
-                        </span>
-                        <span className="flex items-center gap-3">
-                          <span className="text-fp-mid">{longDate(d.issue_date)}</span>
-                          <Badge tone={salesTone(d.status)}>{salesStatus(d.doc_type as DocType, d.status)}</Badge>
-                          <span className="w-24 text-right font-semibold">{gbp(Number(d.total))}</span>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </Card>
+              <>
+                {/* The lists search by customer name; see "Customer at a glance" for exact figures. */}
+                <CustomerDocsCard
+                  title="Quotes"
+                  docs={(quotes?.data ?? []) as CustomerDoc[]}
+                  total={quotes?.count ?? 0}
+                  newHref={user.can("quotes", "edit") && !c.erased_at ? `/sales/opportunity?customer=${id}` : null}
+                  newLabel="New opportunity"
+                  seeAllHref={`/sales/quotes?q=${encodeURIComponent(c.name)}`}
+                />
+                <CustomerDocsCard
+                  title="Sales orders"
+                  docs={(orders?.data ?? []) as CustomerDoc[]}
+                  total={orders?.count ?? 0}
+                  newHref={user.can("quotes", "edit") && !c.erased_at ? `/sales/new?type=sales_order&customer=${id}` : null}
+                  newLabel="New sales order"
+                  seeAllHref={`/sales/orders?q=${encodeURIComponent(c.name)}`}
+                />
+                <CustomerDocsCard
+                  title="Invoices & credit notes"
+                  docs={(invoices?.data ?? []) as CustomerDoc[]}
+                  total={invoices?.count ?? 0}
+                  newHref={user.can("quotes", "edit") && !c.erased_at ? `/sales/new?type=invoice&customer=${id}` : null}
+                  newLabel="New invoice"
+                  seeAllHref={`/sales/invoices?q=${encodeURIComponent(c.name)}`}
+                />
+              </>
             )}
 
             <Card
