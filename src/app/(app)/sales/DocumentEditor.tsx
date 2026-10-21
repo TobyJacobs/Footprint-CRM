@@ -477,7 +477,7 @@ export default function DocumentEditor({
                 <td className="py-2 pr-2">
                   <input
                     type="number"
-                    step="0.5"
+                    step="any"
                     min={0}
                     max={100}
                     value={l.discount_percent}
@@ -511,8 +511,9 @@ export default function DocumentEditor({
                   ) : (
                     <input
                       type="number"
-                      step="0.1"
-                      max={99.9}
+                      step="any"
+                      // No "max" and any decimals: a line with no cost shows 100%, and a
+                      // browser limit here would stop the whole quote being saved.
                       aria-label="Margin %"
                       title={l.unit_cost ? "Type a margin to work out the sell price" : "Add a cost first to set the price from a margin"}
                       value={l.margin_input ?? lineMargin(l) ?? ""}
