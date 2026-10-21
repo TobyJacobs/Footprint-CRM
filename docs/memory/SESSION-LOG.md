@@ -7,7 +7,8 @@ One short entry per session. Newest at the top.
 ## 21 October 2026: Improvement list items 10-13
 - Customer quotes/orders/invoices split (#51), no product number on quotes (#52), margin as £ and % everywhere (#53): all merged by Claude at the owner's request and checked live.
 - Urgent fix #54: the margin box blocked saving quotes with a no-cost line. Merged and checked live.
-- Built "Send quote" + PDFs (PDF attached to every document email, Download PDF button, PDF links on the customer page). Tested locally; PR waiting for the owner.
+- "Send quote" + PDFs (#55): live after Claude retried a failed Netlify build (GitHub fetch glitch) with the owner's permission; checked live.
+- Customer links as Copy buttons only, no address shown (#56): merged and checked live.
 
 ## 19 October 2026: Friendly message after a new release
 - Staff with a page open during a release got "Something went wrong" on their next click (an old page calling a button the new release no longer knows). Seen on /login after #36.
