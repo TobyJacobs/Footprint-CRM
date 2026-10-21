@@ -36,6 +36,7 @@ export async function sendCustomerEmail(customerId: string, fd: FormData) {
     text: message,
     html: brandedHtml({ text: message, companyName: settings?.company_name ?? "Footprint Group" }),
     tag: "customer-template",
+    replyTo: user.email,
   });
   const status = result.ok ? (isEmailTestMode() ? "test" : "sent") : "failed";
 

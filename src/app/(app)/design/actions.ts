@@ -247,6 +247,7 @@ export async function sendProofForApproval(jobId: string, fd: FormData) {
       text: `${message}\n\n${buttonLabel}: ${link}`,
       html: brandedHtml({ text: message!, buttonLabel, buttonUrl: link, companyName: company }),
       tag: "design_proof",
+      replyTo: user.email,
     });
     if (!result.ok) {
       // Nobody received it, so don't leave a live link behind.
