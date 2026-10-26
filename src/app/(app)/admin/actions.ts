@@ -2,7 +2,7 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { siteUrl } from "@/lib/site-url";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { isDirectoryConfigured } from "@/lib/entra/graph";
@@ -492,8 +492,7 @@ export async function activateStaff(directoryId: string, back: string) {
   if (error) fail(safeBack, error.message);
   const invite = data as { token: string; email: string; name: string | null };
 
-  const h = await headers();
-  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const origin = await siteUrl();
   const link = `${origin}/invite/${invite.token}`;
   let status = "nomail";
   if (isEmailConfigured()) {

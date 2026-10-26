@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { headers } from "next/headers";
+import { siteUrl } from "@/lib/site-url";
 import { notFound } from "next/navigation";
 import { Download, Pencil, Printer } from "lucide-react";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
@@ -88,8 +88,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
   const balance = Number(doc.total) - credited;
   const margin = marginPercent(Number(doc.subtotal), Number(doc.cost_total));
 
-  const h = await headers();
-  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const origin = await siteUrl();
   const approvalLink = `${origin}/q/${doc.public_token}`;
   const viewLink = `${origin}/d/${doc.public_token}`;
   const emailed = typeof sp.emailed === "string" ? sp.emailed : null;

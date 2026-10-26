@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { siteUrl } from "@/lib/site-url";
 import CopyButton from "@/components/CopyButton";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import { Badge, Card, dangerButton, primaryButton, secondaryButton } from "@/components/ui";
@@ -45,8 +45,7 @@ export default async function StaffAccessCard({
   searchParams: Record<string, string | string[] | undefined>;
 }) {
   const status = staffStatus(entry, hasActiveProfile);
-  const h = await headers();
-  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const origin = await siteUrl();
   const link = entry.invite_token ? `${origin}/invite/${entry.invite_token}` : null;
   const invited = typeof searchParams.invited === "string" ? searchParams.invited : null;
 

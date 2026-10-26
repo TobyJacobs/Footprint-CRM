@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { siteUrl } from "@/lib/site-url";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { brandedHtml, isEmailTestMode, sendEmail } from "@/lib/email/sendgrid";
@@ -233,8 +233,7 @@ export async function sendProofForApproval(jobId: string, fd: FormData) {
     .single();
   if (error) fail(`${back}#approval`, error.message);
 
-  const h = await headers();
-  const link = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}/p/${approval.token}`;
+  const link = `${await siteUrl()}/p/${approval.token}`;
 
   let emailStatus: "sent" | "test" | null = null;
   if (!linkOnly) {

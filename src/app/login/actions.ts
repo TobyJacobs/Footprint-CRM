@@ -1,8 +1,8 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { siteUrl } from "@/lib/site-url";
 
 // Only allow returning to a page on this site after sign-in.
 function safeNext(next: FormDataEntryValue | null): string {
@@ -14,7 +14,7 @@ function safeNext(next: FormDataEntryValue | null): string {
 
 export async function signInWithMicrosoft(formData: FormData) {
   const supabase = await createClient();
-  const origin = (await headers()).get("origin") ?? "";
+  const origin = await siteUrl();
   const next = safeNext(formData.get("next"));
 
   const { data, error } = await supabase.auth.signInWithOAuth({

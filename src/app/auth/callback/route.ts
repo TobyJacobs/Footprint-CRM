@@ -1,10 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { siteUrl } from "@/lib/site-url";
 
 // Microsoft sends people back here after they sign in. We swap the one-time
 // code for a login session, then carry on to the page they wanted.
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl;
+  const { searchParams } = request.nextUrl;
+  const origin = await siteUrl();
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
   // Browsers treat "/\site" like "//site" (another website), so refuse
