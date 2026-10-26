@@ -287,3 +287,7 @@ This refines the "Supabase, London region" part of the technical foundations dec
 ## 26 October 2026 - Part billing on sales orders
 **Decision (owner):** a sales order can be invoiced in parts. Staff enter a £ amount before VAT or a percentage; the part invoice has **one summary line** ("Part invoice 1 for order SO-…: £1,000.00 of £2,000.00 (50%)"), split by VAT rate if the order mixes rates. "Invoice the rest" bills what's left ("Final invoice … the remaining …"). The order becomes "Invoiced" only when fully billed; a part-invoiced order can't also be fully converted (no double billing). Costs and labour follow the same share so margins stay right.
 **Why:** e.g. a £2,000 order billed £1,000 now, showing £1,000 outstanding.
+
+## 26 October 2026 - Cleaner sales flow
+**Decision (owner):** "make the flow as clean as possible". Chosen: drop the old Zoho "Production step" (the automatic stage bar replaces it; Operations dashboard groups by stage); stage bar on quotes (Draft → Sent → Accepted → Sales order); reason for loss asked when marking declined (not on the form); probability and expected order under "More details". Not chosen (for now): removing the old Delivery dropdown, renaming design/PO wording, hiding copy-shop fields, one way to send quotes, removing the "Sell ads" placeholder.
+**Why:** fewer fields and buttons that say the same thing twice.

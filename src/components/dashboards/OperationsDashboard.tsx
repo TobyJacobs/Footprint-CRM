@@ -1,5 +1,6 @@
 import { longDate } from "@/lib/customers/display";
 import { getMonth, isoDate } from "@/lib/dashboards/data";
+import { currentStage, orderStages } from "@/lib/sales/stages";
 import { createClient } from "@/lib/supabase/server";
 import { SimpleList, Tile, money } from "./parts";
 
@@ -16,7 +17,7 @@ export default async function OperationsDashboard() {
     await Promise.all([
       supabase
         .from("sales_documents")
-        .select("id, number, title, deadline_date, production_step, total, customers!sales_documents_customer_id_fkey(name)")
+        .select("id, number, title, status, subtotal, deadline_date, total, customers!sales_documents_customer_id_fkey(name)")
         .eq("doc_type", "sales_order")
         .eq("status", "open")
         .order("deadline_date", { ascending: true, nullsFirst: false })
@@ -44,11 +45,35 @@ export default async function OperationsDashboard() {
         .limit(5000),
     ]);
 
-  const orders = openOrders ?? [];
+  // Each open order's stage, worked out the same way as the stage bar on the order.
+  const ids = (openOrders ?? []).map((o) => o.id);
+  const [{ data: projects }, { data: jobs }, { data: pos }, { data: invoices }] = ids.length
+    ? await Promise.all([
+        supabase.from("projects").select("number, sales_document_id").in("sales_document_id", ids),
+        supabase.from("design_jobs").select("stage, sales_order_id").in("sales_order_id", ids),
+        supabase.from("purchase_orders").select("sales_document_id").in("sales_document_id", ids),
+        supabase.from("sales_documents").select("number, subtotal, source_document_id").eq("doc_type", "invoice").neq("status", "void").in("source_document_id", ids),
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
+  const orders = (openOrders ?? []).map((o) => {
+    const mine = (invoices ?? []).filter((i) => i.source_document_id === o.id);
+    const stage = currentStage(
+      orderStages({
+        status: o.status,
+        project: (projects ?? []).find((p) => p.sales_document_id === o.id) ?? null,
+        designJobs: (jobs ?? []).filter((j) => j.sales_order_id === o.id),
+        poCount: (pos ?? []).filter((p) => p.sales_document_id === o.id).length,
+        invoices: mine,
+        invoicedNet: mine.reduce((sum, i) => sum + Number(i.subtotal), 0),
+        orderNet: Number(o.subtotal),
+      }),
+    );
+    return { ...o, stage };
+  });
   const overdueOrders = orders.filter((o) => o.deadline_date && o.deadline_date < today);
   const dueThisWeek = orders.filter((o) => o.deadline_date && o.deadline_date >= today && o.deadline_date <= weekAhead);
   const steps = new Map<string, number>();
-  for (const o of orders) steps.set(o.production_step ?? "No step set", (steps.get(o.production_step ?? "No step set") ?? 0) + 1);
+  for (const o of orders) steps.set(o.stage, (steps.get(o.stage) ?? 0) + 1);
   const spend = (monthPos ?? []).reduce((s, p) => s + Number(p.total), 0);
 
   return (
@@ -89,13 +114,13 @@ export default async function OperationsDashboard() {
               key: o.id,
               href: `/sales/${o.id}`,
               primary: `${o.number} · ${customerName(o.customers)}`,
-              secondary: [o.production_step, o.title].filter(Boolean).join(" · "),
+              secondary: [`Now: ${o.stage}`, o.title].filter(Boolean).join(" · "),
               right: o.deadline_date ? longDate(o.deadline_date) : "No deadline",
               tone: o.deadline_date && o.deadline_date < today ? "red" : o.deadline_date && o.deadline_date <= weekAhead ? "amber" : undefined,
             }))}
         />
         <section className="rounded-lg border border-fp-border bg-white p-5">
-          <h2 className="mb-3 font-bold">Open orders by production step</h2>
+          <h2 className="mb-3 font-bold">Open orders by stage</h2>
           {steps.size === 0 ? (
             <p className="text-sm text-fp-dark/70">No open sales orders.</p>
           ) : (
@@ -105,7 +130,7 @@ export default async function OperationsDashboard() {
                 .map(([step, n]) => (
                   <li key={step} className="grid grid-cols-[1fr_auto] items-center gap-3">
                     <div>
-                      <p className="font-semibold">{step}</p>
+                      <p className="font-semibold">Now: {step}</p>
                       <div className="mt-1 h-2 rounded-full bg-fp-light">
                         <div className="h-full rounded-full bg-fp-teal-deep" style={{ width: `${(n / orders.length) * 100}%` }} />
                       </div>

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { addDaysTo, customerDueDate, ukToday } from "@/lib/dates";
 import { bool, int, num, str } from "@/lib/forms";
-import { defaultStatus, docTypes, isDocType, isLockedRecord, isQuoteKind, isWarehouse, quoteKindLabel, statuses, type DocType } from "@/lib/sales/options";
+import { defaultStatus, docTypes, isDocType, isLockedRecord, isQuoteKind, isWarehouse, lossReasons, quoteKindLabel, statuses, type DocType } from "@/lib/sales/options";
 import { gbp } from "@/lib/customers/display";
 import { documentEmailText } from "@/lib/sales/email-text";
 import { planPartInvoice } from "@/lib/sales/part-billing";
@@ -90,9 +90,7 @@ function headerFields(fd: FormData, docType: DocType) {
     probability: docType === "quote" ? str(fd, "probability") : null,
     expected_date: str(fd, "expected_date"),
     delivery_type: str(fd, "delivery_type"),
-    reason_for_loss: docType === "quote" ? str(fd, "reason_for_loss") : null,
     labour_cost: num(fd, "labour_cost"),
-    production_step: docType === "sales_order" ? str(fd, "production_step") : null,
     copy_shop_job: docType === "sales_order" ? bool(fd, "copy_shop_job") : false,
     consumer_copy_shop: docType === "sales_order" ? bool(fd, "consumer_copy_shop") : false,
     copy_shop_minutes: docType === "sales_order" ? int(fd, "copy_shop_minutes") : null,
@@ -232,6 +230,18 @@ export async function saveDocument(docType: DocType, documentId: string | null, 
   redirect(`/sales/${id}?saved=1`);
 }
 
+// "Mark declined" on a quote asks why (owner, 26 October 2026): the reason is
+// saved with it, instead of being a box on the quote form.
+export async function markQuoteDeclined(documentId: string, fd: FormData) {
+  await requirePermission("quotes", "edit");
+  const reason = str(fd, "reason_for_loss");
+  if (!reason || !lossReasons.includes(reason)) fail(`/sales/${documentId}`, "Please choose why the quote was lost");
+  const supabase = await createClient();
+  const { error } = await supabase.from("sales_documents").update({ reason_for_loss: reason }).eq("id", documentId).eq("doc_type", "quote").eq("status", "sent");
+  if (error) fail(`/sales/${documentId}`, error.message);
+  await setDocumentStatus(documentId, "declined");
+}
+
 export async function setDocumentStatus(documentId: string, status: string) {
   await requirePermission("quotes", "edit");
   const supabase = await createClient();
@@ -366,7 +376,6 @@ export async function convertDocument(documentId: string, to: DocType) {
       delivery_type: to === "invoice" || to === "credit_note" ? null : src.delivery_type,
       ...addresses,
       labour_cost: to === "credit_note" ? null : src.labour_cost,
-      production_step: to === "sales_order" ? "New Sales Order" : null,
       deadline_date: to === "sales_order" ? src.deadline_date : null,
       notes:
         to === "credit_note"

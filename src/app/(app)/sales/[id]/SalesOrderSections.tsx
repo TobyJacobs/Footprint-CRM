@@ -1,70 +1,25 @@
 import Link from "next/link";
-import { Check, Minus } from "lucide-react";
+import { Check, Minus, X } from "lucide-react";
 import DesignJobsPanel from "@/components/DesignJobsPanel";
 import { Badge, Card, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { gbp } from "@/lib/customers/display";
-import { designStageLabel } from "@/lib/design/options";
 import { projectStatusLabel, projectTone } from "@/lib/projects/options";
 import { poStatusLabel, statusToneFor } from "@/lib/sales/options";
+import type { Stages } from "@/lib/sales/stages";
 
 // The sales order page, in the owner's order (26 October 2026): a stage bar
 // that lights up by itself, then Stage, Finance summary, Purchase orders,
 // Design work, Project and Comms. Quotes and invoices keep their own layout.
 
-type StageState = "done" | "current" | "skipped" | "todo";
-type Stage = { label: string; note: string | null; done: boolean };
-
 export type OrderPo = { id: string; number: string; status: string; subtotal: number; supplier: string | null };
 export type OrderProject = { id: string; number: string; name: string; status: string; tasksDone: number; tasksTotal: number };
 
-// Design counts as done once every job is approved or further on.
-const DESIGN_DONE = ["approved", "production", "done"];
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-
-export function orderStages(o: {
-  status: string;
-  project: OrderProject | null;
-  designJobs: { stage: string }[];
-  pos: OrderPo[];
-  invoices: { number: string }[];
-  invoicedNet: number;
-  orderNet: number;
-}): { stages: Stage[]; states: StageState[] } {
-  const partInvoiced = o.status !== "invoiced" && o.invoices.length > 0;
-  const designDone = o.designJobs.length > 0 && o.designJobs.every((j) => DESIGN_DONE.includes(j.stage));
-  const openJob = o.designJobs.find((j) => !DESIGN_DONE.includes(j.stage));
-  const designNote =
-    o.designJobs.length === 0
-      ? null
-      : openJob
-        ? `${plural(o.designJobs.length, "job")} · ${designStageLabel(openJob.stage)}`
-        : `${plural(o.designJobs.length, "job")} approved`;
-  const stages: Stage[] = [
-    { label: "Order received", note: null, done: true },
-    { label: "Project", note: o.project?.number ?? null, done: !!o.project },
-    { label: "Design", note: designNote, done: designDone },
-    { label: "Suppliers ordered", note: o.pos.length ? plural(o.pos.length, "PO") : null, done: o.pos.length > 0 },
-    { label: "Completed", note: null, done: ["completed", "invoiced"].includes(o.status) },
-    {
-      label: "Invoiced",
-      note: partInvoiced ? `Part invoiced: ${gbp(o.invoicedNet)} of ${gbp(o.orderNet)}` : o.invoices.map((i) => i.number).join(", ") || null,
-      done: o.status === "invoiced",
-    },
-  ];
-  // Steps an order didn't need (e.g. no design) show as "not needed" once a
-  // later step is done; the current stage is the one after the last step done.
-  const lastDone = stages.reduce((last, s, i) => (s.done ? i : last), 0);
-  const states = stages.map((s, i): StageState =>
-    s.done ? "done" : i < lastDone ? "skipped" : i === lastDone + 1 && o.status !== "cancelled" ? "current" : "todo",
-  );
-  return { stages, states };
-}
-
-export function StageBar({ stages, states, cancelled }: { stages: Stage[]; states: StageState[]; cancelled: boolean }) {
+// The stage bar for a quote or a sales order (stages from lib/sales/stages).
+export function StageBar({ stages, states, cancelled, label = "Order stage" }: Stages & { cancelled?: boolean; label?: string }) {
   return (
     <div>
       {cancelled && <p className="mb-3 text-sm font-semibold text-fp-error">This order was cancelled.</p>}
-      <ol aria-label="Order stage" className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+      <ol aria-label={label} className={`grid gap-2 sm:grid-cols-3 ${stages.length > 4 ? "lg:grid-cols-6" : "lg:grid-cols-4"}`}>
         {stages.map((s, i) => {
           const state = states[i];
           return (
@@ -76,16 +31,32 @@ export function StageBar({ stages, states, cancelled }: { stages: Stage[]; state
                   ? "border-fp-teal-deep/30 bg-fp-teal/10"
                   : state === "current"
                     ? "border-fp-pink bg-fp-pink/5 shadow-sm"
-                    : "border-fp-border bg-white text-fp-mid"
+                    : state === "stopped"
+                      ? "border-fp-error/40 bg-fp-error/5 text-fp-error"
+                      : "border-fp-border bg-white text-fp-mid"
               }`}
             >
               <span className="flex items-center gap-2 font-bold">
                 <span
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${
-                    state === "done" ? "bg-fp-teal-deep text-white" : state === "current" ? "bg-fp-pink text-white" : "border border-fp-border"
+                    state === "done"
+                      ? "bg-fp-teal-deep text-white"
+                      : state === "current"
+                        ? "bg-fp-pink text-white"
+                        : state === "stopped"
+                          ? "bg-fp-error text-white"
+                          : "border border-fp-border"
                   }`}
                 >
-                  {state === "done" ? <Check size={12} aria-hidden /> : state === "skipped" ? <Minus size={12} aria-hidden /> : i + 1}
+                  {state === "done" ? (
+                    <Check size={12} aria-hidden />
+                  ) : state === "skipped" ? (
+                    <Minus size={12} aria-hidden />
+                  ) : state === "stopped" ? (
+                    <X size={12} aria-hidden />
+                  ) : (
+                    i + 1
+                  )}
                 </span>
                 {s.label}
               </span>
@@ -95,6 +66,8 @@ export function StageBar({ stages, states, cancelled }: { stages: Stage[]; state
                     <strong className="text-fp-pink">Now</strong>
                     {s.note ? ` · ${s.note}` : ""}
                   </>
+                ) : state === "stopped" ? (
+                  s.note ?? "Stopped"
                 ) : state === "skipped" ? (
                   "Not needed"
                 ) : (

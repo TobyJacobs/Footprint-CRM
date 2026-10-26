@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { Card, Checkbox, Field, Select, TextArea, TextInput, primaryButton, secondaryButton } from "@/components/ui";
 import {
-  businessUnits, quoteBusinessUnits, quoteKindLabel, creditReasons, deliveryTypes, docTypes, expectedDates, lossReasons, probabilities, productionSteps,
+  businessUnits, quoteBusinessUnits, quoteKindLabel, creditReasons, deliveryTypes, docTypes, expectedDates, probabilities,
   type DocType,
 } from "@/lib/sales/options";
 import AddressFields from "./AddressFields";
@@ -116,27 +116,25 @@ export default async function DocumentForm({
             <Select name="business_unit" options={docType === "quote" ? quoteBusinessUnits : businessUnits} defaultValue={(v("business_unit") as string) ?? defaults.business_unit ?? null} />
           </Field>
           {docType === "quote" && (
-            <>
-              <Field label="Probability">
-                <Select name="probability" options={probabilities} defaultValue={v("probability") as string} />
-              </Field>
-              <Field label="Expected order">
-                <Select name="expected_date" options={expectedDates} defaultValue={v("expected_date") as string} />
-              </Field>
-              <Field label="Reason for loss">
-                <Select name="reason_for_loss" options={lossReasons} defaultValue={v("reason_for_loss") as string} />
-              </Field>
-            </>
+            // Forecasting extras, out of the way unless wanted. The reason for
+            // loss is asked when the quote is marked declined.
+            <details className="sm:col-span-2 lg:col-span-4" open={!!(v("probability") || v("expected_date"))}>
+              <summary className="cursor-pointer text-sm font-semibold text-fp-teal-deep">More details (probability, expected order)</summary>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Field label="Probability">
+                  <Select name="probability" options={probabilities} defaultValue={v("probability") as string} />
+                </Field>
+                <Field label="Expected order">
+                  <Select name="expected_date" options={expectedDates} defaultValue={v("expected_date") as string} />
+                </Field>
+              </div>
+            </details>
           )}
           {docType === "sales_order" && (
-            <>
-              <Field label="Production step">
-                <Select name="production_step" options={productionSteps} defaultValue={(v("production_step") as string) ?? "New Sales Order"} />
-              </Field>
-              <Field label="Expected invoice">
-                <Select name="expected_date" options={expectedDates} defaultValue={v("expected_date") as string} />
-              </Field>
-            </>
+            // The order's stage is shown by the stage bar (no production step to set).
+            <Field label="Expected invoice">
+              <Select name="expected_date" options={expectedDates} defaultValue={v("expected_date") as string} />
+            </Field>
           )}
           {(docType === "quote" || docType === "sales_order") && (
             <Field label="Delivery">

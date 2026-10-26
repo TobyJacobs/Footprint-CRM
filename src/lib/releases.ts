@@ -11,6 +11,17 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.25.0",
+    date: "2026-10-26",
+    title: "A cleaner sales flow",
+    changes: [
+      "Quotes have a stage bar too: Draft → Sent → Accepted → Sales order, with the next step highlighted (a declined quote shows in red).",
+      "“Mark declined” asks why the quote was lost, so the reason is always recorded; it's no longer a box on the quote form.",
+      "Probability and Expected order are tucked under “More details” on the quote form.",
+      "Sales orders no longer have the old “Production step”: the stage bar shows where an order is. The Operations dashboard groups open orders by the same stages.",
+    ],
+  },
+  {
     version: "0.24.0",
     date: "2026-10-26",
     title: "Part billing",
