@@ -1,8 +1,11 @@
 import Link from "next/link";
-import { Briefcase, FileText, Mail, Megaphone, Newspaper, Phone, Receipt, ShoppingCart, UserPlus } from "lucide-react";
+import { Briefcase, FileText, Mail, Megaphone, Newspaper, Phone, Presentation, Receipt, ShoppingCart, UserPlus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { quoteKinds } from "@/lib/sales/options";
 
 type Action = { href: string | null; label: string; icon: LucideIcon; note?: string };
+
+const kindIcons = { quote: FileText, advertising: Newspaper, proposal: Presentation };
 
 // Quick actions for one customer, grouped Sell · Work · Contact. Each person
 // only sees the actions they're allowed to do; each opens with this customer
@@ -20,7 +23,8 @@ export default function CustomerActions({
       title: "Sell",
       actions: can.sales
         ? [
-            { href: `/sales/opportunity?${q}`, label: "New opportunity", icon: FileText },
+            // One button per kind of opportunity, straight to its form.
+            ...quoteKinds.map((k) => ({ href: `/sales/new?type=quote&kind=${k.value}&${q}`, label: k.newLabel, icon: kindIcons[k.value] })),
             { href: `/sales/new?type=sales_order&${q}`, label: "New sales order", icon: ShoppingCart },
             { href: `/sales/new?type=invoice&${q}`, label: "New invoice", icon: Receipt },
             // Advert bookings arrive with Magazines (Wave 5); until then this is a placeholder.

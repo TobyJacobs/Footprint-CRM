@@ -16,30 +16,33 @@ export type CustomerDoc = {
 };
 
 // One kind of document on a customer's page (quotes, sales orders, or invoices
-// and credit notes): the latest few, a "New…" button and a link to see them all.
+// and credit notes): the latest few, "New…" links and a link to see them all.
 export default function CustomerDocsCard({
   title,
   docs,
   total,
-  newHref,
-  newLabel,
+  newLinks,
   seeAllHref,
 }: {
   title: string;
   docs: CustomerDoc[];
   total: number;
-  newHref: string | null;
-  newLabel: string;
+  // The "+ New…" links in the corner (several for quotes: one per kind).
+  newLinks: { href: string; label: string }[];
   seeAllHref: string;
 }) {
   return (
     <Card
       title={`${title}${total ? ` (${total})` : ""}`}
       action={
-        newHref ? (
-          <Link href={newHref} className="inline-flex items-center gap-1 text-sm font-semibold text-fp-teal-deep hover:underline">
-            <Plus size={14} aria-hidden /> {newLabel}
-          </Link>
+        newLinks.length > 0 ? (
+          <span className="flex flex-wrap items-center gap-3">
+            {newLinks.map((l) => (
+              <Link key={l.href} href={l.href} className="inline-flex items-center gap-1 text-sm font-semibold text-fp-teal-deep hover:underline">
+                <Plus size={14} aria-hidden /> {l.label}
+              </Link>
+            ))}
+          </span>
         ) : undefined
       }
     >
