@@ -279,3 +279,7 @@ This refines the "Supabase, London region" part of the technical foundations dec
 **Decision (owner):** Footprint's full flow is customer → new opportunity (in the pipeline) → sales order → Create project, Create design, Create PO. A sales order **no longer gets a project automatically**: the order has a **Create project** button (then **Open project**). Request design on an order without a project offers "Create project and continue". Orders that already have a project keep it. Replaces the automatic project from 9 October 2026.
 **Decision (owner):** draft opportunities appear in the pipeline, but **highlighted in their own area** ("Draft opportunities (not sent yet)"), never mixed into win rate, quoted or waiting-for-an-answer figures.
 **Why:** projects only for orders that need one; salespeople see new opportunities as soon as they start them.
+
+## 26 October 2026 - FootprintOS has version numbers and a What's new page
+**Decision (owner):** version shown at the bottom of the side menu ("FootprintOS 0.20.0 · What's new") and a What's new page listing each version and its changes in plain English. No GitHub release tags for now. Numbering starts at **0.20.0** (today) and stays 0.x until Go-live, which becomes **1.0**. New feature → middle number; fix only → last number. One list (`src/lib/releases.ts`) is the source; the rule is in CLAUDE.md.
+**Why:** staff can say which version they're on when reporting a problem, and everyone can see what changed.

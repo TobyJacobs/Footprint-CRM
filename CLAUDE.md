@@ -60,5 +60,11 @@ The platform has a live **Roadmap** (Admin → Roadmap; tables `roadmap_waves`, 
 - A wave put on hold stays "On hold" until the owner says otherwise.
 - Mention what you ticked off in your plain-English summary.
 
+## Versions and What's new (owner's rule, 26 October 2026)
+FootprintOS has a version number (bottom of the side menu) and a **What's new** page, both from `src/lib/releases.ts`.
+- Every pull request that changes what people see or do adds an entry at the top of `releases.ts`, in plain English, with the date it goes live, and sets the same number in `package.json` (and the top of `package-lock.json`).
+- Numbering: 0.x until Go-live, then 1.0. A new feature or visible change → next middle number (0.20.0 → 0.21.0); a fix only → next last number (0.21.0 → 0.21.1). Several changes released the same day can share one version.
+- Mention the new version number in your plain-English summary.
+
 ## Technical notes for Claude
 @AGENTS.md

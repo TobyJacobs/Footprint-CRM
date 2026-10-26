@@ -789,3 +789,8 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Checked locally: old link forwards; typed a line, switched to Advertising (warning shown, advert builder, customer and contact kept), then Proposal (proposal sections, customer kept). Nothing saved. Type check, lint, build clean. No database change.
 - Also committed `.claude/settings.json` (owner agreed): read-only permission rules for Claude (type check, lint, browser reads, PR status).
 - **LIVE 26 October 2026:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#63](https://github.com/TobyJacobs/Footprint-CRM/pull/63), `8d25d56`), live from 18:45 GMT; checked live: Quotes list New opportunity → `/sales/new?type=quote`; old chooser link forwards with the customer; switching to Advertising gives "New advertising quote" with customer and contact kept. Roadmap ticked.
+
+## 26 October 2026 - Improvement list item 21: versions and What's new (branch `feature/versioning`, PR waiting for the owner)
+- Owner: start versioning the platform. Chose: version shown in the app + a What's new page (no GitHub tags); 0.x until Go-live, then 1.0.
+- `src/lib/releases.ts`: the list of versions (newest first) with plain-English changes; history back-filled from PRs #24–#63 as 0.15.0 (foundations) to **0.20.0** (today). `package.json`/lock set to 0.20.0. Side menu (under Sign out): "FootprintOS 0.20.0 · What's new" → `/whats-new` (all signed-in staff). Rule added to CLAUDE.md ("Versions and What's new"); DECISIONS updated.
+- Checked locally: menu shows the version; page lists 0.20.0 … 0.15.0. Type check, lint, build clean. No database change.
