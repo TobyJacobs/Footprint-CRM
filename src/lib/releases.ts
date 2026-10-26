@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.24.0",
+    date: "2026-10-26",
+    title: "Part billing",
+    changes: [
+      "Sales orders can be invoiced in parts: enter an amount before VAT (e.g. £1,000) or a percentage (e.g. 50%) and a part invoice is made with one clear line, VAT worked out as on the order.",
+      "The order shows how much has been invoiced and how much is still to invoice, and “Invoice the rest” bills what's left.",
+      "An order only counts as Invoiced once everything has been billed; the stage bar shows “Part invoiced” until then.",
+    ],
+  },
+  {
     version: "0.23.0",
     date: "2026-10-26",
     title: "Warehouse on sales orders",

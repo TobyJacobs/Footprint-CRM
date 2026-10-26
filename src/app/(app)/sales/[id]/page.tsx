@@ -13,11 +13,11 @@ import {
   docTypes, isDocType, isLockedRecord, marginPercent, marginText, poStatusLabel, quoteKindLabel, statusLabel, statusToneFor, type DocType,
 } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
-import { clearLineGpOverride, convertDocument, deleteDocument, setDocumentStatus, setLineGpOverride } from "../actions";
+import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, setDocumentStatus, setLineGpOverride } from "../actions";
 import { raisePurchaseOrders } from "../(operations)/purchase-orders/actions";
 import { createProjectForOrder } from "../../projects/actions";
 import EmailCard from "../EmailCard";
-import { DesignSection, FinanceSummary, ProjectSection, PurchaseOrdersSection, StageBar, orderStages, type OrderPo, type OrderProject } from "./SalesOrderSections";
+import { DesignSection, FinanceSummary, PartInvoiceForm, ProjectSection, PurchaseOrdersSection, StageBar, orderStages, type OrderPo, type OrderProject } from "./SalesOrderSections";
 
 export async function generateMetadata(props: PageProps<"/sales/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -57,7 +57,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
     doc.source_document_id
       ? supabase.from("sales_documents").select("id, number, doc_type").eq("id", doc.source_document_id).maybeSingle()
       : Promise.resolve({ data: null }),
-    supabase.from("sales_documents").select("id, number, doc_type, status, total").eq("source_document_id", id),
+    supabase.from("sales_documents").select("id, number, doc_type, status, subtotal, total").eq("source_document_id", id),
     type === "sales_order"
       ? supabase.from("purchase_orders").select("id, number, status, subtotal, total, suppliers(name)").eq("sales_document_id", id)
       : Promise.resolve({ data: [] }),
@@ -121,7 +121,8 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         tasksTotal: projectTasks.length,
       }
     : null;
-  const orderInvoices = (children ?? []).filter((c) => c.doc_type === "invoice");
+  const orderInvoices = (children ?? []).filter((c) => c.doc_type === "invoice" && c.status !== "void");
+  const invoicedNet = Math.round(orderInvoices.reduce((sum, i) => sum + Number(i.subtotal), 0) * 100) / 100;
   const emailCard = canEdit && !["void", "cancelled"].includes(doc.status) && (
     <div id="email" className="mt-6 scroll-mt-24">
       <EmailCard
@@ -187,7 +188,15 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         // The order's stage, lit up from what has happened so far.
         <div className="mb-6">
           <StageBar
-            {...orderStages({ status: doc.status, project: orderProject, designJobs: designJobs ?? [], pos: orderPos, invoices: orderInvoices })}
+            {...orderStages({
+              status: doc.status,
+              project: orderProject,
+              designJobs: designJobs ?? [],
+              pos: orderPos,
+              invoices: orderInvoices,
+              invoicedNet,
+              orderNet: Number(doc.subtotal),
+            })}
             cancelled={doc.status === "cancelled"}
           />
         </div>
@@ -212,7 +221,8 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 <ActionButton action={setDocumentStatus.bind(null, id, "declined")}>Mark declined</ActionButton>
               </>
             )}
-            {type === "sales_order" && ["open", "completed"].includes(doc.status) && (
+            {/* The whole order at once; once part-invoiced, the part-billing box below finishes it. */}
+            {type === "sales_order" && ["open", "completed"].includes(doc.status) && invoicedNet === 0 && (
               <ActionButton action={convertDocument.bind(null, id, "invoice")} tone="primary">
                 Create invoice
               </ActionButton>
@@ -259,6 +269,10 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
               <p className="text-sm text-fp-dark/75">This document is finalised and can no longer be changed.</p>
             )}
           </div>
+
+          {isOrder && ["open", "completed"].includes(doc.status) && (
+            <PartInvoiceForm orderNet={Number(doc.subtotal)} invoicedNet={invoicedNet} partAction={createPartInvoice.bind(null, id)} />
+          )}
 
           {type === "quote" && doc.status !== "draft" && (
             <div className="mt-5 rounded-md bg-fp-offwhite p-4 text-sm">
@@ -310,7 +324,8 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 labour={doc.labour_cost === null ? null : Number(doc.labour_cost)}
                 poSubtotal={orderPos.reduce((sum, p) => sum + (p.status === "cancelled" ? 0 : p.subtotal), 0)}
                 total={Number(doc.total)}
-                invoiced={orderInvoices.filter((i) => i.status !== "void").reduce((sum, i) => sum + Number(i.total), 0)}
+                invoiced={orderInvoices.reduce((sum, i) => sum + Number(i.total), 0)}
+                invoicedNet={invoicedNet}
               />
             </Card>
           </div>

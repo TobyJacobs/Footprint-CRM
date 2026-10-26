@@ -8,6 +8,7 @@ import { bool, int, num, str } from "@/lib/forms";
 import { defaultStatus, docTypes, isDocType, isLockedRecord, isQuoteKind, isWarehouse, quoteKindLabel, statuses, type DocType } from "@/lib/sales/options";
 import { gbp } from "@/lib/customers/display";
 import { documentEmailText } from "@/lib/sales/email-text";
+import { planPartInvoice } from "@/lib/sales/part-billing";
 import { deliverDocument } from "@/lib/sales/send-document";
 
 const isFinalised = (status: string) => ["accepted", "converted", "paid", "void", "invoiced"].includes(status);
@@ -273,6 +274,16 @@ export async function convertDocument(documentId: string, to: DocType) {
   if (to === "credit_note" && !(src.doc_type === "invoice" && ["issued", "paid"].includes(src.status))) {
     fail(back, "Credit notes can only be raised against an issued or paid invoice");
   }
+  // An order that has been part-invoiced is finished with "Invoice the rest", not a full copy.
+  if (src.doc_type === "sales_order" && to === "invoice") {
+    const { count } = await supabase
+      .from("sales_documents")
+      .select("id", { count: "exact", head: true })
+      .eq("source_document_id", src.id)
+      .eq("doc_type", "invoice")
+      .neq("status", "void");
+    if (count) fail(back, "This order has already been part-invoiced. Use “Invoice the rest” instead.");
+  }
   const allowedFrom = conversions[src.doc_type as DocType]?.[to];
   if (!allowedFrom) fail(back, "This document can't be converted to that");
   if (!allowedFrom.includes(src.status)) {
@@ -391,6 +402,96 @@ export async function convertDocument(documentId: string, to: DocType) {
     if (overrideError) fail(`/sales/${created.id}`, `Created, but line GP overrides couldn't be copied: ${overrideError.message}`);
   }
 
+  revalidatePath("/sales", "layout");
+  redirect(`/sales/${created.id}?saved=1`);
+}
+
+// Part billing (owner, 26 October 2026): invoice part of a sales order, as a £
+// amount before VAT or a percentage, or "the rest". The invoice has one summary
+// line (one per VAT rate if the order mixes rates), and the order only becomes
+// "Invoiced" once everything has been billed.
+export async function createPartInvoice(orderId: string, fd: FormData) {
+  await requirePermission("quotes", "edit");
+  const back = `/sales/${orderId}`;
+  const supabase = await createClient();
+  const { data: so } = await supabase.from("sales_documents").select("*").eq("id", orderId).eq("doc_type", "sales_order").maybeSingle();
+  if (!so) fail(back, "Sales order not found");
+  if (!["open", "completed"].includes(so.status)) fail(back, "This order can't be invoiced in its current status");
+
+  const [{ data: lines }, { data: invoices }] = await Promise.all([
+    supabase.from("sales_document_lines").select("tax_rate_id, tax_rate, line_net").eq("document_id", orderId),
+    supabase.from("sales_documents").select("subtotal").eq("source_document_id", orderId).eq("doc_type", "invoice").neq("status", "void"),
+  ]);
+  const orderNet = Number(so.subtotal);
+  const already = (invoices ?? []).reduce((sum, i) => sum + Number(i.subtotal), 0);
+  const amount = num(fd, "amount");
+  const plan = planPartInvoice(
+    (lines ?? []).map((l) => ({ tax_rate_id: l.tax_rate_id, tax_rate: Number(l.tax_rate), line_net: Number(l.line_net) })),
+    { net: orderNet, cost: Number(so.cost_total) },
+    already,
+    (invoices ?? []).length,
+    str(fd, "rest") === "1" ? { rest: true } : { amount: amount ?? 0, unit: str(fd, "unit") === "percent" ? "percent" : "gbp" },
+  );
+  if (!plan.ok) fail(back, plan.error);
+  const { bill, share, isFinal, partNo, percent } = plan;
+  const heading = isFinal && partNo > 1 ? `Final invoice for order ${so.number}: the remaining` : `Part invoice ${partNo} for order ${so.number}:`;
+  const description = `${heading} ${gbp(bill)} of ${gbp(orderNet)} (${percent}%)`;
+
+  const { data: settings } = await supabase.from("company_settings").select("*").single();
+  const { data: customer } = await supabase.from("customers").select("invoice_due_days, invoice_due_terms").eq("id", so.customer_id).maybeSingle();
+  const today = ukToday();
+  let number: string;
+  try {
+    number = await nextNumber("invoice");
+  } catch (e) {
+    fail(back, e instanceof Error ? e.message : "Couldn't get an invoice number");
+  }
+  const { data: created, error } = await supabase
+    .from("sales_documents")
+    .insert({
+      doc_type: "invoice",
+      number,
+      status: defaultStatus.invoice,
+      customer_id: so.customer_id,
+      contact_id: so.contact_id,
+      owner_id: so.owner_id,
+      source_document_id: so.id,
+      title: so.title,
+      customer_reference: so.customer_reference,
+      issue_date: today,
+      due_date: customerDueDate(today, customer?.invoice_due_days, customer?.invoice_due_terms) ?? addDaysTo(today, settings?.invoice_due_days ?? 30),
+      business_unit: so.business_unit,
+      quote_kind: so.quote_kind ?? "quote",
+      billing_address: so.billing_address ?? null,
+      // Costs follow the same share, so margin reports stay right.
+      labour_cost: so.labour_cost === null ? null : Math.round(Number(so.labour_cost) * share * 100) / 100,
+      notes: settings?.invoice_notes ?? so.notes,
+      terms: settings?.invoice_terms ?? so.terms,
+      internal_notes: so.internal_notes,
+    })
+    .select("id")
+    .single();
+  if (error) fail(back, error.message);
+
+  const { error: lineError } = await supabase.from("sales_document_lines").insert(
+    plan.lines.map((g, i) => ({
+      document_id: created.id,
+      position: i,
+      description: plan.lines.length > 1 ? `${description} – items at ${g.tax_rate}% VAT` : description,
+      quantity: 1,
+      unit_price: g.amount,
+      unit_cost: g.cost,
+      discount_percent: 0,
+      tax_rate_id: g.tax_rate_id,
+      tax_rate: g.tax_rate,
+    })),
+  );
+  if (lineError) fail(`/sales/${created.id}`, `Created, but its line couldn't be added: ${lineError.message}`);
+
+  // Everything billed: the order is now invoiced.
+  if (isFinal) {
+    await supabase.from("sales_documents").update({ status: "invoiced" }).eq("id", so.id).in("status", ["open", "completed"]);
+  }
   revalidatePath("/sales", "layout");
   redirect(`/sales/${created.id}?saved=1`);
 }

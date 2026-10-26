@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Check, Minus } from "lucide-react";
 import DesignJobsPanel from "@/components/DesignJobsPanel";
-import { Badge, Card, secondaryButton } from "@/components/ui";
+import { Badge, Card, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { gbp } from "@/lib/customers/display";
 import { designStageLabel } from "@/lib/design/options";
 import { projectStatusLabel, projectTone } from "@/lib/projects/options";
@@ -27,7 +27,10 @@ export function orderStages(o: {
   designJobs: { stage: string }[];
   pos: OrderPo[];
   invoices: { number: string }[];
+  invoicedNet: number;
+  orderNet: number;
 }): { stages: Stage[]; states: StageState[] } {
+  const partInvoiced = o.status !== "invoiced" && o.invoices.length > 0;
   const designDone = o.designJobs.length > 0 && o.designJobs.every((j) => DESIGN_DONE.includes(j.stage));
   const openJob = o.designJobs.find((j) => !DESIGN_DONE.includes(j.stage));
   const designNote =
@@ -42,7 +45,11 @@ export function orderStages(o: {
     { label: "Design", note: designNote, done: designDone },
     { label: "Suppliers ordered", note: o.pos.length ? plural(o.pos.length, "PO") : null, done: o.pos.length > 0 },
     { label: "Completed", note: null, done: ["completed", "invoiced"].includes(o.status) },
-    { label: "Invoiced", note: o.invoices.map((i) => i.number).join(", ") || null, done: o.status === "invoiced" || o.invoices.length > 0 },
+    {
+      label: "Invoiced",
+      note: partInvoiced ? `Part invoiced: ${gbp(o.invoicedNet)} of ${gbp(o.orderNet)}` : o.invoices.map((i) => i.number).join(", ") || null,
+      done: o.status === "invoiced",
+    },
   ];
   // Steps an order didn't need (e.g. no design) show as "not needed" once a
   // later step is done; the current stage is the one after the last step done.
@@ -110,6 +117,7 @@ export function FinanceSummary({
   poSubtotal,
   total,
   invoiced,
+  invoicedNet,
 }: {
   net: number;
   cost: number;
@@ -117,6 +125,8 @@ export function FinanceSummary({
   poSubtotal: number;
   total: number;
   invoiced: number;
+  // Before VAT, for "still to invoice".
+  invoicedNet: number;
 }) {
   const margin = net - cost - (labour ?? 0);
   const scale = Math.max(net, cost + (labour ?? 0), poSubtotal, 1);
@@ -159,7 +169,10 @@ export function FinanceSummary({
         <div className="h-3 rounded-full bg-white" aria-hidden>
           <div className="h-3 rounded-full bg-fp-teal-deep" style={{ width: `${total ? Math.min(100, (invoiced / total) * 100) : 0}%` }} />
         </div>
-        <p className="text-xs text-fp-mid">Including VAT. Staff only — customers never see cost or margin.</p>
+        <p className="text-sm">
+          <strong>Still to invoice:</strong> {gbp(Math.max(0, net - invoicedNet))} <span className="text-fp-mid">before VAT</span>
+        </p>
+        <p className="text-xs text-fp-mid">Invoiced figures include VAT. Staff only — customers never see cost or margin.</p>
       </div>
     </div>
   );
@@ -234,4 +247,49 @@ export function ProjectSection({ project, create, canView }: { project: OrderPro
 // Design work: the existing Design jobs card (hidden from people without Design access).
 export function DesignSection({ orderId }: { orderId: string }) {
   return <DesignJobsPanel order={orderId} />;
+}
+
+// Part billing (owner, 26 October 2026): bill part of the order as a £ amount
+// before VAT or a percentage, or bill whatever is left.
+export function PartInvoiceForm({
+  orderNet,
+  invoicedNet,
+  partAction,
+}: {
+  orderNet: number;
+  invoicedNet: number;
+  partAction: (fd: FormData) => Promise<void>;
+}) {
+  const remaining = Math.round((orderNet - invoicedNet) * 100) / 100;
+  if (remaining <= 0) return null;
+  return (
+    <div className="mt-4 grid gap-3 rounded-md border border-fp-border p-4 text-sm">
+      {invoicedNet > 0 && (
+        <p>
+          Invoiced so far <strong>{gbp(invoicedNet)}</strong> of {gbp(orderNet)} before VAT · <strong>{gbp(remaining)}</strong> still to invoice.
+        </p>
+      )}
+      <form action={partAction} className="flex flex-wrap items-end gap-2">
+        <label className="grid gap-1">
+          <span className="font-semibold">Part invoice</span>
+          <input name="amount" type="number" step="any" min="0" required placeholder="e.g. 1000 or 50" className={`${inputClass} w-40`} />
+        </label>
+        <select name="unit" aria-label="Pounds or percent" defaultValue="gbp" className={`${inputClass} w-auto`}>
+          <option value="gbp">£ before VAT</option>
+          <option value="percent">% of the order</option>
+        </select>
+        <button type="submit" className={secondaryButton}>
+          Create part invoice
+        </button>
+      </form>
+      {invoicedNet > 0 && (
+        <form action={partAction}>
+          <input type="hidden" name="rest" value="1" />
+          <button type="submit" className={primaryButton}>
+            Invoice the rest ({gbp(remaining)} + VAT)
+          </button>
+        </form>
+      )}
+    </div>
+  );
 }
