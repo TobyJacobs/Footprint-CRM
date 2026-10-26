@@ -84,7 +84,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
 
   const canSeeProjects = user.can("projects", "view");
   const { data: customerProjects } = canSeeProjects
-    ? await supabase.from("projects").select("id, name, status, due_date").eq("customer_id", id).order("created_at", { ascending: false }).limit(10)
+    ? await supabase.from("projects").select("id, number, name, status, due_date").eq("customer_id", id).order("created_at", { ascending: false }).limit(10)
     : { data: null };
 
   const canSeeSales = user.can("quotes", "view");
@@ -217,34 +217,6 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
               </dl>
               {c.description && <p className="mt-4 whitespace-pre-line text-sm text-fp-dark/80">{c.description}</p>}
             </Card>
-
-            {canSeeProjects && (
-              <Card
-                title="Projects"
-                action={
-                  user.can("projects", "edit") ? (
-                    <Link href={`/projects/new?customer=${id}`} className={`${secondaryButton} inline-flex items-center gap-1.5`}>
-                      <Plus size={14} aria-hidden /> New project
-                    </Link>
-                  ) : undefined
-                }
-              >
-                {(customerProjects ?? []).length === 0 ? (
-                  <p className="text-sm text-fp-dark/70">No projects for this customer yet.</p>
-                ) : (
-                  <ul className="grid gap-2 text-sm">
-                    {(customerProjects ?? []).map((pr) => (
-                      <li key={pr.id} className="flex flex-wrap items-center justify-between gap-2">
-                        <Link href={`/projects/${pr.id}`} className="font-semibold hover:text-fp-pink">
-                          {pr.name}
-                        </Link>
-                        <Badge tone={projectTone(pr.status)}>{projectStatusLabel(pr.status)}</Badge>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </Card>
-            )}
 
             <Card
               title="Contacts"
@@ -584,7 +556,55 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
             </Card>
           </div>
         </div>
+
+        {/* Projects: at the bottom, full width (owner, 26 October 2026). Shown by
+            number and a clean name, not as "Customer – Order SO-…". */}
+        {canSeeProjects && (
+          <div className="mt-6">
+            <Card
+              title={`Projects${(customerProjects ?? []).length ? ` (${(customerProjects ?? []).length})` : ""}`}
+              action={
+                user.can("projects", "edit") ? (
+                  <Link href={`/projects/new?customer=${id}`} className={`${secondaryButton} inline-flex items-center gap-1.5`}>
+                    <Plus size={14} aria-hidden /> New project
+                  </Link>
+                ) : undefined
+              }
+            >
+              {(customerProjects ?? []).length === 0 ? (
+                <p className="text-sm text-fp-dark/70">No projects for this customer yet.</p>
+              ) : (
+                <ul className="divide-y divide-fp-border text-sm">
+                  {(customerProjects ?? []).map((pr) => {
+                    const name = projectDisplayName(pr.name, c.name);
+                    return (
+                      <li key={pr.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
+                        <Link href={`/projects/${pr.id}`} className="font-semibold hover:text-fp-pink">
+                          {pr.number}
+                          {name && <span className="font-normal text-fp-dark/80"> · {name}</span>}
+                        </Link>
+                        <span className="flex items-center gap-3">
+                          {pr.due_date && <span className="text-fp-mid">Due {longDate(pr.due_date)}</span>}
+                          <Badge tone={projectTone(pr.status)}>{projectStatusLabel(pr.status)}</Badge>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Card>
+          </div>
+        )}
       </div>
     </>
   );
+}
+
+// A project's name without the customer's name or "Order SO-…" (projects made
+// from an order are called "Customer – Order SO-010932"), e.g. "Spring leaflets".
+function projectDisplayName(name: string, customer: string) {
+  return name
+    .replace(new RegExp(`^${customer.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*[–-]\\s*`, "i"), "")
+    .replace(/\bOrder SO-\d+\b/i, "")
+    .replace(/^[\s–-]+|[\s–-]+$/g, "");
 }

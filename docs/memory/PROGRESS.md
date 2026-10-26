@@ -840,3 +840,8 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - `sales/[id]/page.tsx`: the "Customer approval link" / "Customer view link" boxes (heading + explanation) are gone; one button at the top after Download PDF: "Copy approval link" (quotes) or "Copy customer link" (orders, invoices, credit notes), not for drafts, only for people who can edit (as before).
 - Checked locally on QT-010191 and SO-010932. Type check, lint, build clean. No database change.
 - **LIVE 26 October 2026 as 0.26.0:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#70](https://github.com/TobyJacobs/Footprint-CRM/pull/70), `f509b2c`), live from 20:20 GMT; checked live: QT-010191 Print · Download PDF · Copy approval link · Edit; SO-010932 … Copy customer link; no link boxes; menu 0.26.0. Roadmap ticked. **Next version: 0.27.0.**
+
+## 26 October 2026 - Improvement list item 28: customer Projects at the bottom (branch `feature/customer-projects-bottom`, PR waiting for the owner) — version 0.27.0
+- Owner: on customers, don't show sales orders in the Projects section; move Projects off the side and below everything else.
+- `customers/[id]/page.tsx`: Projects card moved from under Details to the bottom, full width ("Projects (n)", New project button). Each row: project number + clean name (`projectDisplayName` strips "Customer – " and "Order SO-…", e.g. "DEALCLUB Limited – Order SO-010932" → just "FO-1521"), due date, status.
+- Checked locally on DEALCLUB Limited (Projects last; FO-1522, FO-1521). Type check, lint, build clean. No database change.
