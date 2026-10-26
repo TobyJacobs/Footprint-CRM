@@ -6,7 +6,8 @@ One short entry per session. Newest at the top.
 
 ## 26 October 2026: Order flow and Request design
 - Owner gave Footprint's flow: quote / proposal / advert → SO → PO, design request, project (saved in GLOSSARY).
-- Built Request design on the sales order (#59): job linked to the order and its project. Clicked through locally, merged; live check waiting for sign-in.
+- Built Request design on the sales order (#59): job linked to the order and its project. Clicked through locally, merged and checked live.
+- Noticed sign-in sometimes lands on a release-specific Netlify address; suggested as a follow-up.
 
 ## 21 October 2026: Improvement list items 10-13
 - Customer quotes/orders/invoices split (#51), no product number on quotes (#52), margin as £ and % everywhere (#53): all merged by Claude at the owner's request and checked live.
