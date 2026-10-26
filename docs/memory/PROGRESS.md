@@ -845,3 +845,4 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Owner: on customers, don't show sales orders in the Projects section; move Projects off the side and below everything else.
 - `customers/[id]/page.tsx`: Projects card moved from under Details to the bottom, full width ("Projects (n)", New project button). Each row: project number + clean name (`projectDisplayName` strips "Customer – " and "Order SO-…", e.g. "DEALCLUB Limited – Order SO-010932" → just "FO-1521"), due date, status.
 - Checked locally on DEALCLUB Limited (Projects last; FO-1522, FO-1521). Type check, lint, build clean. No database change.
+- **LIVE 26 October 2026 as 0.27.0:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#71](https://github.com/TobyJacobs/Footprint-CRM/pull/71), `4e48f92`), live from 20:26 GMT; checked live on DEALCLUB (Projects (2) last, FO-1522 / FO-1521; menu 0.27.0). Roadmap ticked. **Next version: 0.28.0.**
