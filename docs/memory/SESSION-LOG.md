@@ -14,6 +14,7 @@ One short entry per session. Newest at the top.
 - Sign-in fix (#60) done in a separate session: live and checked.
 - Owner's full flow: customer → opportunity (pipeline) → SO → Create project / design / PO. Built Create project button (no automatic project) and a separate Draft opportunities area in the pipeline (#61): tested on a temporary database, merged and checked live.
 - Customer page: New quote / New advertising quote / New proposal straight from the customer (#62): merged and checked live.
+- New quote "What kind of quote?" dropdown that switches the screen (#63), plus Claude's read-only permission rules committed: merged and checked live.
 
 ## 21 October 2026: Improvement list items 10-13
 - Customer quotes/orders/invoices split (#51), no product number on quotes (#52), margin as £ and % everywhere (#53): all merged by Claude at the owner's request and checked live.
