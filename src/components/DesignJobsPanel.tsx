@@ -7,8 +7,8 @@ import { designStageLabel, designStageTone, jobNumber } from "@/lib/design/optio
 import { createClient } from "@/lib/supabase/server";
 
 // "Design jobs" card for a sales order, project or customer page: the jobs
-// linked to it. New jobs are always started from a project, so the button
-// shows on a project, and on a sales order that has a project. Hidden from
+// linked to it. New jobs always belong to a project, so the button shows on a
+// project and on a sales order (which offers to create its project). Hidden from
 // people without Design access.
 export default async function DesignJobsPanel({ order, project, customer }: { order?: string; project?: string; customer?: string }) {
   const user = await getCurrentUser();
@@ -25,8 +25,9 @@ export default async function DesignJobsPanel({ order, project, customer }: { or
     ? (await supabase.from("projects").select("id").eq("sales_document_id", order).maybeSingle()).data?.id ?? null
     : null;
   const fromProject = project ?? orderProject;
-  // From an order, go through the order so the page comes back to it.
-  const newHref = order && orderProject ? `/design/new?order=${order}` : fromProject ? `/design/new?project=${fromProject}` : null;
+  // From an order, go through the order (it offers to create the order's
+  // project first if there isn't one).
+  const newHref = order ? `/design/new?order=${order}` : fromProject ? `/design/new?project=${fromProject}` : null;
   return (
     <Card
       title="Design jobs"
@@ -40,7 +41,7 @@ export default async function DesignJobsPanel({ order, project, customer }: { or
     >
       {!newHref && (
         <p className="mb-2 text-xs text-fp-mid">
-          {order ? "Design jobs are started from a project. Create a project for this order first." : "Design jobs are started from one of this customer's projects."}
+          Design jobs are started from one of this customer&apos;s projects.
         </p>
       )}
       {jobs.length === 0 ? (

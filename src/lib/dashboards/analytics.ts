@@ -111,6 +111,10 @@ export type Pipeline = {
   openExpired: number;
   ages: { label: string; n: number; value: number }[];
   biggest: { id: string; number: string; title: string | null; value: number; issue_date: string; valid_until: string | null; customer: string | null; owner: string | null }[];
+  // Draft opportunities (not sent yet): kept apart from every figure above.
+  draftCount: number;
+  draftValue: number;
+  drafts: { id: string; number: string; title: string | null; value: number; issue_date: string; customer: string | null; owner: string | null }[];
 };
 
 const AGE_LABELS = ["Up to 30 days", "31–60 days", "61–90 days", "Over 90 days"];
@@ -142,6 +146,17 @@ export async function getPipeline(from: string, to: string, ownerId: string | nu
       const a = ages.find((x) => num(x.bucket) === i + 1);
       return { label, n: a ? num(a.n) : 0, value: a ? num(a.value) : 0 };
     }),
+    draftCount: num(d.draft_count),
+    draftValue: num(d.draft_value),
+    drafts: rows("drafts").map((r) => ({
+      id: String(r.id),
+      number: String(r.number),
+      title: (r.title as string | null) ?? null,
+      value: num(r.value),
+      issue_date: String(r.issue_date),
+      customer: (r.customer as string | null) ?? null,
+      owner: (r.owner as string | null) ?? null,
+    })),
     biggest: rows("biggest").map((r) => ({
       id: String(r.id),
       number: String(r.number),

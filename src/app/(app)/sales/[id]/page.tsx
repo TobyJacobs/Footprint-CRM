@@ -15,6 +15,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { clearLineGpOverride, convertDocument, deleteDocument, setDocumentStatus, setLineGpOverride } from "../actions";
 import { raisePurchaseOrders } from "../(operations)/purchase-orders/actions";
+import { createProjectForOrder } from "../../projects/actions";
 import EmailCard from "../EmailCard";
 import DesignJobsPanel from "@/components/DesignJobsPanel";
 
@@ -51,7 +52,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
   if (!doc || !isDocType(doc.doc_type)) notFound();
   const type = doc.doc_type as DocType;
 
-  const [lines, { data: source }, { data: children }, { data: pos }, { data: emailLog }, { data: settings }, { data: canOverrideGp }] = await Promise.all([
+  const [lines, { data: source }, { data: children }, { data: pos }, { data: emailLog }, { data: settings }, { data: canOverrideGp }, { data: project }] = await Promise.all([
     getDocumentLines(id),
     doc.source_document_id
       ? supabase.from("sales_documents").select("id, number, doc_type").eq("id", doc.source_document_id).maybeSingle()
@@ -68,6 +69,9 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
       .limit(10),
     supabase.from("company_settings").select("company_name").single(),
     supabase.rpc("can_override_gp"),
+    type === "sales_order"
+      ? supabase.from("projects").select("id, number").eq("sales_document_id", id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   // Names for "overridden by" on any lines that have a GP override.
@@ -160,14 +164,22 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 Create invoice
               </ActionButton>
             )}
-            {type === "sales_order" && ["open", "completed", "invoiced"].includes(doc.status) && (
-              <ActionButton action={raisePurchaseOrders.bind(null, id)}>Order from suppliers (raise POs)</ActionButton>
+            {/* Footprint's flow: sales order → project, design request and POs. */}
+            {type === "sales_order" && project && user.can("projects", "view") && (
+              <Link href={`/projects/${project.id}`} className={secondaryButton}>
+                Open project {project.number}
+              </Link>
             )}
-            {/* Footprint's flow: sales order → POs, design request and project. */}
+            {type === "sales_order" && !project && ["open", "completed", "invoiced"].includes(doc.status) && user.can("projects", "edit") && (
+              <ActionButton action={createProjectForOrder.bind(null, id, "project")}>Create project</ActionButton>
+            )}
             {type === "sales_order" && ["open", "completed", "invoiced"].includes(doc.status) && user.can("design", "view") && (
               <Link href={`/design/new?order=${id}`} className={secondaryButton}>
                 Request design
               </Link>
+            )}
+            {type === "sales_order" && ["open", "completed", "invoiced"].includes(doc.status) && (
+              <ActionButton action={raisePurchaseOrders.bind(null, id)}>Order from suppliers (raise POs)</ActionButton>
             )}
             {type === "sales_order" && doc.status === "open" && (
               <>

@@ -4,6 +4,7 @@ import { Card, Notice, inputClass, primaryButton } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { loadPeople } from "@/lib/design/jobs";
 import { createClient } from "@/lib/supabase/server";
+import { createProjectForOrder } from "../../projects/actions";
 import { saveJob } from "../actions";
 import JobForm, { type JobValues } from "../JobForm";
 
@@ -15,8 +16,9 @@ const param = (v: unknown) => (typeof v === "string" && UUID.test(v) ? v : null)
 // Design jobs are always started from a project (the owner's rule, 20 October
 // 2026). Arriving with a project fills in the customer, sales order and title;
 // arriving from a sales order ("Request design", 26 October 2026) uses the
-// order's own project (every order gets one automatically); arriving with
-// neither (e.g. from the Design board) asks which project first.
+// order's project, or offers to create it first (projects are made with
+// "Create project" on the order); arriving with neither (e.g. from the
+// Design board) asks which project first.
 export default async function NewDesignJobPage(props: PageProps<"/design/new">) {
   const user = await getCurrentUser();
   const sp = await props.searchParams;
@@ -53,6 +55,31 @@ export default async function NewDesignJobPage(props: PageProps<"/design/new">) 
     }
   }
 
+  if (!from && order) {
+    // Footprint's flow: the order's project comes first, then the design request.
+    return (
+      <div className="grid max-w-3xl gap-4">
+        <Link href={`/sales/${order.id}`} className="text-sm font-semibold text-fp-teal-deep hover:underline">
+          ← Back to sales order {order.number}
+        </Link>
+        <h2 className="text-xl font-black">Request design</h2>
+        <Notice searchParams={sp} />
+        <Card>
+          <p className="text-sm">Sales order {order.number} has no project yet. Design jobs belong to a project, so create the order&apos;s project first.</p>
+          {user.can("projects", "edit") ? (
+            <form action={createProjectForOrder.bind(null, order.id, "design")} className="mt-3">
+              <button type="submit" className={primaryButton}>
+                Create project and continue
+              </button>
+            </form>
+          ) : (
+            <p className="mt-2 text-sm text-fp-mid">Ask someone who can create projects to press &ldquo;Create project&rdquo; on the order.</p>
+          )}
+        </Card>
+      </div>
+    );
+  }
+
   if (!from) {
     // No project yet: pick one (open projects, newest first).
     const { data: projects } = await supabase
@@ -67,11 +94,7 @@ export default async function NewDesignJobPage(props: PageProps<"/design/new">) 
           ← Design board
         </Link>
         <h2 className="text-xl font-black">New design job</h2>
-        <p className="text-sm text-fp-dark/75">
-          {order
-            ? `Sales order ${order.number} has no project yet, and design jobs are started from a project. Choose the project this job is for.`
-            : "Design jobs are started from a project. Choose the project this job is for."}
-        </p>
+        <p className="text-sm text-fp-dark/75">Design jobs are started from a project. Choose the project this job is for.</p>
         <Notice searchParams={sp} />
         <Card>
           {(projects ?? []).length > 0 ? (

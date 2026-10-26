@@ -36,7 +36,7 @@ export default function ProjectForm({
         <CustomerSearchField initial={values.customer ?? null} />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Sales order (optional)" hint="Most projects are created automatically from a sales order. Only needed for one made by hand.">
+        <Field label="Sales order (optional)" hint="Usually made with “Create project” on the sales order. Only needed for one made by hand.">
           <TextInput name="sales_order" defaultValue={values.sales_order} placeholder="e.g. SO-010913" />
         </Field>
         <Field label="Owner" hint="Only staff who have signed in to FootprintOS are listed.">
