@@ -9,15 +9,14 @@ import { Badge, Card, Notice, dangerButton, inputClass, primaryButton, secondary
 import { requirePermission } from "@/lib/auth";
 import { gbp, longDate, personName, shortDateTime } from "@/lib/customers/display";
 import { getDocumentLines } from "@/lib/sales/data";
-import {
-  docTypes, isDocType, isLockedRecord, marginPercent, marginText, poStatusLabel, quoteKindLabel, statusLabel, statusToneFor, type DocType,
-} from "@/lib/sales/options";
+import { docTypes, isDocType, isLockedRecord, lossReasons, marginPercent, marginText, poStatusLabel, quoteKindLabel, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
-import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, setDocumentStatus, setLineGpOverride } from "../actions";
+import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, markQuoteDeclined, setDocumentStatus, setLineGpOverride } from "../actions";
 import { raisePurchaseOrders } from "../(operations)/purchase-orders/actions";
 import { createProjectForOrder } from "../../projects/actions";
 import EmailCard from "../EmailCard";
-import { DesignSection, FinanceSummary, PartInvoiceForm, ProjectSection, PurchaseOrdersSection, StageBar, orderStages, type OrderPo, type OrderProject } from "./SalesOrderSections";
+import { orderStages, quoteStages } from "@/lib/sales/stages";
+import { DesignSection, FinanceSummary, PartInvoiceForm, ProjectSection, PurchaseOrdersSection, StageBar, type OrderPo, type OrderProject } from "./SalesOrderSections";
 
 export async function generateMetadata(props: PageProps<"/sales/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -192,12 +191,22 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
               status: doc.status,
               project: orderProject,
               designJobs: designJobs ?? [],
-              pos: orderPos,
+              poCount: orderPos.length,
               invoices: orderInvoices,
               invoicedNet,
               orderNet: Number(doc.subtotal),
             })}
             cancelled={doc.status === "cancelled"}
+          />
+        </div>
+      )}
+
+      {type === "quote" && (
+        // The quote's stage: Draft → Sent → Accepted → Sales order.
+        <div className="mb-6">
+          <StageBar
+            label="Quote stage"
+            {...quoteStages({ status: doc.status, orderNumber: (children ?? []).find((c) => c.doc_type === "sales_order")?.number ?? null })}
           />
         </div>
       )}
@@ -218,7 +227,28 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
             {type === "quote" && doc.status === "sent" && (
               <>
                 <ActionButton action={setDocumentStatus.bind(null, id, "accepted")}>Mark accepted (by phone/email)</ActionButton>
-                <ActionButton action={setDocumentStatus.bind(null, id, "declined")}>Mark declined</ActionButton>
+                {/* Declining asks why, so the reason is always recorded. */}
+                <details className="relative">
+                  <summary className={`${secondaryButton} cursor-pointer list-none`}>Mark declined…</summary>
+                  <form action={markQuoteDeclined.bind(null, id)} className="mt-2 flex flex-wrap items-end gap-2 rounded-md border border-fp-border bg-white p-3 text-sm">
+                    <label className="grid gap-1">
+                      <span className="font-semibold">Why was it lost?</span>
+                      <select name="reason_for_loss" required defaultValue="" className={inputClass}>
+                        <option value="" disabled>
+                          Choose a reason…
+                        </option>
+                        {lossReasons.map((r) => (
+                          <option key={r} value={r}>
+                            {r}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button type="submit" className={secondaryButton}>
+                      Mark declined
+                    </button>
+                  </form>
+                </details>
               </>
             )}
             {/* The whole order at once; once part-invoiced, the part-billing box below finishes it. */}
@@ -519,7 +549,6 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 ["Valid until", type === "quote" ? longDate(doc.valid_until) : null],
                 ["Due", type === "invoice" ? longDate(doc.due_date) : null],
                 ["Deadline", type === "sales_order" ? longDate(doc.deadline_date) : null],
-                ["Production step", doc.production_step],
                 ["Customer reference", doc.customer_reference],
                 ["Billing address", type === "invoice" ? doc.billing_address : null],
                 ["Salesperson", owner ? (owner.full_name ?? owner.email) : null],
