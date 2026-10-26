@@ -88,7 +88,7 @@ export default async function DocumentList({
           <p className="text-sm text-fp-dark/75">To raise a credit note, open the invoice and choose “Raise credit note”.</p>
         )}
         {user.can("quotes", "edit") && docType !== "credit_note" && (
-          <Link href={docType === "quote" ? "/sales/opportunity" : `/sales/new?type=${docType}`} className={`${primaryButton} inline-flex items-center gap-2`}>
+          <Link href={`/sales/new?type=${docType}`} className={`${primaryButton} inline-flex items-center gap-2`}>
             <Plus size={16} aria-hidden /> {docType === "quote" ? "New opportunity" : `New ${label.toLowerCase()}`}
           </Link>
         )}
