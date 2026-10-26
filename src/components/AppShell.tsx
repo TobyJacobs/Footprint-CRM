@@ -7,6 +7,7 @@ import { Suspense, createContext, useContext, useState } from "react";
 import { LogOut, Menu, X } from "lucide-react";
 import ActivityBar from "./ActivityBar";
 import { features, home, type Feature } from "@/lib/features";
+import { currentVersion } from "@/lib/releases";
 
 // Which of Sales / Operations is open, set by their tabs (both share /sales).
 const SectionContext = createContext<(section: string) => void>(() => {});
@@ -90,6 +91,10 @@ function UserBox({ name, email }: { name: string; email: string }) {
           Sign out
         </button>
       </form>
+      {/* The version, so a problem report can say which one; links to what changed. */}
+      <Link href="/whats-new" className="mt-3 block text-xs text-white/40 hover:text-white">
+        FootprintOS {currentVersion} · What&apos;s new
+      </Link>
     </div>
   );
 }
