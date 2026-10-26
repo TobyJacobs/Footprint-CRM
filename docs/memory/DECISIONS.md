@@ -265,3 +265,7 @@ This refines the "Supabase, London region" part of the technical foundations dec
 **Decision (owner):** quote, order and invoice lines no longer start with the product number; they show the product name (and description). Updates the 5 October 2026 decision ("choosing a product puts its Zoho product number at the start of the line description").
 **Unchanged:** the product number is still saved on every line (`product_code`) for the Xero sync, and purchase orders to suppliers still show it in the line text.
 **Existing lines** (test data) keep their text; nothing in the database was changed.
+
+## 26 October 2026 - Design requests straight from the sales order
+**Decision (owner):** Footprint's flow is quote / proposal / advert → sales order → purchase orders, design request and project. A sales order gets a **Request design** button; the job is linked to the order **and** the order's project (every order gets a project automatically). Updates the 20 October 2026 rule ("every new design job is started from a project"): jobs still always belong to a project, but staff can start one from the order.
+**Why:** the sales order is where the team works after the sale, so the design request should be one click from there.
