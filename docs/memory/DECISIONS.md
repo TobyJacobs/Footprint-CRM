@@ -274,3 +274,8 @@ This refines the "Supabase, London region" part of the technical foundations dec
 **Decision:** sign-in return addresses and every link we email or copy are built from the site address Netlify gives at build time (`siteUrl()` in `src/lib/site-url.ts`): the main address on the live site, the preview's address on a preview. Never from the request's Origin/Host header.
 **Why:** with skew protection on, a request can be answered by a release-specific address, which broke sign-in (people had to sign in twice) and could have put release-specific links in customer emails. This also means moving to os.footprintgroup.uk needs no code change.
 
+
+## 26 October 2026 - Projects made with "Create project"; drafts in the pipeline
+**Decision (owner):** Footprint's full flow is customer → new opportunity (in the pipeline) → sales order → Create project, Create design, Create PO. A sales order **no longer gets a project automatically**: the order has a **Create project** button (then **Open project**). Request design on an order without a project offers "Create project and continue". Orders that already have a project keep it. Replaces the automatic project from 9 October 2026.
+**Decision (owner):** draft opportunities appear in the pipeline, but **highlighted in their own area** ("Draft opportunities (not sent yet)"), never mixed into win rate, quoted or waiting-for-an-answer figures.
+**Why:** projects only for orders that need one; salespeople see new opportunities as soon as they start them.

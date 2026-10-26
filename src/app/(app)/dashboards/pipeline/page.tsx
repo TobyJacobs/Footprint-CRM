@@ -40,7 +40,7 @@ export default async function PipelineDashboard(props: PageProps<"/dashboards/pi
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-fp-dark/75">
-          Quotes sent in the period, excluding VAT. Drafts aren&apos;t counted. {!user.seesAllSales && "Only your own quotes are included."}
+          Quotes sent in the period, excluding VAT. Drafts are listed separately below. {!user.seesAllSales && "Only your own quotes are included."}
         </p>
         <Suspense>
           <ChartFilters months={months} owner={owner} people={user.seesAllSales ? (people ?? []).map((x) => ({ id: x.id, name: x.full_name ?? x.email })) : []} />
@@ -59,6 +59,55 @@ export default async function PipelineDashboard(props: PageProps<"/dashboards/pi
         <Tile label="Won" value={money(totals.won)} note={`From ${money(totals.quoted)} quoted (${totals.quotedCount} quotes)`} tone="teal" />
         <Tile label="Days from quote to win" value={p.avgDaysToWin === null ? "—" : String(p.avgDaysToWin)} note="Average, for quotes won in the period" />
       </div>
+
+      {/* Draft opportunities: not sent yet, so kept apart from the figures
+          above (owner, 26 October 2026). */}
+      <section aria-labelledby="drafts-heading" className="rounded-lg border-2 border-dashed border-fp-amber bg-fp-amber/5 p-5">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="drafts-heading" className="font-black">
+            Draft opportunities <span className="font-semibold text-fp-mid">(not sent yet)</span>
+          </h2>
+          <Link href="/sales/quotes?status=draft" className="text-sm font-semibold text-fp-teal-deep hover:underline">
+            {p.draftCount} draft{p.draftCount === 1 ? "" : "s"} · {money(p.draftValue)}
+          </Link>
+        </div>
+        <p className="mb-3 text-xs text-fp-dark/75">Not counted in the figures above until the quote is sent. All drafts, whatever the period.</p>
+        {p.drafts.length === 0 ? (
+          <Empty text="No draft opportunities." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] text-sm">
+              <thead className="text-left text-xs uppercase tracking-wide text-fp-mid">
+                <tr>
+                  <th className="py-1.5">Opportunity</th>
+                  <th className="py-1.5">Customer</th>
+                  <th className="py-1.5">Started</th>
+                  <th className="py-1.5 text-right">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {p.drafts.map((d) => (
+                  <tr key={d.id} className="border-t border-fp-amber/30">
+                    <td className="py-2">
+                      <Link href={`/sales/${d.id}`} className="font-semibold hover:text-fp-pink">
+                        {d.number}
+                      </Link>
+                      {d.title && <span className="text-fp-mid"> · {d.title}</span>}
+                      {d.owner && <p className="text-xs text-fp-mid">{d.owner}</p>}
+                    </td>
+                    <td className="py-2">{d.customer ?? "—"}</td>
+                    <td className="py-2 whitespace-nowrap">{longDate(d.issue_date)}</td>
+                    <td className="py-2 text-right font-semibold">{money(d.value)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {p.draftCount > p.drafts.length && (
+              <p className="mt-2 text-xs text-fp-mid">Showing the newest {p.drafts.length}.</p>
+            )}
+          </div>
+        )}
+      </section>
 
       <Card title="Won and lost by month">
         {totals.quotedCount === 0 ? <Empty text="No quotes sent in this period yet." /> : <WonLostChart rows={rows} />}

@@ -30,6 +30,22 @@ const withFlag = (path: string, flag: string) => `${path}${path.includes("?") ? 
 
 // ─── Projects ───────────────────────────────────────────────────────────────
 
+// "Create project" on a sales order (Footprint's flow: order → project, design,
+// POs). Makes the order's project from the matching template, then opens it,
+// or goes on to the design request when started from there.
+export async function createProjectForOrder(orderId: string, then: "project" | "design" = "project") {
+  await requirePermission("projects", "edit");
+  const back = then === "design" ? `/design/new?order=${orderId}` : `/sales/${orderId}`;
+  if (!uuid(orderId)) fail(back, "Unknown sales order");
+  const supabase = await createClient();
+  const { data: projectId, error } = await supabase.rpc("create_project_for_sales_order", { p_order: orderId });
+  if (error) fail(back, error.message);
+  if (!projectId) fail(back, "That isn't a sales order");
+  revalidatePath("/projects", "layout");
+  revalidatePath(`/sales/${orderId}`);
+  redirect(then === "design" ? `/design/new?order=${orderId}` : `/projects/${projectId}?saved=1`);
+}
+
 export async function saveProject(projectId: string | null, fd: FormData) {
   const user = await requirePermission("projects", "edit");
   const back = projectId ? `/projects/${projectId}/edit` : "/projects/new";
