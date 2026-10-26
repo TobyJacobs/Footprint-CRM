@@ -17,7 +17,7 @@ import { clearLineGpOverride, convertDocument, deleteDocument, setDocumentStatus
 import { raisePurchaseOrders } from "../(operations)/purchase-orders/actions";
 import { createProjectForOrder } from "../../projects/actions";
 import EmailCard from "../EmailCard";
-import DesignJobsPanel from "@/components/DesignJobsPanel";
+import { DesignSection, FinanceSummary, ProjectSection, PurchaseOrdersSection, StageBar, orderStages, type OrderPo, type OrderProject } from "./SalesOrderSections";
 
 export async function generateMetadata(props: PageProps<"/sales/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -59,7 +59,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
       : Promise.resolve({ data: null }),
     supabase.from("sales_documents").select("id, number, doc_type, status, total").eq("source_document_id", id),
     type === "sales_order"
-      ? supabase.from("purchase_orders").select("id, number, status, total, suppliers(name)").eq("sales_document_id", id)
+      ? supabase.from("purchase_orders").select("id, number, status, subtotal, total, suppliers(name)").eq("sales_document_id", id)
       : Promise.resolve({ data: [] }),
     supabase
       .from("email_log")
@@ -70,9 +70,13 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
     supabase.from("company_settings").select("company_name").single(),
     supabase.rpc("can_override_gp"),
     type === "sales_order"
-      ? supabase.from("projects").select("id, number").eq("sales_document_id", id).maybeSingle()
+      ? supabase.from("projects").select("id, number, name, status, project_tasks(status)").eq("sales_document_id", id).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
+
+  // For a sales order: its design jobs, for the stage bar.
+  const { data: designJobs } =
+    type === "sales_order" ? await supabase.from("design_jobs").select("stage").eq("sales_order_id", id) : { data: [] as { stage: string }[] };
 
   // Names for "overridden by" on any lines that have a GP override.
   const overriderIds = [...new Set(lines.map((l) => l.gp_override_by).filter((v): v is string => !!v))];
@@ -96,6 +100,45 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
   const approvalLink = `${origin}/q/${doc.public_token}`;
   const viewLink = `${origin}/d/${doc.public_token}`;
   const emailed = typeof sp.emailed === "string" ? sp.emailed : null;
+
+  // Sales orders get their own layout (stage bar, finance, POs, design, project, comms).
+  const isOrder = type === "sales_order";
+  const orderPos: OrderPo[] = (pos ?? []).map((p) => ({
+    id: p.id,
+    number: p.number,
+    status: p.status,
+    subtotal: Number(p.subtotal),
+    supplier: (p.suppliers as unknown as { name: string } | null)?.name ?? null,
+  }));
+  const projectTasks = (project?.project_tasks ?? []) as { status: string }[];
+  const orderProject: OrderProject | null = project
+    ? {
+        id: project.id,
+        number: project.number,
+        name: project.name,
+        status: project.status,
+        tasksDone: projectTasks.filter((t) => t.status === "done").length,
+        tasksTotal: projectTasks.length,
+      }
+    : null;
+  const orderInvoices = (children ?? []).filter((c) => c.doc_type === "invoice");
+  const emailCard = canEdit && !["void", "cancelled"].includes(doc.status) && (
+    <div id="email" className="mt-6 scroll-mt-24">
+      <EmailCard
+        documentId={id}
+        type={type}
+        number={doc.number}
+        total={gbp(Number(doc.total)) ?? ""}
+        dueDate={type === "invoice" ? longDate(doc.due_date) : null}
+        contactEmail={contact?.email ?? null}
+        contactFirstName={contact?.first_name ?? null}
+        senderName={user.fullName ?? user.email}
+        companyName={settings?.company_name ?? "Footprint Group"}
+        kindLabel={type === "quote" && doc.quote_kind && doc.quote_kind !== "quote" ? quoteKindLabel(doc.quote_kind) : null}
+        log={emailLog ?? []}
+      />
+    </div>
+  );
 
   return (
     <>
@@ -140,8 +183,18 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         </p>
       )}
 
+      {isOrder && (
+        // The order's stage, lit up from what has happened so far.
+        <div className="mb-6">
+          <StageBar
+            {...orderStages({ status: doc.status, project: orderProject, designJobs: designJobs ?? [], pos: orderPos, invoices: orderInvoices })}
+            cancelled={doc.status === "cancelled"}
+          />
+        </div>
+      )}
+
       {canEdit && (
-        <Card title="Next steps">
+        <Card title={isOrder ? "Stage" : "Next steps"}>
           <div className="flex flex-wrap items-center gap-3">
             {type === "quote" && doc.status === "draft" && (
               <ActionButton action={setDocumentStatus.bind(null, id, "sent")} tone="primary">
@@ -163,23 +216,6 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
               <ActionButton action={convertDocument.bind(null, id, "invoice")} tone="primary">
                 Create invoice
               </ActionButton>
-            )}
-            {/* Footprint's flow: sales order → project, design request and POs. */}
-            {type === "sales_order" && project && user.can("projects", "view") && (
-              <Link href={`/projects/${project.id}`} className={secondaryButton}>
-                Open project {project.number}
-              </Link>
-            )}
-            {type === "sales_order" && !project && ["open", "completed", "invoiced"].includes(doc.status) && user.can("projects", "edit") && (
-              <ActionButton action={createProjectForOrder.bind(null, id, "project")}>Create project</ActionButton>
-            )}
-            {type === "sales_order" && ["open", "completed", "invoiced"].includes(doc.status) && user.can("design", "view") && (
-              <Link href={`/design/new?order=${id}`} className={secondaryButton}>
-                Request design
-              </Link>
-            )}
-            {type === "sales_order" && ["open", "completed", "invoiced"].includes(doc.status) && (
-              <ActionButton action={raisePurchaseOrders.bind(null, id)}>Order from suppliers (raise POs)</ActionButton>
             )}
             {type === "sales_order" && doc.status === "open" && (
               <>
@@ -264,8 +300,57 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         </div>
       )}
 
+      {isOrder && (
+        <>
+          <div className="mt-6">
+            <Card title="Finance summary">
+              <FinanceSummary
+                net={Number(doc.subtotal)}
+                cost={Number(doc.cost_total)}
+                labour={doc.labour_cost === null ? null : Number(doc.labour_cost)}
+                poSubtotal={orderPos.reduce((sum, p) => sum + (p.status === "cancelled" ? 0 : p.subtotal), 0)}
+                total={Number(doc.total)}
+                invoiced={orderInvoices.filter((i) => i.status !== "void").reduce((sum, i) => sum + Number(i.total), 0)}
+              />
+            </Card>
+          </div>
+          {/* Footprint's flow: sales order → POs, design work and project. */}
+          <div className="mt-6 grid gap-6 lg:grid-cols-3">
+            <PurchaseOrdersSection
+              pos={orderPos}
+              raise={
+                canEdit && ["open", "completed", "invoiced"].includes(doc.status) ? (
+                  <ActionButton action={raisePurchaseOrders.bind(null, id)}>Raise POs</ActionButton>
+                ) : undefined
+              }
+            />
+            <DesignSection orderId={id} />
+            <ProjectSection
+              project={orderProject}
+              canView={user.can("projects", "view")}
+              create={
+                ["open", "completed", "invoiced"].includes(doc.status) && user.can("projects", "edit") ? (
+                  <ActionButton action={createProjectForOrder.bind(null, id, "project")} tone="primary">
+                    Create project
+                  </ActionButton>
+                ) : (
+                  <p className="text-xs text-fp-mid">Someone who can create projects can start one here.</p>
+                )
+              }
+            />
+          </div>
+          {/* Comms: email the customer. */}
+          {sp.noemail && (
+            <p role="status" className="mt-6 rounded-md border border-fp-amber bg-fp-amber/10 px-4 py-3 text-sm">
+              Saved as a draft. The contact has no email address, so it hasn&apos;t been sent: enter an address below to send it.
+            </p>
+          )}
+          {emailCard}
+        </>
+      )}
+
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
-        <Card title="Lines">
+        <Card title={isOrder ? "Order lines" : "Lines"}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px] text-left text-sm">
               <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
@@ -358,6 +443,8 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         </Card>
 
         <div className="grid content-start gap-6">
+          {/* A sales order shows this in its Finance summary. */}
+          {!isOrder && (
           <Card title="Margin">
             <p className="text-3xl font-black text-fp-teal-deep">
               {margin === null ? "—" : `${margin}%`}
@@ -383,6 +470,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
               )}
             </dl>
           </Card>
+          )}
 
           <Card title="Details">
             <dl className="grid gap-2 text-sm">
@@ -415,9 +503,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
             </dl>
           </Card>
 
-          {type === "sales_order" && <DesignJobsPanel order={id} />}
-
-          {(pos ?? []).length > 0 && (
+          {!isOrder && (pos ?? []).length > 0 && (
             <Card title="Purchase orders">
               <ul className="grid gap-1 text-sm">
                 {(pos ?? []).map((p) => (
@@ -464,30 +550,15 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         </div>
       </div>
 
-      {/* Email to customer: below the document so the quote itself comes first. */}
-      {sp.noemail && (
+      {/* Email to customer: below the document so the quote itself comes first
+          (a sales order has it in its Comms section above). */}
+      {!isOrder && sp.noemail && (
         <p role="status" className="mt-6 rounded-md border border-fp-amber bg-fp-amber/10 px-4 py-3 text-sm">
           Saved as a draft. The contact has no email address, so it hasn&apos;t been sent: enter an address below to send it.
         </p>
       )}
 
-      {canEdit && !["void", "cancelled"].includes(doc.status) && (
-        <div id="email" className="mt-6 scroll-mt-24">
-          <EmailCard
-            documentId={id}
-            type={type}
-            number={doc.number}
-            total={gbp(Number(doc.total)) ?? ""}
-            dueDate={type === "invoice" ? longDate(doc.due_date) : null}
-            contactEmail={contact?.email ?? null}
-            contactFirstName={contact?.first_name ?? null}
-            senderName={user.fullName ?? user.email}
-            companyName={settings?.company_name ?? "Footprint Group"}
-            kindLabel={type === "quote" && doc.quote_kind && doc.quote_kind !== "quote" ? quoteKindLabel(doc.quote_kind) : null}
-            log={emailLog ?? []}
-          />
-        </div>
-      )}
+      {!isOrder && emailCard}
 
       {user.can("quotes", "delete") && !isLockedRecord(type, doc.status) && (
         <form action={deleteDocument.bind(null, id)} className="mt-10 border-t border-fp-border pt-6">
