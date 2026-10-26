@@ -74,7 +74,7 @@ export default async function DocumentForm({
         <Card title="Addresses & delivery">
           <AddressFields
             customerId={customer?.id ?? null}
-            initial={{ billing: v("billing_address") as string | null, delivery: v("delivery_address") as string | null, notes: v("delivery_notes") as string | null }}
+            initial={{ billing: v("billing_address") as string | null, delivery: v("delivery_address") as string | null, notes: v("delivery_notes") as string | null, warehouse: v("warehouse") as string | null }}
           />
         </Card>
       )}

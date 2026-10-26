@@ -36,6 +36,7 @@ export async function loadPrintableData(supabase: SupabaseClient, id: string): P
       customer: { name: customer.name as string, address: doc.billing_address || customerAddress(customer), contact: contact ? personName(contact) : null },
       deliver_to: type === "sales_order" ? doc.delivery_address : null,
       delivery_notes: type === "sales_order" ? doc.delivery_notes : null,
+      warehouse: type === "sales_order" ? doc.warehouse : null,
       lines,
       subtotal: Number(doc.subtotal),
       vat_total: Number(doc.vat_total),

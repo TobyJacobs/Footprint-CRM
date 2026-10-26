@@ -483,6 +483,10 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                   <dt className="text-fp-dark/75">Deliver to</dt>
                   <dd className="whitespace-pre-line font-semibold">{doc.delivery_address || <span className="font-normal text-fp-mid">Not set yet</span>}</dd>
                 </div>
+                <div>
+                  <dt className="text-fp-dark/75">Warehouse</dt>
+                  <dd>{doc.warehouse ?? <span className="text-fp-mid">Not chosen yet</span>}</dd>
+                </div>
                 {doc.delivery_notes && (
                   <div>
                     <dt className="text-fp-dark/75">Delivery notes</dt>

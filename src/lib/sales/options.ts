@@ -169,6 +169,9 @@ Next steps
 Accept this proposal online and we'll be in touch to get started.`;
 export const probabilities = ["Low", "Confident", "Definite"];
 export const expectedDates = ["This Month", "Next Month", "Future"];
+// Footprint's warehouses: where an order goes out from or is collected from.
+export const warehouses = ["Swanwick", "Swindon"] as const;
+export const isWarehouse = (v: unknown): v is (typeof warehouses)[number] => warehouses.some((w) => w === v);
 export const deliveryTypes = ["Direct to Customer", "Pick up from Footprint", "Swindon Office", "Footprint Delivery"];
 export const lossReasons = ["Price", "Went Cold", "Just Exploring", "Requirements Not Met"];
 export const productionSteps = [

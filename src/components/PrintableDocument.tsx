@@ -21,6 +21,7 @@ export type PrintableData = {
   needed_by?: string | null;
   deliver_to?: string | null;
   delivery_notes?: string | null;
+  warehouse?: string | null;
   reason?: string | null;
   customer_reference?: string | null;
   customer: { name: string; address?: string | null; contact?: string | null };
@@ -98,12 +99,18 @@ export default function PrintableDocument({ d }: { d: PrintableData }) {
         </dl>
       </section>
 
-      {(d.deliver_to || d.reason) && (
+      {(d.deliver_to || d.warehouse || d.reason) && (
         <section className="mt-6 grid gap-1 rounded-md bg-fp-offwhite p-3 print:bg-white">
           {d.deliver_to && (
             <p className="whitespace-pre-line">
               <span className="font-semibold">Deliver to: </span>
               {d.deliver_to}
+            </p>
+          )}
+          {d.warehouse && (
+            <p>
+              <span className="font-semibold">Warehouse: </span>
+              {d.warehouse}
             </p>
           )}
           {d.delivery_notes && (
