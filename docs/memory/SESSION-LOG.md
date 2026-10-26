@@ -4,6 +4,10 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 26 October 2026: Order flow and Request design
+- Owner gave Footprint's flow: quote / proposal / advert → SO → PO, design request, project (saved in GLOSSARY).
+- Built Request design on the sales order (#59): job linked to the order and its project. Clicked through locally, merged; live check waiting for sign-in.
+
 ## 21 October 2026: Improvement list items 10-13
 - Customer quotes/orders/invoices split (#51), no product number on quotes (#52), margin as £ and % everywhere (#53): all merged by Claude at the owner's request and checked live.
 - Urgent fix #54: the margin box blocked saving quotes with a no-cost line. Merged and checked live.
