@@ -164,6 +164,12 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
             {type === "sales_order" && ["open", "completed", "invoiced"].includes(doc.status) && (
               <ActionButton action={raisePurchaseOrders.bind(null, id)}>Order from suppliers (raise POs)</ActionButton>
             )}
+            {/* Footprint's flow: sales order → POs, design request and project. */}
+            {type === "sales_order" && ["open", "completed", "invoiced"].includes(doc.status) && user.can("design", "view") && (
+              <Link href={`/design/new?order=${id}`} className={secondaryButton}>
+                Request design
+              </Link>
+            )}
             {type === "sales_order" && doc.status === "open" && (
               <>
                 <ActionButton action={setDocumentStatus.bind(null, id, "completed")}>Mark completed</ActionButton>

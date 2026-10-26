@@ -25,7 +25,8 @@ export default async function DesignJobsPanel({ order, project, customer }: { or
     ? (await supabase.from("projects").select("id").eq("sales_document_id", order).maybeSingle()).data?.id ?? null
     : null;
   const fromProject = project ?? orderProject;
-  const newHref = fromProject ? `/design/new?project=${fromProject}` : null;
+  // From an order, go through the order so the page comes back to it.
+  const newHref = order && orderProject ? `/design/new?order=${order}` : fromProject ? `/design/new?project=${fromProject}` : null;
   return (
     <Card
       title="Design jobs"
