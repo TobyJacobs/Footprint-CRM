@@ -8,6 +8,7 @@ import { addDays, getCompanySettings, getCustomerWithContacts, getTaxRates } fro
 import { docTypes, isDocType, isQuoteKind, proposalTemplate, quoteKinds } from "@/lib/sales/options";
 import { saveDocument } from "../actions";
 import DocumentForm from "../DocumentForm";
+import QuoteKindPicker from "../QuoteKindPicker";
 import SectionChrome from "../SectionChrome";
 
 export const metadata: Metadata = { title: "New document" };
@@ -34,16 +35,20 @@ export default async function NewDocumentPage(props: PageProps<"/sales/new">) {
   return (
     <SectionChrome section={docType === "quote" ? "sales" : "operations"} activeHref={docTypes[docType].path}>
       <Link
-        href={docType === "quote" ? `/sales/opportunity${customerId ? `?customer=${customerId}` : ""}` : docTypes[docType].path}
+        href={docType === "quote" && picked.customer ? `/customers/${picked.customer.id}` : docTypes[docType].path}
         className="text-sm font-semibold text-fp-teal-deep hover:underline"
       >
-        ← {docType === "quote" ? "Choose a different type" : docTypes[docType].plural}
+        ← {docType === "quote" && picked.customer ? picked.customer.name : docTypes[docType].plural}
       </Link>
       <h2 className="mb-6 mt-3 text-xl font-black">
         {docType === "quote" ? quoteKinds.find((k) => k.value === kind)!.newLabel : `New ${docTypes[docType].label.toLowerCase()}`}
       </h2>
+      {/* The kind changes the whole screen (lines, advert builder or proposal). */}
+      {docType === "quote" && <QuoteKindPicker kind={kind} formId="document-form" />}
       <Notice searchParams={sp} />
       <DocumentForm
+        // A fresh form for each kind (switching kind starts again).
+        key={kind}
         docType={docType}
         quoteKind={kind}
         lines={[]}
@@ -58,6 +63,8 @@ export default async function NewDocumentPage(props: PageProps<"/sales/new">) {
           due_date:
             customerDueDate(today, picked.customer?.invoice_due_days, picked.customer?.invoice_due_terms) ?? addDays(settings?.invoice_due_days ?? 30),
           terms,
+          // Kept when switching the kind of quote.
+          contact_id: typeof sp.contact === "string" && picked.contacts.some((p) => p.id === sp.contact) ? sp.contact : null,
           notes: docType === "invoice" ? settings?.invoice_notes : kind === "proposal" ? proposalTemplate : null,
           title: kind === "proposal" ? "Proposal" : kind === "advertising" ? "Advertising in Forget Me Not" : null,
           business_unit: kind === "advertising" ? "Advertising" : null,

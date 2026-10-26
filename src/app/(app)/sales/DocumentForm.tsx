@@ -40,6 +40,7 @@ export default async function DocumentForm({
     owner_id?: string;
     title?: string | null;
     business_unit?: string | null;
+    contact_id?: string | null;
   };
   action: (fd: FormData) => Promise<void>;
   cancelHref: string;
@@ -51,13 +52,13 @@ export default async function DocumentForm({
     customer?.credit_status && /ON STOP|Up Front|before we order/i.test(customer.credit_status) ? customer.credit_status : null;
 
   return (
-    <form action={action} className="grid max-w-6xl gap-6">
+    <form id="document-form" action={action} className="grid max-w-6xl gap-6">
       {docType === "quote" && <input type="hidden" name="quote_kind" value={kind} />}
       <Card title={label}>
         <DocumentEditor
           initialCustomer={customer ? { id: customer.id, name: customer.name } : null}
           initialContacts={contacts}
-          initialContactId={(v("contact_id") as string) ?? contacts.find((p) => p.is_primary)?.id ?? null}
+          initialContactId={(v("contact_id") as string) ?? defaults.contact_id ?? contacts.find((p) => p.is_primary)?.id ?? null}
           initialLines={lines}
           kind={docType === "quote" ? kind : "quote"}
           // Labour is entered with the lines (not on credit notes).
