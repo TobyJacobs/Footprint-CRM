@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.27.0",
+    date: "2026-10-26",
+    title: "Customer projects at the bottom",
+    changes: [
+      "Customer page: Projects moved to the bottom, full width, below everything else.",
+      "Projects are listed by number and name (with status and due date), without the “Order SO-…” wording that made them look like sales orders.",
+    ],
+  },
+  {
     version: "0.26.0",
     date: "2026-10-26",
     title: "Just a copy link button",
