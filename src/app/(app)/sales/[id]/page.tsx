@@ -472,6 +472,27 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
           </Card>
           )}
 
+          {isOrder && (
+            <Card title="Addresses & delivery">
+              <dl className="grid gap-3 text-sm">
+                <div>
+                  <dt className="text-fp-dark/75">Billing address</dt>
+                  <dd className="whitespace-pre-line">{doc.billing_address || <span className="text-fp-mid">The customer&apos;s billing address</span>}</dd>
+                </div>
+                <div>
+                  <dt className="text-fp-dark/75">Deliver to</dt>
+                  <dd className="whitespace-pre-line font-semibold">{doc.delivery_address || <span className="font-normal text-fp-mid">Not set yet</span>}</dd>
+                </div>
+                {doc.delivery_notes && (
+                  <div>
+                    <dt className="text-fp-dark/75">Delivery notes</dt>
+                    <dd className="whitespace-pre-line">{doc.delivery_notes}</dd>
+                  </div>
+                )}
+              </dl>
+            </Card>
+          )}
+
           <Card title="Details">
             <dl className="grid gap-2 text-sm">
               {[
@@ -481,6 +502,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 ["Deadline", type === "sales_order" ? longDate(doc.deadline_date) : null],
                 ["Production step", doc.production_step],
                 ["Customer reference", doc.customer_reference],
+                ["Billing address", type === "invoice" ? doc.billing_address : null],
                 ["Salesperson", owner ? (owner.full_name ?? owner.email) : null],
                 ["Type", type === "quote" ? quoteKindLabel(doc.quote_kind) : null],
                 ["Business unit", doc.business_unit],
@@ -497,7 +519,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 .map(([k, v]) => (
                   <div key={k as string} className="grid grid-cols-2 gap-2">
                     <dt className="text-fp-dark/75">{k}</dt>
-                    <dd>{v}</dd>
+                    <dd className="whitespace-pre-line">{v}</dd>
                   </div>
                 ))}
             </dl>

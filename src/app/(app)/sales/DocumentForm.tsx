@@ -5,6 +5,7 @@ import {
   businessUnits, quoteBusinessUnits, quoteKindLabel, creditReasons, deliveryTypes, docTypes, expectedDates, lossReasons, probabilities, productionSteps,
   type DocType,
 } from "@/lib/sales/options";
+import AddressFields from "./AddressFields";
 import DocumentEditor, { type EditorLine } from "./DocumentEditor";
 
 type Doc = Record<string, unknown>;
@@ -68,6 +69,15 @@ export default async function DocumentForm({
           creditWarning={creditWarning}
         />
       </Card>
+
+      {docType === "sales_order" && (
+        <Card title="Addresses & delivery">
+          <AddressFields
+            customerId={customer?.id ?? null}
+            initial={{ billing: v("billing_address") as string | null, delivery: v("delivery_address") as string | null, notes: v("delivery_notes") as string | null }}
+          />
+        </Card>
+      )}
 
       <Card title="Details">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
