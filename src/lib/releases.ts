@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.21.0",
+    date: "2026-10-26",
+    title: "Sales order stages",
+    changes: [
+      "Sales orders: a stage bar at the top (Order received → Project → Design → Suppliers ordered → Completed → Invoiced) that lights up by itself and highlights where the order is now.",
+      "Sales orders are laid out in sections: Stage, Finance summary (bars for value, cost, margin, supplier orders and how much is invoiced), Purchase orders, Design work, Project and Comms.",
+    ],
+  },
+  {
     version: "0.20.0",
     date: "2026-10-26",
     title: "The full sales flow",
