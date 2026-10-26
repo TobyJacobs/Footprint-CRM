@@ -32,7 +32,10 @@ export async function loadPrintableData(supabase: SupabaseClient, id: string): P
       valid_until: type === "quote" ? doc.valid_until : null,
       due_date: type === "invoice" ? doc.due_date : null,
       customer_reference: doc.customer_reference,
-      customer: { name: customer.name as string, address: customerAddress(customer), contact: contact ? personName(contact) : null },
+      // The document's own billing address if it has one (sales orders, and invoices made from them).
+      customer: { name: customer.name as string, address: doc.billing_address || customerAddress(customer), contact: contact ? personName(contact) : null },
+      deliver_to: type === "sales_order" ? doc.delivery_address : null,
+      delivery_notes: type === "sales_order" ? doc.delivery_notes : null,
       lines,
       subtotal: Number(doc.subtotal),
       vat_total: Number(doc.vat_total),

@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.22.0",
+    date: "2026-10-26",
+    title: "Order addresses and delivery",
+    changes: [
+      "Sales orders have their own billing address, delivery address and delivery notes, filled in from the customer and changeable on the order.",
+      "“Deliver to” picks the customer's shipping or billing address, one of their contacts' addresses, collection from Footprint, or a different address.",
+      "The addresses show on the order page, the printed order and PDF, and the customer's online copy; the billing address carries over to the invoice.",
+    ],
+  },
+  {
     version: "0.21.0",
     date: "2026-10-26",
     title: "Sales order stages",

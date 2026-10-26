@@ -6,6 +6,7 @@ import { inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { quickAddCustomer, type QuickCustomerInput } from "../customers/actions";
 import { DuplicateCheck } from "../customers/DuplicateCheck";
 import { addMonthsTo, ukMonth } from "@/lib/dates";
+import { CUSTOMER_PICKED } from "./AddressFields";
 import AdvertBuilder, { type AdvertLine } from "./AdvertBuilder";
 import ProductDropdown, { productLineText } from "./ProductDropdown";
 import { lineGp, lineMargin, lineNet, marginPercent, priceForMargin, totals } from "@/lib/sales/options";
@@ -302,8 +303,12 @@ export default function DocumentEditor({
   // Bumped to redraw the customer box with the chosen customer's proper name.
   const [pickerVersion, setPickerVersion] = useState(0);
 
+  // Lets the address boxes on a sales order fill in from the new customer.
+  const announce = (id: string) => window.dispatchEvent(new CustomEvent(CUSTOMER_PICKED, { detail: id }));
+
   const pickCustomer = async (c: CustomerHit) => {
     setCustomer({ id: c.id, name: c.name });
+    announce(c.id);
     setCredit(c.credit_status && /ON STOP|Up Front|before we order/i.test(c.credit_status) ? c.credit_status : null);
     const res = await fetch(`/api/search/contacts?customer=${c.id}`);
     const list: Contact[] = res.ok ? await res.json() : [];
@@ -393,6 +398,7 @@ export default function DocumentEditor({
             onAdded={(c, contact) => {
               setAdding(null);
               setCustomer({ id: c.id, name: c.name });
+              announce(c.id);
               setCredit(null);
               setContacts(contact ? [contact] : []);
               setContactId(contact?.id ?? "");

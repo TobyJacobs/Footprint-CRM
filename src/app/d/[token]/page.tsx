@@ -21,6 +21,8 @@ type PublicDoc = {
   total: number;
   customer_name: string;
   customer_address: string | null;
+  delivery_address: string | null;
+  delivery_notes: string | null;
   contact_name: string | null;
   lines: PrintableData["lines"];
   company: (PrintableData["company"] & { bank_details?: string | null }) | null;
@@ -73,6 +75,8 @@ export default async function PublicDocumentPage(props: PageProps<"/d/[token]">)
                 customer_reference: doc.customer_reference,
                 reason: doc.doc_type === "credit_note" ? doc.credit_reason : null,
                 customer: { name: doc.customer_name, address: doc.customer_address, contact: doc.contact_name },
+                deliver_to: doc.delivery_address,
+                delivery_notes: doc.delivery_notes,
                 lines: doc.lines,
                 subtotal: Number(doc.subtotal),
                 vat_total: Number(doc.vat_total),

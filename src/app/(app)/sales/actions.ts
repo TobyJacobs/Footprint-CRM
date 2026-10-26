@@ -95,6 +95,10 @@ function headerFields(fd: FormData, docType: DocType) {
     copy_shop_job: docType === "sales_order" ? bool(fd, "copy_shop_job") : false,
     consumer_copy_shop: docType === "sales_order" ? bool(fd, "consumer_copy_shop") : false,
     copy_shop_minutes: docType === "sales_order" ? int(fd, "copy_shop_minutes") : null,
+    // A sales order's own addresses (an invoice keeps the one it was given).
+    ...(docType === "sales_order"
+      ? { billing_address: str(fd, "billing_address"), delivery_address: str(fd, "delivery_address"), delivery_notes: str(fd, "delivery_notes") }
+      : {}),
     collected: docType === "invoice" ? bool(fd, "collected") : false,
     credit_reason: docType === "credit_note" ? str(fd, "credit_reason") : null,
     notes: str(fd, "notes"),
@@ -302,6 +306,23 @@ export async function convertDocument(documentId: string, to: DocType) {
     fail(back, e instanceof Error ? e.message : "Couldn't get a document number");
   }
 
+  // Addresses: a new sales order starts with the customer's; an invoice takes
+  // the order's billing address.
+  let addresses: Record<string, string | null> = {};
+  if (to === "sales_order") {
+    const { data: c } = await supabase
+      .from("customers")
+      .select("billing_street, billing_city, billing_county, billing_postcode, shipping_street, shipping_city, shipping_county, shipping_postcode")
+      .eq("id", src.customer_id)
+      .maybeSingle();
+    const join = (...parts: (string | null)[]) => parts.map((p) => p?.trim()).filter(Boolean).join("\n") || null;
+    const billing = c ? join(c.billing_street, c.billing_city, c.billing_county, c.billing_postcode) : null;
+    const shipping = c ? join(c.shipping_street, c.shipping_city, c.shipping_county, c.shipping_postcode) : null;
+    addresses = { billing_address: billing, delivery_address: shipping ?? billing };
+  } else if (to === "invoice") {
+    addresses = { billing_address: src.billing_address ?? null };
+  }
+
   // Due date: the customer's own payment terms if they have any, else the company's.
   const today = ukToday();
   let due: string | null = null;
@@ -327,6 +348,7 @@ export async function convertDocument(documentId: string, to: DocType) {
       business_unit: src.business_unit,
       quote_kind: src.quote_kind ?? "quote",
       delivery_type: to === "invoice" || to === "credit_note" ? null : src.delivery_type,
+      ...addresses,
       labour_cost: to === "credit_note" ? null : src.labour_cost,
       production_step: to === "sales_order" ? "New Sales Order" : null,
       deadline_date: to === "sales_order" ? src.deadline_date : null,
