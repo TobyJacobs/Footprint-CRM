@@ -23,6 +23,7 @@ One short entry per session. Newest at the top.
 - Cleaner sales flow (0.25.0, #69): quote stage bar, decline asks why, quote extras folded, production step removed (dashboard by stage). Merged and checked live.
 - Customer links as a single copy button at the top, no link boxes (0.26.0, #70): merged and checked live.
 - Customer page: Projects at the bottom without "Order SO-…" wording (0.27.0, #71): merged and checked live.
+- Owner confirmed on 26 October 2026: **all improvements on this list are done.** Still to try on a real order: saving order addresses and a real part invoice.
 
 ## 21 October 2026: Improvement list items 10-13
 - Customer quotes/orders/invoices split (#51), no product number on quotes (#52), margin as £ and % everywhere (#53): all merged by Claude at the owner's request and checked live.
