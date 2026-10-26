@@ -19,6 +19,7 @@ One short entry per session. Newest at the top.
 - Sales order stage bar and sections (0.21.0, #65): merged and checked live.
 - Order billing address, deliver-to and delivery notes (0.22.0, #66): merged and checked live (not saved on a real order).
 - Warehouse (Swanwick / Swindon) on sales orders (0.23.0, #67): merged and checked live.
+- Part billing on sales orders (0.24.0, #68): sums tested, merged and checked live (no real part invoice made yet).
 
 ## 21 October 2026: Improvement list items 10-13
 - Customer quotes/orders/invoices split (#51), no product number on quotes (#52), margin as £ and % everywhere (#53): all merged by Claude at the owner's request and checked live.
