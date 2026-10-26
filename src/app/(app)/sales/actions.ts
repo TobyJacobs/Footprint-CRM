@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { addDaysTo, customerDueDate, ukToday } from "@/lib/dates";
 import { bool, int, num, str } from "@/lib/forms";
-import { defaultStatus, docTypes, isDocType, isLockedRecord, isQuoteKind, quoteKindLabel, statuses, type DocType } from "@/lib/sales/options";
+import { defaultStatus, docTypes, isDocType, isLockedRecord, isQuoteKind, isWarehouse, quoteKindLabel, statuses, type DocType } from "@/lib/sales/options";
 import { gbp } from "@/lib/customers/display";
 import { documentEmailText } from "@/lib/sales/email-text";
 import { deliverDocument } from "@/lib/sales/send-document";
@@ -97,7 +97,12 @@ function headerFields(fd: FormData, docType: DocType) {
     copy_shop_minutes: docType === "sales_order" ? int(fd, "copy_shop_minutes") : null,
     // A sales order's own addresses (an invoice keeps the one it was given).
     ...(docType === "sales_order"
-      ? { billing_address: str(fd, "billing_address"), delivery_address: str(fd, "delivery_address"), delivery_notes: str(fd, "delivery_notes") }
+      ? {
+          billing_address: str(fd, "billing_address"),
+          delivery_address: str(fd, "delivery_address"),
+          delivery_notes: str(fd, "delivery_notes"),
+          warehouse: isWarehouse(str(fd, "warehouse")) ? str(fd, "warehouse") : null,
+        }
       : {}),
     collected: docType === "invoice" ? bool(fd, "collected") : false,
     credit_reason: docType === "credit_note" ? str(fd, "credit_reason") : null,

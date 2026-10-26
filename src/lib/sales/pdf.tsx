@@ -91,12 +91,20 @@ function DocumentPdf({ d }: { d: PrintableData }) {
           </View>
         </View>
 
-        {d.deliver_to ? (
+        {d.deliver_to || d.warehouse ? (
           <View style={s.box}>
-            <Text>
-              <Text style={s.bold}>Deliver to: </Text>
-              {d.deliver_to}
-            </Text>
+            {d.deliver_to ? (
+              <Text>
+                <Text style={s.bold}>Deliver to: </Text>
+                {d.deliver_to}
+              </Text>
+            ) : null}
+            {d.warehouse ? (
+              <Text>
+                <Text style={s.bold}>Warehouse: </Text>
+                {d.warehouse}
+              </Text>
+            ) : null}
             {d.delivery_notes ? (
               <Text>
                 <Text style={s.bold}>Delivery notes: </Text>

@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.23.0",
+    date: "2026-10-26",
+    title: "Warehouse on sales orders",
+    changes: [
+      "Sales orders say which warehouse they go out from or are collected from: Swanwick or Swindon.",
+      "It shows on the order page, the printed order, the PDF and the customer's copy; choosing “Collect from Footprint” names the warehouse.",
+    ],
+  },
+  {
     version: "0.22.0",
     date: "2026-10-26",
     title: "Order addresses and delivery",

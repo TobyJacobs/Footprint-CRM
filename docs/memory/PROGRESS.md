@@ -811,3 +811,9 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Tested on the temporary database (3 checks pass). Locally: form fills from Riverside Bakery, Collect from Footprint works, contacts' addresses listed. Nothing saved (columns arrive with the merge). Type check, lint, build clean.
 - Note: the local server needed a restart to pick up the form change.
 - **LIVE 26 October 2026 as 0.22.0:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#66](https://github.com/TobyJacobs/Footprint-CRM/pull/66), `b2b0692`), live from 19:37 GMT; migration applied (columns present). Checked live: new order for Riverside Bakery fills billing/delivery and offers Deliver to choices; SO-010932 shows "Addresses & delivery" (falls back to the customer's billing address). Saving an address on a real order not tried (would change live data) — owner to try on their next order. Roadmap ticked. **Next version: 0.23.0.**
+
+## 26 October 2026 - Improvement list item 24: warehouse on sales orders (branch `feature/order-warehouse`, PR waiting for the owner) — version 0.23.0
+- Owner: add warehouse location (Swanwick / Swindon).
+- Migration `20261105120000_order_warehouse.sql`: `sales_documents.warehouse` ('Swanwick' or 'Swindon'); `get_public_document` returns it for orders. `warehouses` list in `lib/sales/options.ts`.
+- Order form "Addresses & delivery": Warehouse dropdown (Not chosen yet / Swanwick / Swindon); with "Collect from Footprint" the delivery box reads "Collect from Footprint, <warehouse> warehouse" and follows the warehouse. Shown on the order page (Addresses & delivery), printed order, PDF and customer copy ("Warehouse: …").
+- Tested on the temporary database (3 checks pass: shows on customer copy, unknown warehouse refused, Swanwick allowed). Locally: dropdown and collection text work; nothing saved. Type check, lint, build clean.
