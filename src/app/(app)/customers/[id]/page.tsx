@@ -10,6 +10,7 @@ import { address, gbp, longDate, personName, shortDateTime, statusTone, toLocalI
 import { loadGlance } from "@/lib/customers/glance";
 import { activityKinds } from "@/lib/customers/options";
 import { projectStatusLabel, projectTone } from "@/lib/projects/options";
+import { quoteKinds } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 import { addActivity, deleteActivity, markNotDuplicate } from "../actions";
 import EmailComposer from "../EmailComposer";
@@ -303,24 +304,25 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                   title="Quotes"
                   docs={(quotes?.data ?? []) as CustomerDoc[]}
                   total={quotes?.count ?? 0}
-                  newHref={user.can("quotes", "edit") && !c.erased_at ? `/sales/opportunity?customer=${id}` : null}
-                  newLabel="New opportunity"
+                  newLinks={
+                    user.can("quotes", "edit") && !c.erased_at
+                      ? quoteKinds.map((k) => ({ href: `/sales/new?type=quote&kind=${k.value}&customer=${id}`, label: k.label }))
+                      : []
+                  }
                   seeAllHref={`/sales/quotes?q=${encodeURIComponent(c.name)}`}
                 />
                 <CustomerDocsCard
                   title="Sales orders"
                   docs={(orders?.data ?? []) as CustomerDoc[]}
                   total={orders?.count ?? 0}
-                  newHref={user.can("quotes", "edit") && !c.erased_at ? `/sales/new?type=sales_order&customer=${id}` : null}
-                  newLabel="New sales order"
+                  newLinks={user.can("quotes", "edit") && !c.erased_at ? [{ href: `/sales/new?type=sales_order&customer=${id}`, label: "New sales order" }] : []}
                   seeAllHref={`/sales/orders?q=${encodeURIComponent(c.name)}`}
                 />
                 <CustomerDocsCard
                   title="Invoices & credit notes"
                   docs={(invoices?.data ?? []) as CustomerDoc[]}
                   total={invoices?.count ?? 0}
-                  newHref={user.can("quotes", "edit") && !c.erased_at ? `/sales/new?type=invoice&customer=${id}` : null}
-                  newLabel="New invoice"
+                  newLinks={user.can("quotes", "edit") && !c.erased_at ? [{ href: `/sales/new?type=invoice&customer=${id}`, label: "New invoice" }] : []}
                   seeAllHref={`/sales/invoices?q=${encodeURIComponent(c.name)}`}
                 />
               </>
