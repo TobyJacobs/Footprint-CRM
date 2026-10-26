@@ -21,6 +21,7 @@ One short entry per session. Newest at the top.
 - Warehouse (Swanwick / Swindon) on sales orders (0.23.0, #67): merged and checked live.
 - Part billing on sales orders (0.24.0, #68): sums tested, merged and checked live (no real part invoice made yet).
 - Cleaner sales flow (0.25.0, #69): quote stage bar, decline asks why, quote extras folded, production step removed (dashboard by stage). Merged and checked live.
+- Customer links as a single copy button at the top, no link boxes (0.26.0, #70): merged and checked live.
 
 ## 21 October 2026: Improvement list items 10-13
 - Customer quotes/orders/invoices split (#51), no product number on quotes (#52), margin as £ and % everywhere (#53): all merged by Claude at the owner's request and checked live.

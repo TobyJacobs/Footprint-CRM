@@ -839,3 +839,4 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Owner: don't show the customer view / approval link boxes, just a copy link button.
 - `sales/[id]/page.tsx`: the "Customer approval link" / "Customer view link" boxes (heading + explanation) are gone; one button at the top after Download PDF: "Copy approval link" (quotes) or "Copy customer link" (orders, invoices, credit notes), not for drafts, only for people who can edit (as before).
 - Checked locally on QT-010191 and SO-010932. Type check, lint, build clean. No database change.
+- **LIVE 26 October 2026 as 0.26.0:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#70](https://github.com/TobyJacobs/Footprint-CRM/pull/70), `f509b2c`), live from 20:20 GMT; checked live: QT-010191 Print · Download PDF · Copy approval link · Edit; SO-010932 … Copy customer link; no link boxes; menu 0.26.0. Roadmap ticked. **Next version: 0.27.0.**
