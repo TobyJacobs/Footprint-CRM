@@ -834,3 +834,8 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Quote form: Probability + Expected order in a "More details" fold (open if either is set).
 - Checked locally: sent / declined / converted quote bars, decline form, order form without production step, Operations dashboard by stage, new quote fold. Type check, lint, build clean. No database change.
 - **LIVE 26 October 2026 as 0.25.0:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#69](https://github.com/TobyJacobs/Footprint-CRM/pull/69), `de0fee8`), live from 20:12 GMT; checked live: QT-010191 quote stage bar (Accepted = Now), decline reason form, order form without production step, Operations "Open orders by stage", quote "More details" fold, menu 0.25.0. Roadmap ticked. **Next version: 0.26.0.**
+
+## 26 October 2026 - Improvement list item 27: just a copy link button (branch `feature/copy-link-only`, PR waiting for the owner) — version 0.26.0
+- Owner: don't show the customer view / approval link boxes, just a copy link button.
+- `sales/[id]/page.tsx`: the "Customer approval link" / "Customer view link" boxes (heading + explanation) are gone; one button at the top after Download PDF: "Copy approval link" (quotes) or "Copy customer link" (orders, invoices, credit notes), not for drafts, only for people who can edit (as before).
+- Checked locally on QT-010191 and SO-010932. Type check, lint, build clean. No database change.

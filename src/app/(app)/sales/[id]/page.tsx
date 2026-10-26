@@ -167,6 +167,8 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
           <a href={`/sales/${id}/pdf`} className={`${secondaryButton} inline-flex items-center gap-2`}>
             <Download size={14} aria-hidden /> Download PDF
           </a>
+          {/* The customer's private link: just a copy button, the address isn't shown. */}
+          {canEdit && doc.status !== "draft" && <CopyButton text={type === "quote" ? approvalLink : viewLink} label={type === "quote" ? "Copy approval link" : "Copy customer link"} />}
           {canEdit && !finalised && (
             <Link href={`/sales/${id}/edit`} className={`${secondaryButton} inline-flex items-center gap-2`}>
               <Pencil size={14} aria-hidden /> Edit
@@ -304,23 +306,6 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
             <PartInvoiceForm orderNet={Number(doc.subtotal)} invoicedNet={invoicedNet} partAction={createPartInvoice.bind(null, id)} />
           )}
 
-          {type === "quote" && doc.status !== "draft" && (
-            <div className="mt-5 rounded-md bg-fp-offwhite p-4 text-sm">
-              <p className="font-semibold">Customer approval link</p>
-              <p className="mb-2 text-fp-dark/75">
-                Copy this private link to send to the customer. They can view the quote and accept or decline it — no login needed.
-              </p>
-              {/* The address itself isn't shown, only copied. */}
-              <CopyButton text={approvalLink} label="Copy approval link" />
-            </div>
-          )}
-          {type !== "quote" && doc.status !== "draft" && (
-            <div className="mt-5 rounded-md bg-fp-offwhite p-4 text-sm">
-              <p className="font-semibold">Customer view link</p>
-              <p className="mb-2 text-fp-dark/75">A private, read-only link the customer can open and print — no login needed.</p>
-              <CopyButton text={viewLink} label="Copy customer link" />
-            </div>
-          )}
         </Card>
       )}
 
