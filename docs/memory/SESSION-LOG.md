@@ -16,6 +16,7 @@ One short entry per session. Newest at the top.
 - Customer page: New quote / New advertising quote / New proposal straight from the customer (#62): merged and checked live.
 - New quote "What kind of quote?" dropdown that switches the screen (#63), plus Claude's read-only permission rules committed: merged and checked live.
 - Versions: FootprintOS 0.20.0 in the side menu and a What's new page (#64); rule in CLAUDE.md. Merged and checked live.
+- Sales order stage bar and sections (0.21.0, #65): merged and checked live.
 
 ## 21 October 2026: Improvement list items 10-13
 - Customer quotes/orders/invoices split (#51), no product number on quotes (#52), margin as £ and % everywhere (#53): all merged by Claude at the owner's request and checked live.
