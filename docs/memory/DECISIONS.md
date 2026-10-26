@@ -283,3 +283,7 @@ This refines the "Supabase, London region" part of the technical foundations dec
 ## 26 October 2026 - FootprintOS has version numbers and a What's new page
 **Decision (owner):** version shown at the bottom of the side menu ("FootprintOS 0.20.0 · What's new") and a What's new page listing each version and its changes in plain English. No GitHub release tags for now. Numbering starts at **0.20.0** (today) and stays 0.x until Go-live, which becomes **1.0**. New feature → middle number; fix only → last number. One list (`src/lib/releases.ts`) is the source; the rule is in CLAUDE.md.
 **Why:** staff can say which version they're on when reporting a problem, and everyone can see what changed.
+
+## 26 October 2026 - Part billing on sales orders
+**Decision (owner):** a sales order can be invoiced in parts. Staff enter a £ amount before VAT or a percentage; the part invoice has **one summary line** ("Part invoice 1 for order SO-…: £1,000.00 of £2,000.00 (50%)"), split by VAT rate if the order mixes rates. "Invoice the rest" bills what's left ("Final invoice … the remaining …"). The order becomes "Invoiced" only when fully billed; a part-invoiced order can't also be fully converted (no double billing). Costs and labour follow the same share so margins stay right.
+**Why:** e.g. a £2,000 order billed £1,000 now, showing £1,000 outstanding.
