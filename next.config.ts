@@ -17,6 +17,13 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  env: {
+    // The site's own address (used by src/lib/site-url.ts). Netlify provides
+    // these while building: URL is the main address, DEPLOY_PRIME_URL a
+    // preview's. Empty when running on a computer.
+    SITE_URL:
+      (process.env.CONTEXT === "production" ? process.env.URL : process.env.DEPLOY_PRIME_URL) ?? "",
+  },
   headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -1,5 +1,5 @@
 import "server-only";
-import { headers } from "next/headers";
+import { siteUrl } from "@/lib/site-url";
 import type { CurrentUser } from "@/lib/auth";
 import { brandedHtml, isEmailTestMode, sendEmail } from "@/lib/email/sendgrid";
 import { createClient } from "@/lib/supabase/server";
@@ -39,8 +39,7 @@ export async function deliverDocument(
     if (error) return { ok: false, error: error.message };
   }
 
-  const h = await headers();
-  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const origin = await siteUrl();
   const link = `${origin}/${type === "quote" ? "q" : "d"}/${doc.public_token}`;
   const { data: settings } = await supabase.from("company_settings").select("company_name").single();
   const company = settings?.company_name ?? "Footprint Group";

@@ -269,3 +269,8 @@ This refines the "Supabase, London region" part of the technical foundations dec
 ## 26 October 2026 - Design requests straight from the sales order
 **Decision (owner):** Footprint's flow is quote / proposal / advert → sales order → purchase orders, design request and project. A sales order gets a **Request design** button; the job is linked to the order **and** the order's project (every order gets a project automatically). Updates the 20 October 2026 rule ("every new design job is started from a project"): jobs still always belong to a project, but staff can start one from the order.
 **Why:** the sales order is where the team works after the sale, so the design request should be one click from there.
+
+## 26 October 2026 - The site's own address comes from Netlify, not from the request
+**Decision:** sign-in return addresses and every link we email or copy are built from the site address Netlify gives at build time (`siteUrl()` in `src/lib/site-url.ts`): the main address on the live site, the preview's address on a preview. Never from the request's Origin/Host header.
+**Why:** with skew protection on, a request can be answered by a release-specific address, which broke sign-in (people had to sign in twice) and could have put release-specific links in customer emails. This also means moving to os.footprintgroup.uk needs no code change.
+

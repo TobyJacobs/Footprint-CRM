@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { siteUrl } from "@/lib/site-url";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FileText } from "lucide-react";
@@ -62,8 +62,7 @@ export default async function DesignJobPage(props: PageProps<"/design/[id]">) {
         .limit(1)
         .maybeSingle()
     : { data: null };
-  const h = await headers();
-  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const origin = await siteUrl();
   const approvals: ApprovalRow[] = (approvalRows ?? []).map((a) => ({
     id: a.id as string,
     token: a.token as string,
