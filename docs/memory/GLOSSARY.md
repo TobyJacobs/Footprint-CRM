@@ -10,4 +10,6 @@ Plain-English meanings of words the business uses. Add to this whenever a new te
 | Distributor | A person paid to hand-deliver Forget Me Not magazines on a GPS-tracked route. |
 | Your Lead Kit (YLK) | Footprint's CRM and automation product for clients — a white-labelled GoHighLevel. Stays on GoHighLevel. |
 | Quote to invoice | The core sales flow in Zoho Books: quote → sales order → (purchase orders to suppliers) → invoice. |
+| Footprint's order flow | Owner, 26 October 2026: **Quote, proposal or advert → sales order (SO) → purchase orders (POs), design request (DesReq) and project.** The sales order is the hub everything after the sale hangs off. |
+| DesReq | Design request: a job for the design team (a design job in FootprintOS). |
 | Web hosting plan | A recurring hosting service Footprint provides to a client, currently recorded in Zoho CRM. |
