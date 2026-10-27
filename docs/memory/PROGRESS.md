@@ -855,3 +855,9 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - `customers/[id]/page.tsx`: Projects card moved from under Details to the bottom, full width ("Projects (n)", New project button). Each row: project number + clean name (`projectDisplayName` strips "Customer – " and "Order SO-…", e.g. "DEALCLUB Limited – Order SO-010932" → just "FO-1521"), due date, status.
 - Checked locally on DEALCLUB Limited (Projects last; FO-1522, FO-1521). Type check, lint, build clean. No database change.
 - **LIVE 26 October 2026 as 0.27.0:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#71](https://github.com/TobyJacobs/Footprint-CRM/pull/71), `4e48f92`), live from 20:26 GMT; checked live on DEALCLUB (Projects (2) last, FO-1522 / FO-1521; menu 0.27.0). Roadmap ticked. **Next version: 0.28.0.**
+
+## 27 October 2026 - Drag design jobs between stages on the Design Workload board (0.33.0, branch `feature/design-flow-drag`, PR waiting for the owner)
+- Owner asked to drag design jobs between stages on the board ("flow"). New `src/app/(app)/design/BoardDrag.tsx` (browser's own drag and drop, no new package): cards are draggable for people with Design edit access; dropping on another column calls the existing `setJobStage` action (same as the "Move to …" button, which stays for phones/tablets where browser drag and drop doesn't work). The target column highlights pink; the card greys out while saving, then the board reloads.
+- Checked locally (simulated drag, not dropped, because local uses the real database and the only job is DJ-1003 for DEALCLUB): card draggable and faded while dragging, Approved column accepts and highlights, own column doesn't; letting go elsewhere resets and nothing moves. Type check, lint, build clean. No database change.
+- After merge: drag a job to another column on the live board and check it stays there after reloading.
+
