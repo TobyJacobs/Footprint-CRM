@@ -23,7 +23,7 @@ export default async function PortalLoginPage(props: PageProps<"/portal/login">)
   return (
     <div className="mx-auto max-w-md rounded-xl bg-white p-8 shadow-sm">
       <h1 className="text-xl font-black">Sign in to your customer portal</h1>
-      <p className="mt-2 text-sm text-fp-dark/75">See your quotes and hosting plans with Footprint Group.</p>
+      <p className="mt-2 text-sm text-fp-dark/75">See your quotes, adverts, invoices and more with Footprint Group.</p>
 
       {message && (
         <p role="alert" className="mt-4 rounded-md border border-fp-error/30 bg-fp-error/5 px-3 py-2 text-sm text-fp-error">
