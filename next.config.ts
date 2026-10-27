@@ -5,14 +5,22 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 const securityHeaders = [
   // Always use HTTPS for this site (one year), including subdomains.
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
-  // Don't let other websites show the platform inside a frame (stops click-jacking).
-  { key: "X-Frame-Options", value: "DENY" },
   // Don't let browsers guess file types.
   { key: "X-Content-Type-Options", value: "nosniff" },
   // Only tell other sites which domain a visitor came from, never the full page address.
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   // The platform doesn't need the camera, microphone or location.
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+];
+
+// Don't let other websites show the platform inside a frame (stops
+// click-jacking), except the public flipbooks, which Footprint's own websites
+// may show.
+const flipbookSites = [
+  "https://forgetmenotonline.org",
+  "https://*.forgetmenotonline.org",
+  "https://footprintgroup.uk",
+  "https://*.footprintgroup.uk",
 ];
 
 const nextConfig: NextConfig = {
@@ -25,7 +33,15 @@ const nextConfig: NextConfig = {
       (process.env.CONTEXT === "production" ? process.env.URL : process.env.DEPLOY_PRIME_URL) ?? "",
   },
   headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      // Everything except the public flipbooks: never shown inside another site.
+      { source: "/((?!read/).*)", headers: [...securityHeaders, { key: "X-Frame-Options", value: "DENY" }] },
+      // Flipbooks (/read/…) may be shown inside Footprint's own websites.
+      {
+        source: "/read/:path*",
+        headers: [...securityHeaders, { key: "Content-Security-Policy", value: `frame-ancestors 'self' ${flipbookSites.join(" ")}` }],
+      },
+    ];
   },
 };
 

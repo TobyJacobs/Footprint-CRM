@@ -214,3 +214,35 @@ export async function addEditorial(issueId: string, fd: FormData) {
   revalidatePath("/magazines", "layout");
   redirect(flatplanBack(issueId));
 }
+
+// ─── Flipbooks ──────────────────────────────────────────────────────────────
+// The issue's PDF is uploaded from the browser into the public "flipbooks"
+// store, then recorded here (replacing any earlier one).
+
+export async function recordFlipbook(issueId: string, path: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  await requirePermission("magazines", "edit");
+  if (!path.startsWith(`${issueId}/`) || path.includes("..")) return { ok: false, error: "That upload doesn't belong to this issue" };
+  const supabase = await createClient();
+  const { data: old } = await supabase.from("magazine_issues").select("flipbook_path").eq("id", issueId).maybeSingle();
+  const { error } = await supabase
+    .from("magazine_issues")
+    .update({ flipbook_path: path, flipbook_published_at: new Date().toISOString() })
+    .eq("id", issueId);
+  if (error) return { ok: false, error: error.message };
+  if (old?.flipbook_path && old.flipbook_path !== path) await supabase.storage.from("flipbooks").remove([old.flipbook_path]);
+  revalidatePath("/magazines", "layout");
+  revalidatePath("/read", "layout");
+  return { ok: true };
+}
+
+export async function removeFlipbook(issueId: string) {
+  await requirePermission("magazines", "edit");
+  const supabase = await createClient();
+  const { data: old } = await supabase.from("magazine_issues").select("flipbook_path").eq("id", issueId).maybeSingle();
+  const { error } = await supabase.from("magazine_issues").update({ flipbook_path: null, flipbook_published_at: null }).eq("id", issueId);
+  if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}`));
+  if (old?.flipbook_path) await supabase.storage.from("flipbooks").remove([old.flipbook_path]);
+  revalidatePath("/magazines", "layout");
+  revalidatePath("/read", "layout");
+  redirect(flatplanBack(issueId, "?saved=1"));
+}
