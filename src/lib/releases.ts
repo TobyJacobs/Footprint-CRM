@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.28.0",
+    date: "2026-10-27",
+    title: "Customer portal (first half)",
+    changes: [
+      "Customers can sign in at /portal with a one-time link emailed to them. Anyone listed as a contact with that email can sign in; no passwords.",
+      "They see their own company's quotes (sent, accepted and declined, never drafts) and can open, accept or decline them, plus their hosting plans. Nothing from any other customer, and no internal notes, logins or costs.",
+      "Removing a contact's email (or the contact) stops them signing in straight away.",
+    ],
+  },
+  {
     version: "0.27.0",
     date: "2026-10-26",
     title: "Customer projects at the bottom",
