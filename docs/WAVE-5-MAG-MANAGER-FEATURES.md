@@ -60,12 +60,32 @@ About 60 reports. The groups: artwork statuses; bookings (by issue, user, catego
 ## 13. Settings worth noting
 - Users, **portal users** (Mag Manager has its own customer portal), document templates, national advertising, provisional percentages, booking weighting, **pipelines** (kanban), company and person flags, lead sources, contact types / reasons / outcomes, custom tabs, Dropbox, email logs, customer import. **?**
 
-## Still to confirm with the director
-1. Is there a **rate card**, or is every advert priced on the booking? Any multi-issue or multi-edition discounts?
-2. **Commission**: who gets it and how is it worked out? (Mag Manager has commission reports.)
-3. The **monthly timetable**: booking deadline, artwork deadline, print and delivery dates.
-4. Total **reach**: the editions' distribution figures add up to what? (55,000 or 100,000+?)
-5. Which **reports** do you actually use each month?
-6. Do you use the **Articles** library, flipbooks, Mag Manager's customer portal, pipelines, Stripe or GoCardless?
-7. What **annoys** you about Mag Manager, and what do you wish it did?
-8. The safest month to **switch over**, and when the Mag Manager contract renews.
+## Answers from Toby and the director (27 October 2026)
+1. **Rate card:** yes, there is one. _(Send Claude a copy: sizes, prices and any multi-issue or multi-edition discounts.)_
+2. **Commission:** set per salesperson. _(Rules to be confirmed.)_
+3. **Timetable:** yes, there's a monthly timetable. _(Send Claude a copy: booking deadline, artwork deadline, print and delivery dates.)_
+4. **Reach:** around **50,000 homes a month** across all editions.
+5. **Reports:** not many are used. _(Priorities to be confirmed.)_
+6. Other features in use:
+   - **Articles library:** used, but we accept we may need another source.
+   - **Flipbooks:** used; they're published on our website. **Keep**
+   - **Mag Manager's customer portal:** used. Bring it into the FootprintOS customer portal. **Keep**
+   - **Pipelines:** used. Bring into FootprintOS (we already have a sales pipeline). **Keep**
+   - **Stripe and GoCardless:** both used. **Keep**
+7. **What's wrong with Mag Manager** (what FootprintOS should fix):
+   - No connection (API) to our other systems.
+   - Can't sell directly from our website with **live advert availability**.
+   - Two separate databases, so poor management information (**MI**).
+   - No **contract management** for long-term bookings: agreed verbally or by email, not tied to terms.
+8. **Contract:** Mag Manager is monthly rolling. **Safest switch-over month: January** (year to confirm).
+
+## What this means for FootprintOS (Claude's summary)
+- Magazines must live **inside FootprintOS**, using the same customers, sales orders, invoices and Xero link, so there's one database and proper MI.
+- New things Mag Manager can't do: **contracts for long-term bookings** (tied to terms and conditions, accepted online like quotes), and **online booking from the website with live availability** (Wave 6).
+- Must keep: editions and issues, rate card, bookings, renewals, actions, artwork and production, flatplans, flipbooks on the website, commission per salesperson, the reports actually used, Stripe and GoCardless payments.
+
+## Still needed from the business
+- The **rate card** and the **monthly timetable** (a PDF or photo is fine).
+- **Commission** rules per salesperson.
+- The **reports** you rely on each month.
+- Which **year's January** to switch over in.

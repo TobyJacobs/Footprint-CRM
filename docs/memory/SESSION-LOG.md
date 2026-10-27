@@ -4,6 +4,11 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 27 October 2026 (evening): Mag Manager review with the director
+- Claude looked through Mag Manager (read only, in the owner's Chrome) with Toby and the director: dashboard, publications, bookings, renewals, actions, artwork, production, articles, reports, settings, flatplan. Invoicing opens Xero. Nothing changed; no customer details recorded.
+- Wrote `docs/WAVE-5-MAG-MANAGER-FEATURES.md` and added the director's answers: rate card exists, commission per salesperson, ~50,000 homes, flipbooks/portal/pipelines/Stripe/GoCardless used, pain points (no API, no live online booking, two databases, no contracts for long-term bookings), monthly rolling, switch in January.
+- Added 7 Magazines tasks to the Roadmap (Wave 5).
+
 ## 27 October 2026: Roadmap tidy, Wave 5 prep, Customer portal
 - At the owner's request, moved the two remaining Wave 2 roadmap tasks (GoCardless Direct Debit, Xero sync) to the Go-live stage. Wave 2 is now complete.
 - Removed the empty Wave 0+ (Password manager and Teams chat) from the Roadmap at the owner's request; its Vault and Cliq tasks were already in Go-live.
