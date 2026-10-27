@@ -148,11 +148,6 @@ export type QuoteKind = (typeof quoteKinds)[number]["value"];
 export const isQuoteKind = (v: unknown): v is QuoteKind => quoteKinds.some((k) => k.value === v);
 export const quoteKindLabel = (v: unknown) => quoteKinds.find((k) => k.value === v)?.label ?? "Quote";
 
-// Forget Me Not advertising (a first guess: sizes and edition names to confirm
-// with the magazine team; only Fareham and Hedge End are known so far).
-export const adSizes = ["Full page", "Half page", "Quarter page", "Eighth page", "Front cover", "Back cover", "Inside front cover"];
-export const knownEditions = ["Fareham", "Hedge End"];
-
 // What a new proposal's notes start with, ready to fill in.
 export const proposalTemplate = `Overview
 What the customer wants to achieve, in a few lines.

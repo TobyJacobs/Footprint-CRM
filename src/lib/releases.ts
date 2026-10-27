@@ -11,6 +11,17 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.31.0",
+    date: "2026-10-27",
+    title: "Magazines, part 1",
+    changes: [
+      "New Magazines dashboard: for any month, each Forget Me Not edition's pages, adverts booked (in pages and £), sales target reached, revenue per page and what's still at quote, plus the list of adverts.",
+      "Magazines → Setup: the 11 editions (homes, usual pages, monthly target), each month's issues (pages, copy deadline, target, complete) and the advert sizes (mm, part of a page, usual price for when the rate card arrives).",
+      "Advertising quotes now book real editions, months and sizes: one line per edition per month, which carries through to the sales order and invoices.",
+      "Fix: adding a sales order line for a customer with no services ticked could fail to save.",
+    ],
+  },
+  {
     version: "0.30.0",
     date: "2026-10-27",
     title: "Portal sign-in code",

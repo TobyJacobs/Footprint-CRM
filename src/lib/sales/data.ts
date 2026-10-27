@@ -50,6 +50,8 @@ export async function getDocumentLines(documentId: string) {
     gp_override_reason: (l.gp_override_reason ?? null) as string | null,
     gp_override_by: (l.gp_override_by ?? null) as string | null,
     gp_override_at: (l.gp_override_at ?? null) as string | null,
+    magazine_issue_id: (l.magazine_issue_id ?? null) as string | null,
+    advert_size_id: (l.advert_size_id ?? null) as string | null,
   }));
 }
 

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
+import { ukToday } from "@/lib/dates";
+import { getAdvertSetup } from "@/lib/magazines";
 import { Card, Checkbox, Field, Select, TextArea, TextInput, primaryButton, secondaryButton } from "@/components/ui";
 import {
   businessUnits, quoteBusinessUnits, quoteKindLabel, creditReasons, deliveryTypes, docTypes, expectedDates, probabilities,
@@ -49,6 +51,8 @@ export default async function DocumentForm({
   const v = (k: string) => (doc?.[k] as string | number | null | undefined) ?? null;
   const kind = (v("quote_kind") as string | null) ?? quoteKind ?? "quote";
   const label = docType === "quote" && kind !== "quote" ? quoteKindLabel(kind) : docTypes[docType].label;
+  // Advertising quotes book Forget Me Not editions and issues.
+  const advertSetup = docType === "quote" && kind === "advertising" ? await getAdvertSetup(ukToday()) : undefined;
   const creditWarning =
     customer?.credit_status && /ON STOP|Up Front|before we order/i.test(customer.credit_status) ? customer.credit_status : null;
 
@@ -67,6 +71,7 @@ export default async function DocumentForm({
           taxRates={taxRates}
           canAddCustomer={(await getCurrentUser()).can("customers", "edit")}
           creditWarning={creditWarning}
+          advertSetup={advertSetup}
         />
       </Card>
 
