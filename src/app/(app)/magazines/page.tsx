@@ -148,6 +148,11 @@ export default async function MagazinesPage(props: PageProps<"/magazines">) {
                     <tr key={r.edition_id}>
                       <td className="py-2 pr-3 font-semibold">
                         {r.code}. {r.name}
+                        {r.issue_id && (
+                          <Link href={`/magazines/flatplan/${r.issue_id}`} className="ml-2 text-xs font-semibold text-fp-teal-deep hover:underline">
+                            Flatplan
+                          </Link>
+                        )}
                         {r.complete && (
                           <span className="ml-2">
                             <Badge tone="grey">Complete</Badge>
