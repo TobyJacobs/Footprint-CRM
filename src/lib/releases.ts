@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.33.0",
+    date: "2026-10-27",
+    title: "Magazine renewals",
+    changes: [
+      "New Magazines → Renewals tab: for any month, every advertiser who booked an earlier issue but nothing this month, scored like Mag Manager (booked last month 20, 2 months ago 16, 3 months ago 12, 4–6 months ago 8, 7–12 months ago 4; one less if they already have later bookings), with the opportunity (what they spent last time).",
+      "Filter by salesperson; mark each one Contacted, Carried forward or Definitely out with a note (Definitely out keeps them off later months until they book again); start a new advertising quote in one click.",
+    ],
+  },
+  {
     version: "0.32.0",
     date: "2026-10-27",
     title: "Magazines, part 2: artwork and monthly invoicing",

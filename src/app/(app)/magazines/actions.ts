@@ -137,3 +137,24 @@ export async function invoiceMagazineMonth(month: string) {
   revalidatePath("/sales", "layout");
   back(`invoiced=${made}${problems.length ? `&error=${encodeURIComponent(`${problems.length} couldn't be invoiced: ${problems[0]}`)}` : ""}`);
 }
+
+// Renewals: mark an advertiser for a month (contacted, carried forward or
+// definitely out), or clear the mark.
+export async function markRenewal(customerId: string, month: string, fd: FormData) {
+  const back = (q: string) => redirect(`/magazines/renewals?month=${month}${q}`);
+  if (!/^\d{4}-\d{2}$/.test(month)) back("&error=Unknown month");
+  const status = str(fd, "status");
+  const supabase = await createClient();
+  if (!status) {
+    const { error } = await supabase.from("magazine_renewal_marks").delete().eq("customer_id", customerId).eq("month", `${month}-01`);
+    if (error) back(`&error=${encodeURIComponent(error.message)}`);
+  } else {
+    if (!["contacted", "carried_forward", "out"].includes(status)) back("&error=Unknown status");
+    const { error } = await supabase
+      .from("magazine_renewal_marks")
+      .upsert({ customer_id: customerId, month: `${month}-01`, status, note: str(fd, "note")?.slice(0, 2000) ?? null }, { onConflict: "customer_id,month" });
+    if (error) back(`&error=${encodeURIComponent(error.message)}`);
+  }
+  revalidatePath("/magazines", "layout");
+  back("&saved=1");
+}
