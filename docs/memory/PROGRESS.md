@@ -1,8 +1,17 @@
 # Progress — where we are right now
 
-_Last updated: 19 October 2026 (Part 4b)_
+_Last updated: 27 October 2026_
 
-## Current stage
+## Right now (27 October 2026)
+- **Live version: FootprintOS 0.30.0.** The owner's improvement list (items 1-28) is finished.
+- **Wave 2** has no tasks left (GoCardless and Xero moved to Go-live). **Wave 0+** removed (empty).
+- **Wave 5 (Magazines): paused.** Next step: the owner and the director sign in to Mag Manager in Claude's browser pane; Claude looks through it read only and writes the feature list. Questions: `docs/WAVE-5-MEETING-QUESTIONS.md`.
+- **Wave 6 (Customer portal): first part live.** /portal: sign-in by emailed link or 6-digit code (any contact with that email); own quotes, hosting plans and marketing; Support messages to the staff **Customer support** tab. Secret `PORTAL_LINK_KEY` is in Netlify (and `.env.local`); its fingerprint is in `portal_settings` and must be set again on the London database at Go-live.
+- **Still to do in Wave 6:** owner to test a real support message and reply (then tick the Customer support task); customers see invoices and pay online; online advert booking (after Wave 5).
+- **Owner to try on real data:** saving order addresses; a real part invoice.
+- The GitHub repository is still **public**; Claude recommends making it private.
+
+## Current stage (older summary)
 **Waves 0, 1, 2 (2a/2b/2c) and the Wave 3 building work are LIVE** on https://footprintgroupos.netlify.app, along with the Marketing workspace, Dashboards, profit after time and the 15 October 2026 health-check fixes. The live site still uses the **test database** (Frankfurt); the move to the London database, every Zoho import and the switch-offs all sit in the final Go-live stage.
 
 No pull requests open (16 October 2026): the owner merged #32 (Staff hub one-pass) and #33 (health-check fixes). For what's next, see **"Next (as of 15 October 2026)"** at the bottom of this file. The sections in between are a dated history, oldest first.

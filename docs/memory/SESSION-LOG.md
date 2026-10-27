@@ -4,10 +4,17 @@ One short entry per session. Newest at the top.
 
 ---
 
-## 27 October 2026: GoCardless and Xero moved to Go-live
+## 27 October 2026: Roadmap tidy, Wave 5 prep, Customer portal
 - At the owner's request, moved the two remaining Wave 2 roadmap tasks (GoCardless Direct Debit, Xero sync) to the Go-live stage. Wave 2 is now complete.
 - Removed the empty Wave 0+ (Password manager and Teams chat) from the Roadmap at the owner's request; its Vault and Cliq tasks were already in Go-live.
 - Started Wave 5 (Magazines). Plan: the owner signs in to Mag Manager in Claude's browser pane, Claude looks through it read only and writes the feature list. Paused: the owner will do the sign-in later with the director. Nothing built yet.
+- Prepared `docs/WAVE-5-MEETING-QUESTIONS.md` (13 questions) for the Mag Manager meeting with the director.
+- Started Wave 6 (Customer portal) at the owner's request, as Wave 5 waits for the director:
+  - **0.28.0 (#72):** customers sign in at /portal with a one-time emailed link; any contact with that email; they see their own quotes (accept/decline) and hosting plans. 17 database checks. Owner added `PORTAL_LINK_KEY` in Netlify (value kept in `.env.local`; fingerprint stored in `portal_settings`).
+  - **0.29.0 (#73):** portal shows marketing (retainers, ad campaigns, content calendar) and a Support section; new staff **Customer support** tab (permission "support"), email alerts to admins, replies in FootprintOS. 20 more checks.
+  - **0.30.0 (#74):** the owner found the link signs in the device that opens it (phone, not laptop), so the email now also has a 6-digit code to type on the sign-in screen.
+  - All merged by Claude at the owner's request and checked live. The owner signed in to the portal successfully using a test contact on "tj holds" (their iCloud email).
+- **Not yet tested:** a real support message and reply (the owner will test later). Customer support roadmap task left unticked until then.
 
 ## 26 October 2026: Sign-in lands on the release address
 - Found why sign-in sometimes returned to `<release id>--footprintgroupos.netlify.app` (skew protection + address taken from the request). Fixed: sign-in and emailed links now use the site's main address fixed at build time (#60). Merged at the owner's request and checked live.
