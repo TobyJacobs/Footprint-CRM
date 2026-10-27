@@ -3,9 +3,9 @@
 _Last updated: 27 October 2026_
 
 ## Right now (27 October 2026)
-- **Live version: FootprintOS 0.30.0.** The owner's improvement list (items 1-28) is finished.
+- **Live version: FootprintOS 0.31.0.** The owner's improvement list (items 1-28) is finished.
 - **Wave 2** has no tasks left (GoCardless and Xero moved to Go-live). **Wave 0+** removed (empty).
-- **Wave 5 (Magazines): feature list drafted** with the director (27 October 2026): `docs/WAVE-5-MAG-MANAGER-FEATURES.md`. Waiting on the rate card, monthly timetable, commission rules, report priorities and the switch-over year (January). Suggested first build: editions, issues, advert sizes and rate card, and bookings linked to customers and sales orders.
+- **Wave 5 (Magazines): feature list drafted** with the director (27 October 2026): `docs/WAVE-5-MAG-MANAGER-FEATURES.md`. Waiting on the rate card, monthly timetable, commission rules, report priorities and the switch-over year (January). **Part 1 LIVE (0.31.0, #75):** editions, monthly issues (Nov 2026 to Dec 2027), advert sizes, advertising quotes/orders that book editions and months, Magazines dashboard and Setup. Next: invoicing issue by issue and artwork tracking, then renewals and flatplans; rate card and commission when the business sends them.
 - **Wave 6 (Customer portal): first part live.** /portal: sign-in by emailed link or 6-digit code (any contact with that email); own quotes, hosting plans and marketing; Support messages to the staff **Customer support** tab. Secret `PORTAL_LINK_KEY` is in Netlify (and `.env.local`); its fingerprint is in `portal_settings` and must be set again on the London database at Go-live.
 - **Still to do in Wave 6:** owner to test a real support message and reply (then tick the Customer support task); customers see invoices and pay online; online advert booking (after Wave 5).
 - **Owner to try on real data:** saving order addresses; a real part invoice.
