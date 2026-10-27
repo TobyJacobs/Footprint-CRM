@@ -9,6 +9,7 @@ One short entry per session. Newest at the top.
 - Wrote `docs/WAVE-5-MAG-MANAGER-FEATURES.md` and added the director's answers: rate card exists, commission per salesperson, ~50,000 homes, flipbooks/portal/pipelines/Stripe/GoCardless used, pain points (no API, no live online booking, two databases, no contracts for long-term bookings), monthly rolling, switch in January.
 - Added 7 Magazines tasks to the Roadmap (Wave 5).
 - Built **Magazines part 1** (0.31.0, #75): the owner chose to start without the rate card; adverts create sales orders with a different flow (invoiced issue by issue, artwork not a project, paid up front or by DD). Tested on a temporary database (found and fixed a hidden bug: order lines failed for customers with no services ticked). Merged at the owner's request and checked live: 11 editions, £78,500 November target, 13 sizes on the advertising quote.
+- Built **Magazines part 2** (0.32.0, #76): the owner wanted all artwork in the same design queue as other work, so advert artwork is a normal design job linked to the order (no project). Invoicing issue by issue from the dashboard. 14 database checks. Merged at the owner's request and checked live (pages load; flow not yet tried on a real advert order).
 
 ## 27 October 2026: Roadmap tidy, Wave 5 prep, Customer portal
 - At the owner's request, moved the two remaining Wave 2 roadmap tasks (GoCardless Direct Debit, Xero sync) to the Go-live stage. Wave 2 is now complete.
