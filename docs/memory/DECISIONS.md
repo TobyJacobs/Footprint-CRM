@@ -299,3 +299,8 @@ This refines the "Supabase, London region" part of the technical foundations dec
 ## 27 October 2026 - Wave 0+ removed from the Roadmap
 **Decision (owner):** removed the empty Roadmap wave "0+ Password manager and Teams chat". It had no tasks or requests left. The work lives in Go-live: "Choose a password manager and move passwords from Zoho Vault" and "Move team chat from Zoho Cliq to Microsoft Teams".
 **Why:** an empty wave was clutter; the moves happen at Go-live.
+
+## 27 October 2026 - Customer portal, first half
+**Decision (owner):** customers sign in at /portal with a **one-time emailed link** (no passwords). **Anyone listed as a contact with that email** can sign in (owner chose this over staff switching access on per contact; Claude flagged the GDPR risk of old contacts getting in, so removing a contact's email or the contact locks them out at once). First version shows **quotes** (sent/accepted/declined, accept or decline online) and **hosting plans**; invoices and paying online come later. Owner: "make it so customers can only see their info".
+**How:** customers never get staff accounts; their links and sessions are in their own locked tables (`portal_links`, `portal_sessions`), and all they see comes from `portal_overview`, which only returns companies where their email is a contact. Only FootprintOS can make links: secret `PORTAL_LINK_KEY` in Netlify, fingerprint in `portal_settings.link_key_hash` (must be set again on the London database at Go-live).
+**Why:** simplest safe sign-in for occasional visitors, with the database itself enforcing "own records only".
