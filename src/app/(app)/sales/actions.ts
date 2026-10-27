@@ -590,3 +590,23 @@ export async function clearLineGpOverride(documentId: string, lineId: string) {
   revalidatePath("/sales", "layout");
   redirect(`${back}?saved=1`);
 }
+
+// Advert artwork (Wave 5, part 2): put the artwork for one advert size on an
+// order into the design queue. Sales staff can do this without Design access;
+// the database checks they can see the order.
+export async function requestAdvertArtwork(orderId: string, sizeId: string, fd: FormData) {
+  const back = `/sales/${orderId}`;
+  const source = str(fd, "source");
+  if (source !== "design" && source !== "customer" && source !== "repeat") fail(back, "Choose how the artwork will be done");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("request_advert_artwork", {
+    p_order: orderId,
+    p_size: sizeId,
+    p_source: source,
+    p_note: str(fd, "note"),
+  });
+  if (error) fail(back, error.message);
+  revalidatePath("/sales", "layout");
+  revalidatePath("/design", "layout");
+  redirect(`${back}?saved=1`);
+}

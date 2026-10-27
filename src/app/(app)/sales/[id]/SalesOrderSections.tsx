@@ -3,6 +3,7 @@ import { Check, Minus, X } from "lucide-react";
 import DesignJobsPanel from "@/components/DesignJobsPanel";
 import { Badge, Card, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { gbp } from "@/lib/customers/display";
+import { designStageLabel, designStageTone, jobNumber } from "@/lib/design/options";
 import { projectStatusLabel, projectTone } from "@/lib/projects/options";
 import { poStatusLabel, statusToneFor } from "@/lib/sales/options";
 import type { Stages } from "@/lib/sales/stages";
@@ -264,5 +265,75 @@ export function PartInvoiceForm({
         </form>
       )}
     </div>
+  );
+}
+
+// Advert artwork (Wave 5, part 2): one row per advert size on the order. Each
+// choice puts a job in the same design queue as all other artwork (the
+// owner's rule, 27 October 2026); adverts don't need a project.
+export type AdvertArtwork = {
+  sizeId: string;
+  sizeName: string;
+  adverts: number;
+  job: { id: string; number: number; stage: string; source: string | null } | null;
+};
+
+const artworkSourceLabel: Record<string, string> = {
+  design: "We're designing it",
+  customer: "Customer supplying it",
+  repeat: "Same as last time",
+};
+
+export function AdvertArtworkSection({
+  items,
+  request,
+  canRequest,
+}: {
+  items: AdvertArtwork[];
+  request: (sizeId: string) => (fd: FormData) => Promise<void>;
+  canRequest: boolean;
+}) {
+  return (
+    <Card title="Advert artwork">
+      <ul className="grid gap-4 text-sm">
+        {items.map((a) => (
+          <li key={a.sizeId} className="rounded-md border border-fp-border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-semibold">
+                {a.sizeName} <span className="font-normal text-fp-mid">· {a.adverts} advert{a.adverts === 1 ? "" : "s"}</span>
+              </p>
+              {a.job ? (
+                <span className="flex flex-wrap items-center gap-2">
+                  {a.job.source && <span className="text-xs text-fp-mid">{artworkSourceLabel[a.job.source]}</span>}
+                  <Link href={`/design/${a.job.id}`} className="font-semibold text-fp-teal-deep hover:underline">
+                    {jobNumber(a.job.number)}
+                  </Link>
+                  <Badge tone={designStageTone(a.job.stage)}>{designStageLabel(a.job.stage)}</Badge>
+                </span>
+              ) : (
+                <Badge tone="pink">Artwork needed</Badge>
+              )}
+            </div>
+            {!a.job && canRequest && (
+              <form action={request(a.sizeId)} className="mt-3 grid gap-2">
+                <textarea name="note" rows={2} maxLength={2000} placeholder="Notes for the designer (optional)" aria-label="Notes for the designer" className={inputClass} />
+                <div className="flex flex-wrap gap-2">
+                  <button type="submit" name="source" value="design" className={primaryButton}>
+                    We&apos;ll design it
+                  </button>
+                  <button type="submit" name="source" value="customer" className={secondaryButton}>
+                    Customer is supplying it
+                  </button>
+                  <button type="submit" name="source" value="repeat" className={secondaryButton}>
+                    Same as last time
+                  </button>
+                </div>
+                <p className="text-xs text-fp-mid">Each choice adds a job to the Design board, so all artwork is in one queue.</p>
+              </form>
+            )}
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }

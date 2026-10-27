@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.32.0",
+    date: "2026-10-27",
+    title: "Magazines, part 2: artwork and monthly invoicing",
+    changes: [
+      "Advert artwork uses the same design queue as everything else: on a sales order with adverts, choose “We'll design it”, “Customer is supplying it” or “Same as last time” for each advert size. Each makes a job on the Design board with the editions, months, size and copy deadline filled in. Adverts don't need a project.",
+      "Magazines dashboard: each advert shows its artwork status and invoice.",
+      "Invoicing issue by issue: “Create invoices for [month]” makes one draft invoice per order with just that month's adverts, using each customer's payment terms. Nothing is billed twice, and the order becomes Invoiced once it's all billed.",
+    ],
+  },
+  {
     version: "0.31.0",
     date: "2026-10-27",
     title: "Magazines, part 1",

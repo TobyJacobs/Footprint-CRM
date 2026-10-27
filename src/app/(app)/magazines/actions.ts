@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { bool, int, num, str } from "@/lib/forms";
-import { addMonthsTo } from "@/lib/dates";
+import { addDaysTo, addMonthsTo, customerDueDate, ukToday } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 
 // Magazines setup: editions, monthly issues and advert sizes. Needs Magazines
@@ -97,4 +97,43 @@ export async function saveAdvertSize(id: string, fd: FormData) {
     .eq("id", id);
   if (error) fail(error.message);
   done();
+}
+
+// Invoicing issue by issue (Wave 5, part 2): one draft invoice per sales order
+// for its adverts in this month, not yet billed. Each customer's own payment
+// terms set the due date. The database makes sure nothing is billed twice.
+export async function invoiceMagazineMonth(month: string) {
+  await requirePermission("quotes", "edit");
+  await requirePermission("magazines", "view");
+  const back = (q: string) => redirect(`/magazines?month=${month}&${q}`);
+  if (!/^\d{4}-\d{2}$/.test(month)) back("error=Unknown month");
+  const supabase = await createClient();
+  const { data: rows, error } = await supabase.rpc("magazine_month_bookings", { p_month: `${month}-01` });
+  if (error) back(`error=${encodeURIComponent(error.message)}`);
+  const orderIds = [
+    ...new Set(
+      ((rows ?? []) as { doc_type: string; status: string; invoice_id: string | null; document_id: string }[])
+        .filter((r) => r.doc_type === "sales_order" && ["open", "completed"].includes(r.status) && !r.invoice_id)
+        .map((r) => r.document_id),
+    ),
+  ];
+  if (orderIds.length === 0) back("error=Nothing left to invoice for this month");
+
+  const [{ data: orders }, { data: settings }] = await Promise.all([
+    supabase.from("sales_documents").select("id, customers!sales_documents_customer_id_fkey(invoice_due_days, invoice_due_terms)").in("id", orderIds),
+    supabase.from("company_settings").select("invoice_due_days").single(),
+  ]);
+  const today = ukToday();
+  let made = 0;
+  const problems: string[] = [];
+  for (const o of orders ?? []) {
+    const c = o.customers as unknown as { invoice_due_days: number | null; invoice_due_terms: string | null } | null;
+    const due = customerDueDate(today, c?.invoice_due_days, c?.invoice_due_terms) ?? addDaysTo(today, settings?.invoice_due_days ?? 30);
+    const { data: invoiceId, error: invError } = await supabase.rpc("magazine_invoice_order", { p_order: o.id, p_month: `${month}-01`, p_due: due });
+    if (invError) problems.push(invError.message);
+    else if (invoiceId) made++;
+  }
+  revalidatePath("/magazines", "layout");
+  revalidatePath("/sales", "layout");
+  back(`invoiced=${made}${problems.length ? `&error=${encodeURIComponent(`${problems.length} couldn't be invoiced: ${problems[0]}`)}` : ""}`);
 }
