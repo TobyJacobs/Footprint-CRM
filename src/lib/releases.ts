@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.29.0",
+    date: "2026-10-27",
+    title: "Portal: marketing and customer support",
+    changes: [
+      "Customer portal: customers now see their marketing too: retainers, ad campaigns (budget, spend so far, leads and results) and their content calendar (not early ideas). No internal notes.",
+      "Customer portal: a Support section where customers send a change request or a question, and follow the conversation.",
+      "New Customer support tab: messages arrive here and admins get an email. Reply in FootprintOS (the customer sees it in their portal and gets an email), and mark each one New, In progress or Done. Admins can give other roles access in Admin → Roles.",
+    ],
+  },
+  {
     version: "0.28.0",
     date: "2026-10-27",
     title: "Customer portal (first half)",

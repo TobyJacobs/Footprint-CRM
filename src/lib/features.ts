@@ -5,6 +5,7 @@ import {
   FileText,
   Home,
   LayoutDashboard,
+  LifeBuoy,
   Megaphone,
   Newspaper,
   Palette,
@@ -59,6 +60,14 @@ export const features: Feature[] = [
       "Every customer and contact in one place, with subscriptions, hosting plans and a full activity timeline.",
     wave: 1,
     replaces: "Zoho CRM",
+  },
+  {
+    key: "support",
+    label: "Customer support",
+    href: "/support",
+    icon: LifeBuoy,
+    description: "Change requests and questions customers send from their portal, and our replies.",
+    wave: 6,
   },
   {
     key: "quotes",
