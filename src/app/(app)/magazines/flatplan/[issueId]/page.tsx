@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import CopyButton from "@/components/CopyButton";
 import NoAccess from "@/components/NoAccess";
 import PageHeader from "@/components/PageHeader";
 import { Badge, Card, Notice, inputClass, secondaryButton } from "@/components/ui";
@@ -9,9 +10,11 @@ import { addMonthsTo } from "@/lib/dates";
 import { designStageLabel, designStageTone } from "@/lib/design/options";
 import { monthLabel } from "@/lib/magazines";
 import { createClient } from "@/lib/supabase/server";
-import { addEditorial, moveFlatplanItem, placeAdvert, removeFlatplanItem } from "../../actions";
+import { siteUrl } from "@/lib/site-url";
+import { addEditorial, moveFlatplanItem, placeAdvert, removeFlatplanItem, removeFlipbook } from "../../actions";
 import MagazineTabs from "../../MagazineTabs";
 import { DragItem, DropPage, FlatplanDrag } from "./FlatplanDrag";
+import FlipbookUploader from "./FlipbookUploader";
 
 export const metadata: Metadata = { title: "Flatplan" };
 
@@ -58,11 +61,16 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
   const canEdit = user.can("magazines", "edit");
   const ym = issue.month.slice(0, 7);
 
-  const [{ data: siblings }, { data: editions }, { data: sizes }] = await Promise.all([
+  const [{ data: siblings }, { data: editions }, { data: sizes }, { data: flip }, origin] = await Promise.all([
     supabase.from("magazine_issues").select("id, month").eq("edition_id", issue.edition_id).in("month", [`${addMonthsTo(ym, -1)}-01`, `${addMonthsTo(ym, 1)}-01`]),
     supabase.from("magazine_issues").select("id, magazine_editions(code, name)").eq("month", issue.month),
     supabase.from("advert_sizes").select("name, page_fraction").eq("active", true).order("position"),
+    supabase.from("magazine_issues").select("flipbook_path, flipbook_published_at, magazine_editions(slug)").eq("id", issueId).maybeSingle(),
+    siteUrl(),
   ]);
+  const slug = (flip?.magazine_editions as unknown as { slug: string } | null)?.slug ?? null;
+  const issueLink = slug ? `${origin}/read/${slug}/${ym}` : null;
+  const latestLink = slug ? `${origin}/read/${slug}` : null;
   const prev = siblings?.find((s) => String(s.month).startsWith(addMonthsTo(ym, -1)));
   const next = siblings?.find((s) => String(s.month).startsWith(addMonthsTo(ym, 1)));
   const otherEditions = ((editions ?? []) as unknown as { id: string; magazine_editions: { code: string; name: string } }[]).sort((a, b) =>
@@ -131,6 +139,56 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
             </form>
           </div>
         </div>
+
+        <Card title="Digital edition (flipbook)">
+          <div className="grid gap-4 text-sm lg:grid-cols-2">
+            <div className="grid content-start gap-2">
+              {flip?.flipbook_path ? (
+                <>
+                  <p>
+                    <Badge tone="teal">Online</Badge>{" "}
+                    <span className="text-fp-dark/75">since {flip.flipbook_published_at ? new Date(flip.flipbook_published_at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/London" }) : "—"}</span>
+                  </p>
+                  {issueLink && (
+                    <p className="flex flex-wrap items-center gap-2">
+                      <a href={issueLink} target="_blank" rel="noopener" className="font-semibold text-fp-teal-deep hover:underline">
+                        Open this issue&apos;s flipbook
+                      </a>
+                      <CopyButton text={issueLink} label="Copy link" />
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-fp-mid">Not online yet. Upload the finished PDF to publish it as a page-turning flipbook.</p>
+              )}
+              {canEdit && <FlipbookUploader issueId={issue.id} replacing={!!flip?.flipbook_path} />}
+              {canEdit && flip?.flipbook_path && (
+                <form action={removeFlipbook.bind(null, issue.id)}>
+                  <button type="submit" className="text-xs font-semibold text-fp-error hover:underline">
+                    Take the flipbook offline
+                  </button>
+                </form>
+              )}
+            </div>
+            {latestLink && (
+              <div className="grid content-start gap-2 rounded-md bg-fp-offwhite p-3">
+                <p className="font-semibold">For the website</p>
+                <p className="text-xs text-fp-dark/75">
+                  This address always shows the newest {issue.name} issue, so a &ldquo;Read online&rdquo; button on the website never needs changing:
+                </p>
+                <p className="flex flex-wrap items-center gap-2 break-all text-xs">
+                  <code>{latestLink}</code>
+                  <CopyButton text={latestLink} label="Copy link" />
+                </p>
+                <p className="text-xs text-fp-dark/75">Or show it inside a page on forgetmenotonline.org or footprintgroup.uk:</p>
+                <p className="flex flex-wrap items-center gap-2 break-all text-xs">
+                  <code>{`<iframe src="${latestLink}?embed=1" style="width:100%;height:800px;border:0" title="Forget Me Not ${issue.name}"></iframe>`}</code>
+                  <CopyButton text={`<iframe src="${latestLink}?embed=1" style="width:100%;height:800px;border:0" title="Forget Me Not ${issue.name}"></iframe>`} label="Copy code" />
+                </p>
+              </div>
+            )}
+          </div>
+        </Card>
 
         <FlatplanDrag issueId={issue.id}>
           <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">

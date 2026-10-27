@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.37.0",
+    date: "2026-10-27",
+    title: "Flipbooks",
+    changes: [
+      "Magazines → an issue's flatplan → Digital edition: upload the finished PDF and it's online straight away as a public, page-turning flipbook (two-page spreads on a computer, one page on a phone, with a PDF download). Replaces Mag Manager's flipbook link.",
+      "Each edition has a “latest issue” address (e.g. /read/fareham) that always shows the newest one, so a “Read online” button on the website never needs changing, plus copy-and-paste code to show it inside a page on forgetmenotonline.org or footprintgroup.uk.",
+    ],
+  },
+  {
     version: "0.36.0",
     date: "2026-10-27",
     title: "Portal: adverts and invoices",
