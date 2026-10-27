@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 27 October 2026: GoCardless and Xero moved to Go-live
+- At the owner's request, moved the two remaining Wave 2 roadmap tasks (GoCardless Direct Debit, Xero sync) to the Go-live stage. Wave 2 is now complete.
+
 ## 26 October 2026: Sign-in lands on the release address
 - Found why sign-in sometimes returned to `<release id>--footprintgroupos.netlify.app` (skew protection + address taken from the request). Fixed: sign-in and emailed links now use the site's main address fixed at build time (#60). Merged at the owner's request and checked live.
 

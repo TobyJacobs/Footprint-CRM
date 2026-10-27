@@ -291,3 +291,7 @@ This refines the "Supabase, London region" part of the technical foundations dec
 ## 26 October 2026 - Cleaner sales flow
 **Decision (owner):** "make the flow as clean as possible". Chosen: drop the old Zoho "Production step" (the automatic stage bar replaces it; Operations dashboard groups by stage); stage bar on quotes (Draft → Sent → Accepted → Sales order); reason for loss asked when marking declined (not on the form); probability and expected order under "More details". Not chosen (for now): removing the old Delivery dropdown, renaming design/PO wording, hiding copy-shop fields, one way to send quotes, removing the "Sell ads" placeholder.
 **Why:** fewer fields and buttons that say the same thing twice.
+
+## 27 October 2026 - GoCardless and Xero moved to Go-live
+**Decision (owner):** the last two Wave 2 tasks, "Payments by Direct Debit (GoCardless)" and "Xero sync", were moved on the Roadmap from Wave 2 to the Go-live stage (positions 17 and 18). Wave 2 now has nothing left to do.
+**Why:** the owner wanted GoCardless and Xero left for later (15 October 2026); they belong with switching off Zoho at Go-live.
