@@ -9,7 +9,8 @@ import {
 // Pages anyone can reach without signing in. "/q/" (quote approval), "/d/"
 // (view an invoice, credit note or order) and "/p/" (design proof approval)
 // are the private links sent to customers — they only work with a secret token.
-const PUBLIC_PATHS = ["/login", "/auth/", "/q/", "/d/", "/p/", "/api/cron/", "/invite/"];
+// "/portal" is the customer portal, which has its own sign-in (lib/portal).
+const PUBLIC_PATHS = ["/login", "/auth/", "/q/", "/d/", "/p/", "/api/cron/", "/invite/", "/portal"];
 
 // Runs before every page request: keeps the login session fresh and sends
 // signed-out visitors to the login page. The real permission checks happen
