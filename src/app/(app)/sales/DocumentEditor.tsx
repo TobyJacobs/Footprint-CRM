@@ -7,6 +7,7 @@ import { quickAddCustomer, type QuickCustomerInput } from "../customers/actions"
 import { DuplicateCheck } from "../customers/DuplicateCheck";
 import { addMonthsTo, ukMonth } from "@/lib/dates";
 import { CUSTOMER_PICKED } from "./AddressFields";
+import type { AdvertSetup } from "@/lib/magazines";
 import AdvertBuilder, { type AdvertLine } from "./AdvertBuilder";
 import ProductDropdown, { productLineText } from "./ProductDropdown";
 import { lineGp, lineMargin, lineNet, marginPercent, priceForMargin, totals } from "@/lib/sales/options";
@@ -37,6 +38,9 @@ export type EditorLine = {
   tax_rate_id: string | null;
   tax_rate: number;
   gp_override?: number | null;
+  // Forget Me Not adverts: the issue and size this line books.
+  magazine_issue_id?: string | null;
+  advert_size_id?: string | null;
   // What's being typed in the margin box (screen only, never saved).
   margin_input?: string;
 };
@@ -279,6 +283,7 @@ export default function DocumentEditor({
   canAddCustomer = false,
   kind = "quote",
   initialLabour,
+  advertSetup,
 }: {
   initialCustomer: { id: string; name: string } | null;
   initialContacts: Contact[];
@@ -291,6 +296,8 @@ export default function DocumentEditor({
   kind?: string;
   // Labour cost (staff time) for the whole job; undefined hides the box.
   initialLabour?: number | null;
+  // Editions, issues and sizes for the advert builder.
+  advertSetup?: AdvertSetup;
 }) {
   const defaultTax = taxRates[0];
   const [customer, setCustomer] = useState(initialCustomer);
@@ -358,6 +365,8 @@ export default function DocumentEditor({
               discount_percent: l.discount_percent,
               tax_rate_id: l.tax_rate_id,
               tax_rate: l.tax_rate,
+              magazine_issue_id: l.magazine_issue_id ?? null,
+              advert_size_id: l.advert_size_id ?? null,
             })),
         )}
       />
@@ -412,7 +421,7 @@ export default function DocumentEditor({
         )}
       </div>
 
-      {kind === "advertising" && <AdvertBuilder firstMonth={nextMonth} onAdd={addAdvertLines} />}
+      {kind === "advertising" && advertSetup && <AdvertBuilder firstMonth={nextMonth} setup={advertSetup} onAdd={addAdvertLines} />}
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1100px] text-left text-sm">
