@@ -14,6 +14,7 @@ One short entry per session. Newest at the top.
 - Built **Magazines part 1** (0.31.0, #75): the owner chose to start without the rate card; adverts create sales orders with a different flow (invoiced issue by issue, artwork not a project, paid up front or by DD). Tested on a temporary database (found and fixed a hidden bug: order lines failed for customers with no services ticked). Merged at the owner's request and checked live: 11 editions, £78,500 November target, 13 sizes on the advertising quote.
 - Built **Magazines part 2** (0.32.0, #76): the owner wanted all artwork in the same design queue as other work, so advert artwork is a normal design job linked to the order (no project). Invoicing issue by issue from the dashboard. 14 database checks. Merged at the owner's request and checked live (pages load; flow not yet tried on a real advert order).
 - Built **magazine renewals** (#78): Mag Manager scoring, marks, salesperson filter. Clashed with PR #77 (drag-and-drop Design board, another session, 0.33.0), so renumbered renewals to 0.34.0. Both merged and checked live.
+- Built **flatplans** (0.35.0, #79): page grid per issue, drag adverts and editorial onto pages (same drag pattern as the Design board), colour-coded fullness. 12 database checks. Merged and checked live (Fareham November: 88 pages).
 
 ## 27 October 2026: Roadmap tidy, Wave 5 prep, Customer portal
 - At the owner's request, moved the two remaining Wave 2 roadmap tasks (GoCardless Direct Debit, Xero sync) to the Go-live stage. Wave 2 is now complete.
