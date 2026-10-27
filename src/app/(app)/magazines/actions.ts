@@ -158,3 +158,59 @@ export async function markRenewal(customerId: string, month: string, fd: FormDat
   revalidatePath("/magazines", "layout");
   back("&saved=1");
 }
+
+// ─── Flatplans ──────────────────────────────────────────────────────────────
+// Put adverts and editorial on pages. The database checks an advert belongs to
+// this issue and the page exists.
+
+const flatplanBack = (issueId: string, q = "") => `/magazines/flatplan/${issueId}${q}`;
+const pageFrom = (fd: FormData) => {
+  const p = int(fd, "page");
+  return p && p >= 1 ? p : null;
+};
+
+export async function placeAdvert(issueId: string, lineId: string, fd: FormData) {
+  await requirePermission("magazines", "edit");
+  const page = pageFrom(fd);
+  if (!page) redirect(flatplanBack(issueId, "?error=Choose a page"));
+  const supabase = await createClient();
+  const { error } = await supabase.from("magazine_flatplan_items").insert({ issue_id: issueId, line_id: lineId, page });
+  if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}`));
+  revalidatePath("/magazines", "layout");
+  redirect(flatplanBack(issueId));
+}
+
+export async function moveFlatplanItem(issueId: string, itemId: string, fd: FormData) {
+  await requirePermission("magazines", "edit");
+  const page = pageFrom(fd);
+  if (!page) redirect(flatplanBack(issueId, "?error=Choose a page"));
+  const supabase = await createClient();
+  const { error } = await supabase.from("magazine_flatplan_items").update({ page }).eq("id", itemId).eq("issue_id", issueId);
+  if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}`));
+  revalidatePath("/magazines", "layout");
+  redirect(flatplanBack(issueId));
+}
+
+export async function removeFlatplanItem(issueId: string, itemId: string) {
+  await requirePermission("magazines", "edit");
+  const supabase = await createClient();
+  const { error } = await supabase.from("magazine_flatplan_items").delete().eq("id", itemId).eq("issue_id", issueId);
+  if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}`));
+  revalidatePath("/magazines", "layout");
+  redirect(flatplanBack(issueId));
+}
+
+export async function addEditorial(issueId: string, fd: FormData) {
+  await requirePermission("magazines", "edit");
+  const title = str(fd, "title");
+  const page = pageFrom(fd);
+  const fraction = num(fd, "fraction");
+  if (!title || !page || !fraction) redirect(flatplanBack(issueId, "?error=Give the editorial a title, size and page"));
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("magazine_flatplan_items")
+    .insert({ issue_id: issueId, page, title: title.slice(0, 200), page_fraction: fraction });
+  if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}`));
+  revalidatePath("/magazines", "layout");
+  redirect(flatplanBack(issueId));
+}

@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.35.0",
+    date: "2026-10-27",
+    title: "Flatplans",
+    changes: [
+      "Magazines → Flatplan (link next to each edition on the dashboard): a page-by-page plan of each issue. Pages are colour-coded: empty, part full, full or over-full.",
+      "Booked adverts waiting to be placed are listed down the side: drag one onto a page (or use “Put on page” on a phone). Move or take items off a page the same way.",
+      "Add editorial (e.g. Editor's Letter) with a size, so it takes up space too. Each advert shows its artwork status.",
+    ],
+  },
+  {
     version: "0.34.0",
     date: "2026-10-27",
     title: "Magazine renewals",
