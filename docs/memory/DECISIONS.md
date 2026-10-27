@@ -324,3 +324,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 27 October 2026 - Magazine renewals scoring
 **Decision (owner):** build a renewals list "like Mag Manager's". Scores copied from Mag Manager's settings: last month 20, 2 months ago 16, 3 months ago 12, 4–6 months 8, 7–12 months 4, minus 1 with future bookings. Themed-issue scores left out (no issue themes recorded). Marks per month: Contacted, Carried forward, Definitely out (stays off until they book again). PR #78 (0.33.0).
+
+## 27 October 2026 - Flipbooks hosted by FootprintOS
+**Decision (owner):** today the flipbooks are a Mag Manager link (forgetmenotonline.org shows none). FootprintOS now hosts them: upload the issue PDF on the flatplan page; public page-turning flipbook at /read/<edition>/<month>, and /read/<edition> always shows the latest (for a "Read online" button on the website). Embeddable only on forgetmenotonline.org and footprintgroup.uk; every other page still refuses to be framed. Libraries: PDF.js (pdfjs-dist) and StPageFlip (page-flip). PDFs public on purpose, up to 50 MB. PR #81 (0.37.0).
