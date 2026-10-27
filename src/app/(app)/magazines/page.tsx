@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import NoAccess from "@/components/NoAccess";
 import PageHeader from "@/components/PageHeader";
-import { Badge, Card } from "@/components/ui";
+import { Badge, Card, Notice, primaryButton } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { gbp, longDate } from "@/lib/customers/display";
 import { addMonthsTo, ukMonth } from "@/lib/dates";
+import { designStageLabel, designStageTone } from "@/lib/design/options";
 import { monthLabel } from "@/lib/magazines";
 import { createClient } from "@/lib/supabase/server";
+import { invoiceMagazineMonth } from "./actions";
 import MagazineTabs from "./MagazineTabs";
 
 export const metadata: Metadata = { title: "Magazines" };
@@ -41,6 +43,11 @@ type BookingRow = {
   line_net: number;
   owner_name: string | null;
   issue_date: string;
+  artwork_job_id: string | null;
+  artwork_stage: string | null;
+  artwork_source: string | null;
+  invoice_id: string | null;
+  invoice_number: string | null;
 };
 
 const pct = (n: number, of: number | null) => (of ? `${Math.round((n / of) * 100)}%` : "—");
@@ -73,12 +80,20 @@ export default async function MagazinesPage(props: PageProps<"/magazines">) {
   const totalBooked = total((r) => r.booked_net);
   const totalPages = total((r) => r.pages ?? 0);
   const totalBookedPages = total((r) => r.booked_pages);
+  const toInvoice = new Set(booked.filter((b) => !b.invoice_id && ["open", "completed"].includes(b.status)).map((b) => b.document_id));
+  const canInvoice = user.can("quotes", "edit");
 
   return (
     <>
       <PageHeader title="Magazines" intro="Forget Me Not: what's booked in each edition, against its pages and sales target." />
       <MagazineTabs current="dashboard" canEdit={user.can("magazines", "edit")} />
       <div className="grid gap-6 px-6 py-8 lg:px-10">
+        <Notice searchParams={sp} />
+        {typeof sp.invoiced === "string" && (
+          <p role="status" className="rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-4 py-3 text-sm text-fp-teal-deep">
+            {sp.invoiced === "1" ? "1 draft invoice created." : `${sp.invoiced} draft invoices created.`} Check and send them from Sales → Invoices.
+          </p>
+        )}
         <div className="flex flex-wrap items-center gap-3">
           <Link href={`/magazines?month=${addMonthsTo(month, -1)}`} className="rounded-md border border-fp-border bg-white px-3 py-1.5 text-sm font-semibold hover:bg-fp-light">
             ← {monthLabel(addMonthsTo(month, -1))}
@@ -87,6 +102,13 @@ export default async function MagazinesPage(props: PageProps<"/magazines">) {
           <Link href={`/magazines?month=${addMonthsTo(month, 1)}`} className="rounded-md border border-fp-border bg-white px-3 py-1.5 text-sm font-semibold hover:bg-fp-light">
             {monthLabel(addMonthsTo(month, 1))} →
           </Link>
+          {canInvoice && toInvoice.size > 0 && (
+            <form action={invoiceMagazineMonth.bind(null, month)} className="ml-auto">
+              <button type="submit" className={primaryButton}>
+                Create invoices for {monthLabel(month)} ({toInvoice.size} order{toInvoice.size === 1 ? "" : "s"})
+              </button>
+            </form>
+          )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -171,7 +193,7 @@ export default async function MagazinesPage(props: PageProps<"/magazines">) {
             </p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left text-sm">
+              <table className="w-full min-w-[960px] text-left text-sm">
                 <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
                   <tr>
                     <th className="py-2 pr-3">Customer</th>
@@ -179,6 +201,8 @@ export default async function MagazinesPage(props: PageProps<"/magazines">) {
                     <th className="py-2 pr-3">Size</th>
                     <th className="py-2 pr-3 text-right">Price</th>
                     <th className="py-2 pr-3">Order / quote</th>
+                    <th className="py-2 pr-3">Artwork</th>
+                    <th className="py-2 pr-3">Invoice</th>
                     <th className="py-2">Salesperson</th>
                   </tr>
                 </thead>
@@ -205,6 +229,30 @@ export default async function MagazinesPage(props: PageProps<"/magazines">) {
                         </Link>{" "}
                         {b.doc_type === "quote" && <Badge tone="amber">Quote</Badge>}
                         <span className="ml-1 text-xs text-fp-mid">{longDate(b.issue_date)}</span>
+                      </td>
+                      <td className="py-2 pr-3">
+                        {b.doc_type === "quote" ? (
+                          "—"
+                        ) : b.artwork_job_id && b.artwork_stage ? (
+                          <Link href={`/design/${b.artwork_job_id}`} className="hover:underline">
+                            <Badge tone={designStageTone(b.artwork_stage)}>{designStageLabel(b.artwork_stage)}</Badge>
+                          </Link>
+                        ) : (
+                          <Link href={`/sales/${b.document_id}`} className="hover:underline">
+                            <Badge tone="pink">Needed</Badge>
+                          </Link>
+                        )}
+                      </td>
+                      <td className="py-2 pr-3">
+                        {b.invoice_id ? (
+                          <Link href={`/sales/${b.invoice_id}`} className="text-fp-teal-deep hover:underline">
+                            {b.invoice_number}
+                          </Link>
+                        ) : b.doc_type === "quote" ? (
+                          "—"
+                        ) : (
+                          <span className="text-xs text-fp-mid">Not yet</span>
+                        )}
                       </td>
                       <td className="py-2">{b.owner_name ?? "—"}</td>
                     </tr>

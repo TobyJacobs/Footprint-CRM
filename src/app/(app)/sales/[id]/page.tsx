@@ -11,12 +11,12 @@ import { gbp, longDate, personName, shortDateTime } from "@/lib/customers/displa
 import { getDocumentLines } from "@/lib/sales/data";
 import { docTypes, isDocType, isLockedRecord, lossReasons, marginPercent, marginText, poStatusLabel, quoteKindLabel, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
-import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, markQuoteDeclined, setDocumentStatus, setLineGpOverride } from "../actions";
+import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, markQuoteDeclined, requestAdvertArtwork, setDocumentStatus, setLineGpOverride } from "../actions";
 import { raisePurchaseOrders } from "../(operations)/purchase-orders/actions";
 import { createProjectForOrder } from "../../projects/actions";
 import EmailCard from "../EmailCard";
 import { orderStages, quoteStages } from "@/lib/sales/stages";
-import { DesignSection, FinanceSummary, PartInvoiceForm, ProjectSection, PurchaseOrdersSection, StageBar, type OrderPo, type OrderProject } from "./SalesOrderSections";
+import { AdvertArtworkSection, DesignSection, FinanceSummary, PartInvoiceForm, ProjectSection, PurchaseOrdersSection, StageBar, type AdvertArtwork, type OrderPo, type OrderProject } from "./SalesOrderSections";
 
 export async function generateMetadata(props: PageProps<"/sales/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -73,9 +73,27 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
       : Promise.resolve({ data: null }),
   ]);
 
-  // For a sales order: its design jobs, for the stage bar.
+  // For a sales order: its design jobs, for the stage bar and advert artwork.
   const { data: designJobs } =
-    type === "sales_order" ? await supabase.from("design_jobs").select("stage").eq("sales_order_id", id) : { data: [] as { stage: string }[] };
+    type === "sales_order"
+      ? await supabase.from("design_jobs").select("id, number, stage, advert_size_id, artwork_source").eq("sales_order_id", id)
+      : { data: [] as { id: string; number: number; stage: string; advert_size_id: string | null; artwork_source: string | null }[] };
+
+  // Forget Me Not adverts on an order: one artwork row per size.
+  const advertSizeIds = [...new Set(lines.map((l) => l.advert_size_id).filter((v): v is string => !!v))];
+  const { data: advertSizes } =
+    type === "sales_order" && advertSizeIds.length
+      ? await supabase.from("advert_sizes").select("id, name").in("id", advertSizeIds)
+      : { data: [] as { id: string; name: string }[] };
+  const advertArtwork: AdvertArtwork[] = (advertSizes ?? []).map((sz) => {
+    const job = (designJobs ?? []).find((j) => j.advert_size_id === sz.id);
+    return {
+      sizeId: sz.id,
+      sizeName: sz.name,
+      adverts: lines.filter((l) => l.advert_size_id === sz.id).length,
+      job: job ? { id: job.id, number: job.number, stage: job.stage, source: job.artwork_source } : null,
+    };
+  });
 
   // Names for "overridden by" on any lines that have a GP override.
   const overriderIds = [...new Set(lines.map((l) => l.gp_override_by).filter((v): v is string => !!v))];
@@ -344,6 +362,15 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
               />
             </Card>
           </div>
+          {advertArtwork.length > 0 && (
+            <div className="mt-6">
+              <AdvertArtworkSection
+                items={advertArtwork}
+                canRequest={canEdit && doc.status !== "cancelled"}
+                request={(sizeId) => requestAdvertArtwork.bind(null, id, sizeId)}
+              />
+            </div>
+          )}
           {/* Footprint's flow: sales order → POs, design work and project. */}
           <div className="mt-6 grid gap-6 lg:grid-cols-3">
             <PurchaseOrdersSection
