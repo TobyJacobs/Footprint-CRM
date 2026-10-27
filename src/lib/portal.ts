@@ -93,7 +93,40 @@ export type PortalOverview = {
   campaigns: PortalCampaign[];
   retainers: PortalRetainer[];
   tickets: PortalTicketSummary[];
+  adverts: PortalAdvert[];
+  invoices: PortalInvoice[];
 };
+
+export type PortalAdvert = {
+  month: string;
+  edition: string;
+  size: string | null;
+  order_number: string;
+  customer_name: string;
+  artwork_stage: string | null;
+  artwork_source: "design" | "customer" | "repeat" | null;
+};
+
+export type PortalInvoice = {
+  number: string;
+  title: string | null;
+  status: "issued" | "paid";
+  issue_date: string;
+  due_date: string | null;
+  total: number;
+  owed: number;
+  customer_name: string;
+  token: string;
+};
+
+// How an advert's artwork is getting on, in the customer's words.
+export function advertArtworkLabel(stage: string | null, source: string | null): string {
+  if (!stage) return "Artwork to arrange";
+  if (["approved", "production", "done"].includes(stage)) return "Artwork approved";
+  if (stage === "with_customer") return "Waiting for your approval";
+  if (stage === "amends") return "Making your changes";
+  return source === "customer" ? "Checking your artwork" : "Being designed";
+}
 
 // Customer support wording, shared by the portal and the staff tab.
 export const ticketKindLabel = (k: string) => (k === "change" ? "Change request" : "Question");

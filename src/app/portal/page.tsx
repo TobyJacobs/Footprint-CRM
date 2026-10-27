@@ -5,6 +5,7 @@ import { Badge, Card, primaryButton, secondaryButton } from "@/components/ui";
 import { gbp, longDate, shortDateTime } from "@/lib/customers/display";
 import { ukToday } from "@/lib/dates";
 import {
+  advertArtworkLabel,
   getPortal,
   ticketKindLabel,
   ticketNumber,
@@ -20,6 +21,7 @@ import { signOutOfPortal } from "./actions";
 export const metadata: Metadata = { title: "Your portal" };
 
 type Tone = "grey" | "teal" | "pink" | "amber" | "red";
+const longMonth = (d: string) => new Date(`${d.slice(0, 7)}-01T12:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
 const contentLabel: Record<PortalContent["status"], string> = {
   drafting: "Being written",
   client_approval: "Waiting for your approval",
@@ -37,8 +39,8 @@ function quoteStatus(q: PortalQuote): { label: string; tone: "grey" | "teal" | "
   return { label: "Waiting for your reply", tone: "pink" };
 }
 
-// The signed-in customer's home: their quotes, marketing, hosting plans and
-// support messages, and only theirs.
+// The signed-in customer's home: their quotes, adverts, invoices, marketing,
+// hosting plans and support messages, and only theirs.
 export default async function PortalHomePage() {
   const portal = await getPortal();
   if (!portal) redirect("/portal/login");
@@ -64,6 +66,8 @@ export default async function PortalHomePage() {
       <nav aria-label="Sections" className="flex flex-wrap gap-2 text-sm">
         {[
           ["#quotes", "Quotes"],
+          ["#adverts", "Adverts"],
+          ["#invoices", "Invoices"],
           ["#marketing", "Marketing"],
           ["#hosting", "Hosting"],
           ["#support", "Support"],
@@ -105,6 +109,88 @@ export default async function PortalHomePage() {
                 );
               })}
             </ul>
+          )}
+        </Card>
+      </div>
+
+      <div id="adverts" className="scroll-mt-4">
+        <Card title="Your adverts in Forget Me Not">
+          {portal.adverts.length === 0 ? (
+            <p className="text-sm text-fp-mid">No adverts booked with us.</p>
+          ) : (
+            <ul className="grid gap-4 text-sm">
+              {[...new Set(portal.adverts.map((a) => a.month))].map((m) => (
+                <li key={m}>
+                  <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-fp-mid">{longMonth(m)}</h3>
+                  <ul className="divide-y divide-fp-border rounded-md border border-fp-border">
+                    {portal.adverts
+                      .filter((a) => a.month === m)
+                      .map((a, i) => {
+                        const art = advertArtworkLabel(a.artwork_stage, a.artwork_source);
+                        return (
+                          <li key={i} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+                            <span>
+                              <strong>{a.edition}</strong> · {a.size ?? "Advert"}
+                              <span className="text-xs text-fp-mid">
+                                {" "}
+                                · order {a.order_number}
+                                {several ? ` · ${a.customer_name}` : ""}
+                              </span>
+                            </span>
+                            <Badge tone={art === "Artwork approved" ? "teal" : art === "Waiting for your approval" ? "pink" : "grey"}>{art}</Badge>
+                          </li>
+                        );
+                      })}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
+
+      <div id="invoices" className="scroll-mt-4">
+        <Card title="Your invoices">
+          {portal.invoices.length === 0 ? (
+            <p className="text-sm text-fp-mid">No invoices yet.</p>
+          ) : (
+            <>
+              {portal.invoices.some((v) => Number(v.owed) > 0) && (
+                <p className="mb-3 text-sm">
+                  Still to pay: <strong>{gbp(portal.invoices.reduce((sum, v) => sum + Number(v.owed), 0))}</strong>
+                </p>
+              )}
+              <ul className="divide-y divide-fp-border text-sm">
+                {portal.invoices.map((v) => {
+                  const owed = Number(v.owed);
+                  const overdue = owed > 0 && !!v.due_date && v.due_date < ukToday();
+                  return (
+                    <li key={v.token} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold">
+                          {v.number}
+                          {v.title ? ` · ${v.title}` : ""}
+                        </p>
+                        <p className="text-xs text-fp-mid">
+                          {longDate(v.issue_date)}
+                          {v.due_date && owed > 0 ? ` · due ${longDate(v.due_date)}` : ""}
+                          {several ? ` · ${v.customer_name}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold">{gbp(Number(v.total))}</span>
+                        <Badge tone={owed === 0 ? "teal" : overdue ? "red" : "amber"}>
+                          {owed === 0 ? "Paid" : overdue ? `Overdue · ${gbp(owed)}` : `To pay · ${gbp(owed)}`}
+                        </Badge>
+                        <Link href={`/d/${v.token}`} className={secondaryButton}>
+                          View / PDF
+                        </Link>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
         </Card>
       </div>

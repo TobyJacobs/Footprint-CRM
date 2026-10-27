@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.36.0",
+    date: "2026-10-27",
+    title: "Portal: adverts and invoices",
+    changes: [
+      "Customer portal: advertisers see their Forget Me Not adverts by month (edition, size, order) and how the artwork is getting on, in plain words.",
+      "Customer portal: issued and paid invoices (never drafts), what's still to pay after any credit notes, overdue ones highlighted, and View / PDF for each.",
+    ],
+  },
+  {
     version: "0.35.0",
     date: "2026-10-27",
     title: "Flatplans",
