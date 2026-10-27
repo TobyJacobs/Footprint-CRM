@@ -5,7 +5,7 @@ One short entry per session. Newest at the top.
 ---
 
 ## 27 October 2026: Drag design jobs on the board
-- Built drag and drop between stages on the Design Workload board (0.33.0). Checked locally without moving the real job; PR waiting for the owner.
+- Built drag and drop between stages on the Design Workload board (0.33.0, #77). Merged at the owner's request and checked live (job moved and moved back).
 
 ## 27 October 2026 (evening): Mag Manager review with the director
 - Claude looked through Mag Manager (read only, in the owner's Chrome) with Toby and the director: dashboard, publications, bookings, renewals, actions, artwork, production, articles, reports, settings, flatplan. Invoicing opens Xero. Nothing changed; no customer details recorded.
