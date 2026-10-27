@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.30.0",
+    date: "2026-10-27",
+    title: "Portal sign-in code",
+    changes: [
+      "Customer portal: the sign-in email now has a 6-digit code as well as the button. Read the email on your phone and type the code on your laptop (the button only signs in the device you open it on).",
+      "The code works once, for 30 minutes, and stops working after 5 wrong tries.",
+    ],
+  },
+  {
     version: "0.29.0",
     date: "2026-10-27",
     title: "Portal: marketing and customer support",

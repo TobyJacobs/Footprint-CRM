@@ -1,10 +1,10 @@
 "use server";
 
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomInt } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { sendEmail } from "@/lib/email/sendgrid";
-import { PORTAL_COOKIE, PORTAL_SESSION_DAYS, getPortalSession, getPortalTicket, ticketKindLabel, ticketNumber } from "@/lib/portal";
+import { PORTAL_COOKIE, PORTAL_EMAIL_COOKIE, PORTAL_SESSION_DAYS, getPortalSession, getPortalTicket, ticketKindLabel, ticketNumber } from "@/lib/portal";
 import { siteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,12 +21,18 @@ export async function requestPortalLink(fd: FormData) {
   const key = process.env.PORTAL_LINK_KEY;
   if (!key) redirect("/portal/login?error=setup");
 
+  // The button's token and a 6-digit code for typing on another device (e.g.
+  // email read on a phone, signing in on a laptop). The database gets only
+  // fingerprints; the code's is mixed with the token's.
   const token = randomBytes(32).toString("hex");
+  const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+  const tokenHash = sha256(token);
   const supabase = await createClient();
   const { data: ok, error } = await supabase.rpc("portal_request_link", {
     p_key: key,
     p_email: email,
-    p_token_hash: sha256(token),
+    p_token_hash: tokenHash,
+    p_code_hash: sha256(`${tokenHash}:${code}`),
   });
   if (error) {
     console.error("Portal sign-in link refused:", error.message);
@@ -41,15 +47,51 @@ export async function requestPortalLink(fd: FormData) {
       "Here's your link to sign in to the Footprint Group customer portal:",
       link,
       "",
-      "It works once and stops working after 30 minutes. If you didn't ask for it, you can ignore this email.",
+      `Or type this code on the sign-in screen: ${code}`,
+      "",
+      "They work once and stop working after 30 minutes. If you didn't ask for this, you can ignore this email.",
       "",
       "Footprint Group",
     ].join("\n");
-    const html = `<p>Hello,</p><p>Here's your link to sign in to the Footprint Group customer portal:</p><p><a href="${link}" style="display:inline-block;background:#de2277;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:600">Sign in to your portal</a></p><p>It works once and stops working after 30 minutes. If you didn't ask for it, you can ignore this email.</p><p>Footprint Group</p>`;
+    const html = `<p>Hello,</p><p>Here's your link to sign in to the Footprint Group customer portal:</p><p><a href="${link}" style="display:inline-block;background:#de2277;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:600">Sign in to your portal</a></p><p>Or type this code on the sign-in screen (handy if you're reading this on another device):</p><p style="font-size:28px;font-weight:700;letter-spacing:6px">${code}</p><p>They work once and stop working after 30 minutes. If you didn't ask for this, you can ignore this email.</p><p>Footprint Group</p>`;
     const sent = await sendEmail({ to: email, subject: "Your Footprint Group sign-in link", text, html, tag: "portal-sign-in" });
     if (!sent.ok) console.error("Portal sign-in email failed:", sent.error);
   }
+  // Remember the email (in a private cookie, not the address bar) so the code
+  // box knows whose code it is. Set whatever the answer, so the page can't be
+  // used to find out who is a customer.
+  (await cookies()).set(PORTAL_EMAIL_COOKIE, email, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/portal",
+    maxAge: 30 * 60,
+  });
   redirect("/portal/login?sent=1");
+}
+
+async function startSession(session: string) {
+  const jar = await cookies();
+  jar.set(PORTAL_COOKIE, session, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: PORTAL_SESSION_DAYS * 24 * 60 * 60,
+  });
+  jar.delete({ name: PORTAL_EMAIL_COOKIE, path: "/portal" });
+  redirect("/portal");
+}
+
+// The 6-digit code typed on the "check your inbox" screen.
+export async function signInWithCode(fd: FormData) {
+  const email = (await cookies()).get(PORTAL_EMAIL_COOKIE)?.value;
+  if (!email) redirect("/portal/login?error=expired");
+  const code = String(fd.get("code") ?? "").replace(/\D/g, "");
+  const supabase = await createClient();
+  const { data: session } = await supabase.rpc("portal_sign_in_code", { p_email: email, p_code: code });
+  if (typeof session !== "string" || !session) redirect("/portal/login?sent=1&error=code");
+  await startSession(session);
 }
 
 // The customer clicked Sign in on the link's page. (A button rather than the
@@ -59,14 +101,7 @@ export async function signInWithLink(token: string) {
   const supabase = await createClient();
   const { data: session } = await supabase.rpc("portal_sign_in", { p_link: token });
   if (typeof session !== "string" || !session) redirect("/portal/login?error=link");
-  (await cookies()).set(PORTAL_COOKIE, session, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: PORTAL_SESSION_DAYS * 24 * 60 * 60,
-  });
-  redirect("/portal");
+  await startSession(session);
 }
 
 // ─── Customer support ───────────────────────────────────────────────────────

@@ -10,6 +10,8 @@ import { createClient } from "@/lib/supabase/server";
 // 20261106120000_customer_portal migration).
 export const PORTAL_COOKIE = "fp_portal";
 export const PORTAL_SESSION_DAYS = 14;
+// Who asked for the last sign-in email, so the code box knows whose code it is.
+export const PORTAL_EMAIL_COOKIE = "fp_portal_email";
 
 export type PortalQuote = {
   number: string;
