@@ -295,3 +295,7 @@ This refines the "Supabase, London region" part of the technical foundations dec
 ## 27 October 2026 - GoCardless and Xero moved to Go-live
 **Decision (owner):** the last two Wave 2 tasks, "Payments by Direct Debit (GoCardless)" and "Xero sync", were moved on the Roadmap from Wave 2 to the Go-live stage (positions 17 and 18). Wave 2 now has nothing left to do.
 **Why:** the owner wanted GoCardless and Xero left for later (15 October 2026); they belong with switching off Zoho at Go-live.
+
+## 27 October 2026 - Wave 0+ removed from the Roadmap
+**Decision (owner):** removed the empty Roadmap wave "0+ Password manager and Teams chat". It had no tasks or requests left. The work lives in Go-live: "Choose a password manager and move passwords from Zoho Vault" and "Move team chat from Zoho Cliq to Microsoft Teams".
+**Why:** an empty wave was clutter; the moves happen at Go-live.
