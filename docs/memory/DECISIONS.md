@@ -321,3 +321,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 ## 27 October 2026 - All artwork in one design queue (Wave 5, part 2)
 **Decision (owner):** advert artwork must use the same design pipeline as sales orders and projects, so all artwork (magazines, print orders, projects) flows into one design queue.
 **How (Claude):** advert artwork is a normal design job linked to the sales order (and advert size), on the Design board. Adverts don't need a project; the "design jobs start from a project" rule (20 October 2026) still applies to everything else. Choices per advert size: we design it / customer supplies it (designer checks) / same as last time (approved). Invoicing issue by issue: "Create invoices for [month]" makes draft invoices per order for that month's adverts; lines remember their invoice. PR #76 (0.32.0).
+
+## 27 October 2026 - Magazine renewals scoring
+**Decision (owner):** build a renewals list "like Mag Manager's". Scores copied from Mag Manager's settings: last month 20, 2 months ago 16, 3 months ago 12, 4–6 months 8, 7–12 months 4, minus 1 with future bookings. Themed-issue scores left out (no issue themes recorded). Marks per month: Contacted, Carried forward, Definitely out (stays off until they book again). PR #78 (0.33.0).
