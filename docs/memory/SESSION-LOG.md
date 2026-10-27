@@ -7,6 +7,7 @@ One short entry per session. Newest at the top.
 ## 27 October 2026: GoCardless and Xero moved to Go-live
 - At the owner's request, moved the two remaining Wave 2 roadmap tasks (GoCardless Direct Debit, Xero sync) to the Go-live stage. Wave 2 is now complete.
 - Removed the empty Wave 0+ (Password manager and Teams chat) from the Roadmap at the owner's request; its Vault and Cliq tasks were already in Go-live.
+- Started Wave 5 (Magazines). Plan: the owner signs in to Mag Manager in Claude's browser pane, Claude looks through it read only and writes the feature list. Paused: the owner will do the sign-in later with the director. Nothing built yet.
 
 ## 26 October 2026: Sign-in lands on the release address
 - Found why sign-in sometimes returned to `<release id>--footprintgroupos.netlify.app` (skew protection + address taken from the request). Fixed: sign-in and emailed links now use the site's main address fixed at build time (#60). Merged at the owner's request and checked live.
