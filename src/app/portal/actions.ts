@@ -4,7 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { sendEmail } from "@/lib/email/sendgrid";
-import { PORTAL_COOKIE, PORTAL_SESSION_DAYS } from "@/lib/portal";
+import { PORTAL_COOKIE, PORTAL_SESSION_DAYS, getPortalSession, getPortalTicket, ticketKindLabel, ticketNumber } from "@/lib/portal";
 import { siteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
@@ -67,6 +67,63 @@ export async function signInWithLink(token: string) {
     maxAge: PORTAL_SESSION_DAYS * 24 * 60 * 60,
   });
   redirect("/portal");
+}
+
+// ─── Customer support ───────────────────────────────────────────────────────
+
+const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+// Email everyone who works on customer support that a message has arrived.
+async function alertSupportTeam(ticketId: string, intro: string, body: string) {
+  const key = process.env.PORTAL_LINK_KEY;
+  if (!key) return;
+  const supabase = await createClient();
+  const { data: recipients, error } = await supabase.rpc("portal_support_alert_recipients", { p_key: key });
+  if (error || !Array.isArray(recipients) || recipients.length === 0) {
+    if (error) console.error("Support alert recipients:", error.message);
+    return;
+  }
+  const ticket = await getPortalTicket(ticketId);
+  if (!ticket) return;
+  const link = `${await siteUrl()}/support/${ticketId}`;
+  const heading = `${ticketNumber(ticket.number)} · ${ticketKindLabel(ticket.kind)} from ${ticket.customer_name}: ${ticket.subject}`;
+  const excerpt = body.length > 1000 ? `${body.slice(0, 1000)}…` : body;
+  const sent = await sendEmail({
+    to: (recipients as string[]).join(", "),
+    subject: `Customer support: ${heading}`,
+    text: `${intro}\n\n${heading}\n\n${excerpt}\n\nOpen it in FootprintOS: ${link}`,
+    html: `<p>${escapeHtml(intro)}</p><p><strong>${escapeHtml(heading)}</strong></p><p style="white-space:pre-wrap">${escapeHtml(excerpt)}</p><p><a href="${link}">Open it in FootprintOS</a></p>`,
+    tag: "support-alert",
+  });
+  if (!sent.ok) console.error("Support alert email failed:", sent.error);
+}
+
+export async function createSupportTicket(fd: FormData) {
+  const session = await getPortalSession();
+  if (!session) redirect("/portal/login");
+  const body = String(fd.get("body") ?? "").trim();
+  const supabase = await createClient();
+  const { data: id, error } = await supabase.rpc("portal_create_ticket", {
+    p_session: session,
+    p_customer_id: String(fd.get("customer_id") ?? ""),
+    p_kind: fd.get("kind") === "change" ? "change" : "question",
+    p_subject: String(fd.get("subject") ?? "").trim(),
+    p_body: body,
+  });
+  if (error || typeof id !== "string") redirect(`/portal/support/new?error=${encodeURIComponent(error?.message ?? "Something went wrong")}`);
+  await alertSupportTeam(id, "A customer has sent a new message from their portal.", body);
+  redirect(`/portal/support/${id}?sent=1`);
+}
+
+export async function replyToSupportTicket(ticketId: string, fd: FormData) {
+  const session = await getPortalSession();
+  if (!session) redirect("/portal/login");
+  const body = String(fd.get("body") ?? "").trim();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("portal_reply", { p_session: session, p_ticket_id: ticketId, p_body: body });
+  if (error) redirect(`/portal/support/${ticketId}?error=${encodeURIComponent(error.message)}`);
+  await alertSupportTeam(ticketId, "A customer has replied in a support conversation.", body);
+  redirect(`/portal/support/${ticketId}?sent=1`);
 }
 
 export async function signOutOfPortal() {
