@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.33.0",
+    date: "2026-10-27",
+    title: "Drag design jobs on the board",
+    changes: [
+      "Design Workload → Board: drag a job card onto another column to move it to that stage. The column lights up pink while you hover over it.",
+      "Works with a mouse on a computer. On a phone or tablet, use the \"Move to …\" button on each card as before.",
+    ],
+  },
+  {
     version: "0.32.0",
     date: "2026-10-27",
     title: "Magazines, part 2: artwork and monthly invoicing",
