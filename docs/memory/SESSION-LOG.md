@@ -12,6 +12,7 @@ One short entry per session. Newest at the top.
 - Merged at the owner's request; imported the plan (counts exactly as the spec); re-run added nothing. Checked live, including Preview as a non-director role (board-only action hidden).
 - Owner asked to drag actions between people to reassign: built (0.39.0, #83), merged and checked live (rows draggable; not dragged, to avoid changing a real owner).
 - Owner asked to combine FootprintAI and Transition into one tab: one menu item and shared tabs (0.40.0, #84). Merged and checked live.
+- Started **Reports** (Wave 7) at the owner's request; they chose to start fresh. Built Sales and profit, Magazine MI, Money owed and Customers with CSV (0.41.0, #85). 14 database checks. Merged and checked live (£153,466 last 12 months at 59.8% margin; £43,975.50 owed on 29 invoices).
 
 ## 27 October 2026 (evening): Mag Manager review with the director
 - Claude looked through Mag Manager (read only, in the owner's Chrome) with Toby and the director: dashboard, publications, bookings, renewals, actions, artwork, production, articles, reports, settings, flatplan. Invoicing opens Xero. Nothing changed; no customer details recorded.
