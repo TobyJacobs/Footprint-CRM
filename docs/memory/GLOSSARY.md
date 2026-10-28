@@ -17,3 +17,6 @@ Plain-English meanings of words the business uses. Add to this whenever a new te
 | Full sales flow | Owner, 26 October 2026 (the more detailed version): **Customer → New opportunity (shows in the pipeline) → sales order → Create project, Create design, Create PO.** |
 | DesReq | Design request: a job for the design team (a design job in FootprintOS). |
 | Web hosting plan | A recurring hosting service Footprint provides to a client, currently recorded in Zoho CRM. |
+| FootprintAI transition | The programme turning the digital unit into FootprintAI and putting AI to work across the group (from 28 October 2026). Tracked in FootprintOS → Transition. |
+| Week (transition) | A Wednesday meeting in the FootprintAI transition (Week 1 = Wed 28 Oct 2026, Week 8 = Wed 16 Dec, then After Christmas). Not the same as a FootprintOS build "wave". |
+| Gate | A board decision point in the transition; nothing moves past it until signed off. |
