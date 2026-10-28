@@ -5,7 +5,8 @@ import NoAccess from "@/components/NoAccess";
 import PageHeader from "@/components/PageHeader";
 import { Notice } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth";
-import { currentWeek, loadTransition, meetingLabel, shortDay, streamColour, weekOf, weeksOverdue, type Action } from "@/lib/transition";
+import { canEditFully, currentWeek, loadTransition, meetingLabel, shortDay, streamColour, weekOf, weeksOverdue, type Action } from "@/lib/transition";
+import { AssignDrag, DragAction, DropPerson } from "./AssignDrag";
 import { ActionPanel, BoardLabel, RowStatus, StreamTag, TransitionTabs, monoDate } from "./parts";
 
 export const metadata: Metadata = { title: "Transition" };
@@ -48,10 +49,11 @@ export default async function TransitionThisWeek(props: PageProps<"/transition">
   const streamName = (k: string) => data.streams.find((s) => s.key === k)?.name ?? k;
 
   const row = (a: Action, late: number) => (
-    <li key={a.id} className="relative">
+    <DragAction key={a.id} id={a.id} owner={a.owner_id} canDrag={canEditFully(data, a)}>
       <Link
         href={linkTo(a)}
         scroll={false}
+        draggable={false}
         className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border bg-white py-2 pl-3 pr-2 hover:border-fp-pink ${
           late ? "border-fp-error/40" : "border-fp-border"
         }`}
@@ -72,8 +74,11 @@ export default async function TransitionThisWeek(props: PageProps<"/transition">
       <div className="absolute right-2 top-1/2 -translate-y-1/2">
         <RowStatus data={data} a={a} back={open ? `${here}${here.includes("?") ? "&" : "?"}open=${open.id}` : here} />
       </div>
-    </li>
+    </DragAction>
   );
+  // Who an action can be dragged to: everyone who owns one, and the invite list.
+  const assignable = data.people.filter((p) => p.is_member || data.actions.some((a) => a.owner_id === p.id));
+  const canReassign = data.access === "full" || data.access === "member";
 
   return (
     <>
@@ -120,9 +125,11 @@ export default async function TransitionThisWeek(props: PageProps<"/transition">
             {groups.length === 0 ? (
               <p className="rounded-md border border-fp-border bg-white px-4 py-6 text-center text-sm text-fp-mid">Nothing due this week and nothing overdue.</p>
             ) : (
+              <AssignDrag back={here} people={assignable}>
               <div className="grid gap-5">
+                {canReassign && <p className="-mb-2 text-xs text-fp-mid">Drag an action onto someone to make them the owner.</p>}
                 {groups.map(([k, g]) => (
-                  <section key={k}>
+                  <DropPerson key={k} owner={k === "none" ? null : k} className="rounded-lg p-1 -m-1">
                     <h3 className="mb-2 font-bold">
                       {g.name}{" "}
                       <span className="text-sm font-normal text-fp-dark/75">
@@ -134,9 +141,10 @@ export default async function TransitionThisWeek(props: PageProps<"/transition">
                       {g.overdue.map((a) => row(a, weeksOverdue(a, week, weeks)))}
                       {g.due.map((a) => row(a, 0))}
                     </ul>
-                  </section>
+                  </DropPerson>
                 ))}
               </div>
+              </AssignDrag>
             )}
           </>
         ) : null}

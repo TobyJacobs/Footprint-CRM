@@ -143,3 +143,16 @@ export async function rememberFilters(query: string) {
     maxAge: 60 * 60 * 24 * 180,
   });
 }
+
+// Drag an action onto a person (This week) to make them its owner. The
+// database only lets directors, admins and the invite list do this.
+export async function reassignAction(id: string, ownerId: string | null, back: string) {
+  await need();
+  const to = safeBack(back);
+  if (ownerId !== null && !UUID_RE.test(ownerId)) fail(to, "Unknown person");
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("transition_actions").update({ owner_id: ownerId }).eq("id", id).select("id");
+  if (error) fail(to, error.message);
+  if (!data?.length) fail(to, "You can't reassign that action");
+  done(to);
+}

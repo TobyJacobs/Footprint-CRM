@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.39.0",
+    date: "2026-10-28",
+    title: "Drag to reassign transition actions",
+    changes: [
+      "Transition → This week: drag an action onto someone's group to make them the owner. While dragging, a bar of everyone on the transition appears, so you can also drop it on someone with nothing due that week (or on “No owner”).",
+      "Directors, admins and the invite list can do this (not board-only actions for the invite list). On a phone, change the owner in the action's side panel.",
+    ],
+  },
+  {
     version: "0.38.0",
     date: "2026-10-28",
     title: "FootprintAI transition tracker",
