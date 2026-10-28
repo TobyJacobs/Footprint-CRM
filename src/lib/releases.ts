@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.41.0",
+    date: "2026-10-28",
+    title: "Reports",
+    changes: [
+      "New Reports tab (Directors and Finance; other roles can be given it in Admin → Roles), each with a date range, the same period last year and a Download CSV button for Excel.",
+      "Sales and profit: sales, gross profit and margin by month, salesperson, business unit, sales account or customer. Money owed: issued unpaid invoices by customer in age bands (not yet due, 1–30, 31–60, 61–90, over 90 days).",
+      "Customers: top customers with what they buy, new customers and those who've stopped buying. Magazine MI: booked against target and pages per edition and month, space sold by size, new advertisers and sales by salesperson.",
+    ],
+  },
+  {
     version: "0.40.0",
     date: "2026-10-28",
     title: "FootprintAI and Transition in one place",
