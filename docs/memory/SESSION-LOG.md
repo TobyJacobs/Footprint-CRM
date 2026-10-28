@@ -16,6 +16,7 @@ One short entry per session. Newest at the top.
 - Built **magazine renewals** (#78): Mag Manager scoring, marks, salesperson filter. Clashed with PR #77 (drag-and-drop Design board, another session, 0.33.0), so renumbered renewals to 0.34.0. Both merged and checked live.
 - Built **flatplans** (0.35.0, #79): page grid per issue, drag adverts and editorial onto pages (same drag pattern as the Design board), colour-coded fullness. 12 database checks. Merged and checked live (Fareham November: 88 pages).
 - Built **portal part 2** (0.36.0, #80): adverts with artwork progress and invoices with what's owed. 7 database checks. Merged; live sign-in page checked; owner then checked the signed-in view: correct.
+- Built **flipbooks** (0.37.0, #81): FootprintOS hosts them (today they're a Mag Manager link). PDF.js + StPageFlip; tested with a throwaway PDF locally and in a local production build. Merged and checked live: embed headers right, /read/fareham shows "not available yet" until a PDF is uploaded, flatplan shows the Digital edition box.
 
 ## 27 October 2026: Roadmap tidy, Wave 5 prep, Customer portal
 - At the owner's request, moved the two remaining Wave 2 roadmap tasks (GoCardless Direct Debit, Xero sync) to the Go-live stage. Wave 2 is now complete.
