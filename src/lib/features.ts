@@ -9,6 +9,7 @@ import {
   Megaphone,
   Newspaper,
   Palette,
+  Rocket,
   Map,
   Settings,
   Sparkles,
@@ -117,6 +118,14 @@ export const features: Feature[] = [
     href: "/ai",
     icon: Sparkles,
     description: "The Footprint AI programme: the agents and systems we're building, their progress and live scorecards. Invite only.",
+    wave: 4,
+  },
+  {
+    key: "transition",
+    label: "Transition",
+    href: "/transition",
+    icon: Rocket,
+    description: "The FootprintAI transition: workstreams, Wednesday meetings, gates and every action with its owner. Invite only.",
     wave: 4,
   },
   {
