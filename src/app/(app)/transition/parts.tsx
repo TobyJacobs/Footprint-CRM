@@ -1,4 +1,6 @@
 import Link from "next/link";
+import FootprintAiTabs from "@/components/FootprintAiTabs";
+import { getCurrentUser } from "@/lib/auth";
 import { X } from "lucide-react";
 import { inputClass, primaryButton, secondaryButton, dangerButton } from "@/components/ui";
 import { shortDateTime } from "@/lib/customers/display";
@@ -17,28 +19,16 @@ import {
 import { addActionUpdate, deleteAction, saveAction, setActionStatus } from "./actions";
 import StatusSelect from "./StatusSelect";
 
-export function TransitionTabs({ current, full }: { current: "week" | "actions" | "timeline" | "people"; full: boolean }) {
-  const tabs = [
-    { key: "week", label: "This week", href: "/transition" },
-    { key: "actions", label: "All actions", href: "/transition/all" },
-    { key: "timeline", label: "Timeline", href: "/transition/timeline" },
-    ...(full ? [{ key: "people", label: "Invite list", href: "/transition/people" }] : []),
-  ];
+// The FootprintAI tabs (transition and agents), as this person may see them.
+export async function TransitionTabs() {
+  const user = await getCurrentUser();
   return (
-    <nav aria-label="Transition" className="flex gap-1 overflow-x-auto border-b border-fp-border bg-white px-6 lg:px-10">
-      {tabs.map((t) => (
-        <Link
-          key={t.key}
-          href={t.href}
-          aria-current={t.key === current ? "page" : undefined}
-          className={`-mb-px whitespace-nowrap border-b-2 px-3 py-3 text-sm font-semibold ${
-            t.key === current ? "border-fp-pink text-fp-black" : "border-transparent text-fp-mid hover:text-fp-black"
-          }`}
-        >
-          {t.label}
-        </Link>
-      ))}
-    </nav>
+    <FootprintAiTabs
+      transition={!!user.transitionAccess}
+      transitionFull={user.transitionAccess === "full"}
+      agents={user.can("ai", "view")}
+      agentsAdmin={user.isAdmin}
+    />
   );
 }
 

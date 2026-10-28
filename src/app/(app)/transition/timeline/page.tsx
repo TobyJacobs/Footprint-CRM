@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import NoAccess from "@/components/NoAccess";
 import PageHeader from "@/components/PageHeader";
 import { getCurrentUser } from "@/lib/auth";
@@ -20,7 +21,10 @@ const hatch = "repeating-linear-gradient(135deg, #f0eef2 0 6px, transparent 6px 
 // each action as a chip in its week coloured by status, gates as lines.
 export default async function TransitionTimeline() {
   const user = await getCurrentUser();
-  if (!user.transitionAccess) return <NoAccess title="Transition" />;
+  if (!user.transitionAccess) {
+    if (user.can("ai", "view")) redirect("/ai");
+    return <NoAccess title="FootprintAI" />;
+  }
   const data = await loadTransition(user.transitionAccess, user.previewRole);
   const { weeks } = data;
   const now = currentWeek(weeks);
@@ -46,8 +50,8 @@ export default async function TransitionTimeline() {
 
   return (
     <>
-      <PageHeader title="FootprintAI transition" intro="The whole programme at a glance: streams, weeks, gates and every action." />
-      <TransitionTabs current="timeline" full={data.access === "full"} />
+      <PageHeader title="FootprintAI" intro="The whole programme at a glance: streams, weeks, gates and every action." />
+      <TransitionTabs />
       <div className="grid gap-5 px-4 py-6 sm:px-6 lg:px-10">
         <div>
           <p className="mb-1 text-sm font-semibold">

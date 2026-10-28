@@ -19,7 +19,10 @@ const FILTERS = ["stream", "owner", "status", "week", "mine"] as const;
 // Every action, grouped by phase, with filters (remembered per person).
 export default async function TransitionRegister(props: PageProps<"/transition/all">) {
   const user = await getCurrentUser();
-  if (!user.transitionAccess) return <NoAccess title="Transition" />;
+  if (!user.transitionAccess) {
+    if (user.can("ai", "view")) redirect("/ai");
+    return <NoAccess title="FootprintAI" />;
+  }
   const sp = await props.searchParams;
   const get = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
 
@@ -79,8 +82,8 @@ export default async function TransitionRegister(props: PageProps<"/transition/a
 
   return (
     <>
-      <PageHeader title="FootprintAI transition" intro="Every action, grouped by phase. Click one to see or change it." />
-      <TransitionTabs current="actions" full={data.access === "full"} />
+      <PageHeader title="FootprintAI" intro="Every action, grouped by phase. Click one to see or change it." />
+      <TransitionTabs />
       <RememberFilters query={query.toString()} />
       <div className="grid gap-5 px-4 py-6 sm:px-6 lg:px-10">
         <Notice searchParams={sp} />

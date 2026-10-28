@@ -55,7 +55,7 @@ function NavLink({ feature, active }: { feature: Feature; active: boolean }) {
 
 function Nav({ pathname, visible, section }: { pathname: string; visible: Feature[]; section: string | null }) {
   const isActive = (f: Feature) =>
-    f.href === "/" ? pathname === "/" : pathname.startsWith(f.href);
+    f.href === "/" ? pathname === "/" : [f.href, ...(f.alsoActive ?? [])].some((h) => pathname.startsWith(h));
   return (
     <nav aria-label="Main" className="flex flex-col gap-1">
       <NavLink feature={home} active={isActive(home)} />
