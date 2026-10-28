@@ -11,6 +11,7 @@ One short entry per session. Newest at the top.
 - Read DJ's three files (roadmap reference page, actions JSON, TRANSITION-SPEC.md) and built the Transition section (0.38.0, #82): This week (by owner, overdue in red, inline status, side panel, gate banners), All actions (filters remembered, Add action), Timeline (swimlanes, gates, launch line, Christmas hatching), Invite list, home-page card. Board-only actions hidden in the database. 17 access checks.
 - Merged at the owner's request; imported the plan (counts exactly as the spec); re-run added nothing. Checked live, including Preview as a non-director role (board-only action hidden).
 - Owner asked to drag actions between people to reassign: built (0.39.0, #83), merged and checked live (rows draggable; not dragged, to avoid changing a real owner).
+- Owner asked to combine FootprintAI and Transition into one tab: one menu item and shared tabs (0.40.0, #84). Merged and checked live.
 
 ## 27 October 2026 (evening): Mag Manager review with the director
 - Claude looked through Mag Manager (read only, in the owner's Chrome) with Toby and the director: dashboard, publications, bookings, renewals, actions, artwork, production, articles, reports, settings, flatplan. Invoicing opens Xero. Nothing changed; no customer details recorded.
