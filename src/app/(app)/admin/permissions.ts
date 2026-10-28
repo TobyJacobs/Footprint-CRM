@@ -12,5 +12,5 @@ export const actionLabels: Record<(typeof ACTIONS)[number], string> = {
 // Admin access is controlled by the separate "admin" switch on each user,
 // not by roles, so it's left out of the permission grid.
 // FootprintAI is left out: access comes only from its invite list (Admin adds people there).
-// FootprintAI and the transition tracker are invite only, not role permissions.
-export const permissionFeatures = features.filter((f) => !["admin", "ai", "transition"].includes(f.key));
+// FootprintAI (agents and the transition tracker) is invite only, not role permissions.
+export const permissionFeatures = features.filter((f) => !["admin", "ai"].includes(f.key));

@@ -97,7 +97,6 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
     }
   }
 
-  if (transitionAccess) granted.add("transition:view");
   const can = (feature: string, action: Action) =>
     isAdmin || granted.has(`${feature}:${action}`);
 
@@ -108,7 +107,8 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
     isAdmin,
     can,
     visibleFeatureKeys: features
-      .filter((f) => (f.key === "admin" ? isAdmin : can(f.key, "view")))
+      // FootprintAI holds both the agents workspace and the transition tracker.
+      .filter((f) => (f.key === "admin" ? isAdmin : f.key === "ai" ? can("ai", "view") || !!transitionAccess : can(f.key, "view")))
       .map((f) => f.key),
     dashboards: myDashboards,
     seesAllSales,

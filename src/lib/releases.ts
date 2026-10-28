@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.40.0",
+    date: "2026-10-28",
+    title: "FootprintAI and Transition in one place",
+    changes: [
+      "The menu now has one FootprintAI item instead of FootprintAI and Transition. It opens on This week, with tabs for All actions, Timeline and Agents & systems (the agents workspace), plus the two invite lists for directors and admins.",
+      "Nobody sees more than before: people only on the transition don't get the agents workspace, and people only on the agents list don't get the transition.",
+    ],
+  },
+  {
     version: "0.39.0",
     date: "2026-10-28",
     title: "Drag to reassign transition actions",

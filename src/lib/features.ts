@@ -9,7 +9,6 @@ import {
   Megaphone,
   Newspaper,
   Palette,
-  Rocket,
   Map,
   Settings,
   Sparkles,
@@ -29,6 +28,8 @@ export type Feature = {
   description: string;
   wave: number;
   replaces?: string;
+  // Other addresses that also light this item up in the menu.
+  alsoActive?: string[];
   // Shown in the menu as separate links that share this feature's permission
   // (e.g. Sales and Operations, which both live under /sales).
   menuLinks?: { label: string; href: string; icon: LucideIcon; section: string }[];
@@ -115,17 +116,11 @@ export const features: Feature[] = [
   {
     key: "ai",
     label: "FootprintAI",
-    href: "/ai",
-    icon: Sparkles,
-    description: "The Footprint AI programme: the agents and systems we're building, their progress and live scorecards. Invite only.",
-    wave: 4,
-  },
-  {
-    key: "transition",
-    label: "Transition",
     href: "/transition",
-    icon: Rocket,
-    description: "The FootprintAI transition: workstreams, Wednesday meetings, gates and every action with its owner. Invite only.",
+    alsoActive: ["/ai"],
+    icon: Sparkles,
+    description:
+      "The FootprintAI programme: the transition (this week's actions, the register and timeline) and the agents and systems we're building and scoring. Invite only.",
     wave: 4,
   },
   {

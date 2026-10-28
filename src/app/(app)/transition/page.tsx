@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import NoAccess from "@/components/NoAccess";
 import PageHeader from "@/components/PageHeader";
@@ -15,7 +16,10 @@ export const metadata: Metadata = { title: "Transition" };
 // grouped by owner so the meeting can go round the room.
 export default async function TransitionThisWeek(props: PageProps<"/transition">) {
   const user = await getCurrentUser();
-  if (!user.transitionAccess) return <NoAccess title="Transition" />;
+  if (!user.transitionAccess) {
+    if (user.can("ai", "view")) redirect("/ai");
+    return <NoAccess title="FootprintAI" />;
+  }
   const sp = await props.searchParams;
   const data = await loadTransition(user.transitionAccess, user.previewRole);
   const { weeks } = data;
@@ -82,8 +86,8 @@ export default async function TransitionThisWeek(props: PageProps<"/transition">
 
   return (
     <>
-      <PageHeader title="FootprintAI transition" intro="What's due at this Wednesday's meeting, who owns it and where it's up to." />
-      <TransitionTabs current="week" full={data.access === "full"} />
+      <PageHeader title="FootprintAI" intro="What's due at this Wednesday's meeting, who owns it and where it's up to." />
+      <TransitionTabs />
       <div className="grid gap-5 px-4 py-6 sm:px-6 lg:px-10">
         <Notice searchParams={sp} />
         {data.weeks.length === 0 ? (

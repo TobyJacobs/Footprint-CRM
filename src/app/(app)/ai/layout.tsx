@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import NoAccess from "@/components/NoAccess";
 import PageHeader from "@/components/PageHeader";
 import { getCurrentUser } from "@/lib/auth";
-import AiTabs from "./AiTabs";
+import { TransitionTabs } from "../transition/parts";
 
 export const metadata: Metadata = { title: "FootprintAI" };
 
@@ -13,7 +13,7 @@ export default async function AiLayout({ children }: LayoutProps<"/ai">) {
   return (
     <>
       <PageHeader title="FootprintAI" intro="The agents and systems we're building and testing on ourselves first: where each one is, and how it's scoring." />
-      <AiTabs isAdmin={user.isAdmin} />
+      <TransitionTabs />
       <div className="px-6 py-8 lg:px-10">{children}</div>
     </>
   );

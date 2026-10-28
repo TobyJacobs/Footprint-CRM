@@ -21,8 +21,8 @@ export default async function TransitionPeople(props: PageProps<"/transition/peo
 
   return (
     <>
-      <PageHeader title="FootprintAI transition" intro="The invite list: people who can see and work on the transition, apart from board-only actions." />
-      <TransitionTabs current="people" full />
+      <PageHeader title="FootprintAI" intro="The invite list: people who can see and work on the transition, apart from board-only actions." />
+      <TransitionTabs />
       <div className="grid max-w-2xl gap-5 px-4 py-6 sm:px-6 lg:px-10">
         <Notice searchParams={sp} />
         <Card title={`Invite list (${members.length})`}>
