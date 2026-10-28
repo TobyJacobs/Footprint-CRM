@@ -1,4 +1,5 @@
 import Link from "next/link";
+import MyTransitionActions from "@/components/MyTransitionActions";
 import PageHeader from "@/components/PageHeader";
 import DirectorDashboard from "@/components/dashboards/DirectorDashboard";
 import FinanceDashboard from "@/components/dashboards/FinanceDashboard";
@@ -62,6 +63,7 @@ export default async function Home(props: PageProps<"/">) {
       )}
 
       <div className="grid gap-8 px-6 py-8 lg:px-10">
+        <MyTransitionActions />
         {view === "director" && <DirectorDashboard />}
         {view === "sales" && <SalesDashboard userId={user.id} />}
         {view === "finance" && <FinanceDashboard />}

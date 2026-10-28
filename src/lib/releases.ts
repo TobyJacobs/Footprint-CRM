@@ -11,6 +11,17 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.38.0",
+    date: "2026-10-28",
+    title: "FootprintAI transition tracker",
+    changes: [
+      "New Transition section (admins, Directors, the invite list and action owners only) for the FootprintAI transition: four workstreams, eight Wednesday meetings to Christmas, gates and every action with its owner.",
+      "This week: what's due at the next meeting plus anything overdue (in red), grouped by owner, with the status changed in place and a side panel for the detail, notes and updates. Arrows to look back or ahead.",
+      "All actions: the full register by phase, with filters (stream, owner, status, week, Mine) that are remembered, and Add action. Timeline: swimlanes by stream with gates, the launch and the Christmas break.",
+      "Board-only actions are hidden from everyone except admins and Directors by the database itself. Owners can change the status and notes of their own actions. “My transition actions” appears on your home page when you own open ones.",
+    ],
+  },
+  {
     version: "0.37.0",
     date: "2026-10-27",
     title: "Flipbooks",

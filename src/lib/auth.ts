@@ -22,6 +22,8 @@ export type CurrentUser = {
   seesAllSales: boolean;
   // Set while an admin is previewing the app as one role (see PREVIEW_COOKIE).
   previewRole: { id: string; name: string } | null;
+  // FootprintAI transition tracker: what this person can do there, if anything.
+  transitionAccess: "full" | "member" | "owner" | null;
 };
 
 // An admin can preview the app as a role: menus, pages, tabs and buttons
@@ -47,7 +49,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
   if (!userId) redirect("/login");
   const auth = { user: { id: userId } };
 
-  const [{ data: profile }, { data: perms }, { data: dashboards }, { data: seesAll }, { data: aiMember }] = await Promise.all([
+  const [{ data: profile }, { data: perms }, { data: dashboards }, { data: seesAll }, { data: aiMember }, { data: transition }] = await Promise.all([
     supabase
       .from("profiles")
       .select("email, full_name, is_admin, is_active")
@@ -57,6 +59,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
     supabase.rpc("my_dashboards"),
     supabase.rpc("sees_all_sales"),
     supabase.rpc("is_ai_member"),
+    supabase.rpc("transition_access"),
   ]);
 
   if (!profile || !profile.is_active) redirect("/login?error=inactive");
@@ -66,6 +69,10 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
   );
   // FootprintAI is invite only: being on its list (not a role) gives view and edit.
   if (aiMember === true) granted.add("ai:view").add("ai:edit");
+  // The transition tracker is for admins, Directors, its invite list and
+  // anyone who owns an action (the database decides which).
+  let transitionAccess: CurrentUser["transitionAccess"] =
+    transition === "full" || transition === "member" || transition === "owner" ? transition : null;
   let isAdmin = profile.is_admin;
   let myDashboards = (dashboards as string[] | null) ?? [];
   let seesAllSales = isAdmin || seesAll === true;
@@ -84,9 +91,13 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
       myDashboards = role.dashboard ? [role.dashboard] : [];
       seesAllSales = granted.has("quotes:view") && !role.own_records_only;
       previewRole = { id: role.id, name: role.name };
+      // Previewing: Directors see everything, any other role at most what the
+      // invite list sees (no board-only actions).
+      if (transitionAccess) transitionAccess = role.name === "Directors" ? "full" : "member";
     }
   }
 
+  if (transitionAccess) granted.add("transition:view");
   const can = (feature: string, action: Action) =>
     isAdmin || granted.has(`${feature}:${action}`);
 
@@ -102,6 +113,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
     dashboards: myDashboards,
     seesAllSales,
     previewRole,
+    transitionAccess,
   };
 });
 
