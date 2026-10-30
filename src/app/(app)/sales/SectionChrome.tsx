@@ -12,6 +12,7 @@ const sections = {
     tabs: [
       { href: "/sales/overview", label: "Overview" },
       { href: "/sales/quotes", label: "Quotes" },
+      { href: "/leads", label: "Leads" },
       { href: "/sales/pipeline", label: "Pipeline" },
     ],
   },

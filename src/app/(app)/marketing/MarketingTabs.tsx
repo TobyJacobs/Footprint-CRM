@@ -9,6 +9,7 @@ export default function MarketingTabs() {
     { href: "/marketing", label: "Overview", active: pathname === "/marketing" },
     { href: "/marketing/content", label: "Content calendar", active: pathname.startsWith("/marketing/content") },
     { href: "/marketing/campaigns", label: "Ad campaigns", active: pathname.startsWith("/marketing/campaigns") },
+    { href: "/leads", label: "Lead pipelines", active: pathname.startsWith("/leads") },
   ];
   return (
     <nav aria-label="Marketing" className="no-scrollbar flex gap-1 overflow-x-auto border-b border-fp-border bg-white px-6 lg:px-10">
