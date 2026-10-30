@@ -337,3 +337,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 30 October 2026 - Marketing (Wave 8): lead pipelines first
 **Decision (owner):** start Marketing with lead pipelines; email campaigns wait (the owner's Grok bot already sends email campaigns). What GoHighLevel is used for internally is still to be confirmed. One pipeline per business area (Print/Merch, Signage, Advertising (Forget Me Not), FootprintAI), stages editable; used by Marketing **and** Sales (own-records-only sales staff see own + unassigned leads). "Make customer and quote" links/creates the customer and opens a quote. PR #86 (0.42.0).
+
+## 30 October 2026 - No email or SMS campaigns in FootprintOS
+**Decision (owner):** email and SMS marketing are already done outside FootprintOS (the owner's Grok bot), so they won't be built. The Roadmap task "Email and SMS campaigns" is ticked with that note, so Wave 8 (Marketing) is complete. What GoHighLevel is still used for internally remains an open question before it's switched off.
