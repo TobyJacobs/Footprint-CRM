@@ -7,6 +7,10 @@ One short entry per session. Newest at the top.
 ## 27 October 2026: Drag design jobs on the board
 - Built drag and drop between stages on the Design Workload board (0.33.0, #77). Merged at the owner's request and checked live (job moved and moved back).
 
+## 30 October 2026: Marketing (Wave 8) starts with lead pipelines
+- Owner asked to start Marketing; chose lead pipelines first (email campaigns wait: their Grok bot sends them; GoHighLevel's internal use to be confirmed). One pipeline per business area, used by Marketing and Sales.
+- Built Lead pipelines (0.42.0, #86): boards, drag between stages, lead panel, Make customer and quote, Stages settings, tabs in Marketing and Sales. 9 database checks. Merged and checked live (no test lead added).
+
 ## 28 October 2026: FootprintAI transition tracker
 - Read DJ's three files (roadmap reference page, actions JSON, TRANSITION-SPEC.md) and built the Transition section (0.38.0, #82): This week (by owner, overdue in red, inline status, side panel, gate banners), All actions (filters remembered, Add action), Timeline (swimlanes, gates, launch line, Christmas hatching), Invite list, home-page card. Board-only actions hidden in the database. 17 access checks.
 - Merged at the owner's request; imported the plan (counts exactly as the spec); re-run added nothing. Checked live, including Preview as a non-director role (board-only action hidden).
