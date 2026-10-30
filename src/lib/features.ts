@@ -146,6 +146,7 @@ export const features: Feature[] = [
     key: "marketing",
     label: "Marketing",
     href: "/marketing",
+    alsoActive: ["/leads"],
     icon: Megaphone,
     description: "Client marketing work: jobs, retainers, the content calendar and ad campaigns.",
     wave: 8,

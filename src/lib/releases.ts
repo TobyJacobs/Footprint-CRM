@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.42.0",
+    date: "2026-10-30",
+    title: "Lead pipelines",
+    changes: [
+      "New Lead pipelines (a tab in both Marketing and Sales): leads before they're quotes, on one board per business area: Print/Merch, Signage, Advertising (Forget Me Not) and FootprintAI. Drag a card from stage to stage (New lead → Contacted → Meeting booked → Quote sent → Won / Lost).",
+      "Each lead has its contact details, where it came from, what it's worth, an owner and a follow-up date (red when due). “Make customer and quote” turns it into a customer (or links the existing one with that email) and starts a quote.",
+      "Marketing can rename, reorder and add stages and pipelines. Sales staff who see only their own records see their own and unassigned leads.",
+    ],
+  },
+  {
     version: "0.41.0",
     date: "2026-10-28",
     title: "Reports",
