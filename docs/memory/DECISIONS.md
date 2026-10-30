@@ -334,3 +334,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 28 October 2026 - Reports tab (Wave 7), first set
 **Decision (owner):** start fresh rather than copy the old custom HTML reports. First four reports: Sales and profit, Magazine MI, Money owed (aged debt) and Customers. Each has a date range, same period last year and CSV download. Money counted as on the Dashboards (invoices issued or paid, before VAT, less issued credit notes); sales staff see only their own customers. Directors and Finance get Reports access. Part payments aren't recorded, so money owed counts an invoice in full until it's marked paid. PR #85 (0.41.0).
+
+## 30 October 2026 - Marketing (Wave 8): lead pipelines first
+**Decision (owner):** start Marketing with lead pipelines; email campaigns wait (the owner's Grok bot already sends email campaigns). What GoHighLevel is used for internally is still to be confirmed. One pipeline per business area (Print/Merch, Signage, Advertising (Forget Me Not), FootprintAI), stages editable; used by Marketing **and** Sales (own-records-only sales staff see own + unassigned leads). "Make customer and quote" links/creates the customer and opens a quote. PR #86 (0.42.0).
