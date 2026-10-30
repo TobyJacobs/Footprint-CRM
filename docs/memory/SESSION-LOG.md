@@ -11,7 +11,7 @@ One short entry per session. Newest at the top.
 - Owner asked to start Marketing; chose lead pipelines first (email campaigns wait: their Grok bot sends them; GoHighLevel's internal use to be confirmed). One pipeline per business area, used by Marketing and Sales.
 - Built Lead pipelines (0.42.0, #86): boards, drag between stages, lead panel, Make customer and quote, Stages settings, tabs in Marketing and Sales. 9 database checks. Merged and checked live (no test lead added).
 - Email and SMS campaigns marked not needed (owner's Grok bot does them); Marketing wave complete. Split the portal invoices task: seeing invoices done, paying online (Stripe/GoCardless) still to do.
-- Tested customer support end to end with the owner: SUP-0001 sent from the portal, arrived in Customer support, Claude replied ("Reply sent… emailed"), status moved to In progress. Roadmap task ticked.
+- Tested customer support end to end with the owner: SUP-0001 sent from the portal, arrived in Customer support, Claude replied ("Reply sent… emailed"), status moved to In progress. Owner confirmed the alert email, the reply email and the reply in the portal all arrived. Roadmap task ticked.
 
 ## 28 October 2026: FootprintAI transition tracker
 - Read DJ's three files (roadmap reference page, actions JSON, TRANSITION-SPEC.md) and built the Transition section (0.38.0, #82): This week (by owner, overdue in red, inline status, side panel, gate banners), All actions (filters remembered, Add action), Timeline (swimlanes, gates, launch line, Christmas hatching), Invite list, home-page card. Board-only actions hidden in the database. 17 access checks.
