@@ -159,6 +159,152 @@ export async function getMagazineReport(from: string, to: string): Promise<Magaz
   };
 }
 
+// ─── Magazine bookings (group 1 of the Mag Manager reports) ─────────────────
+
+export type BookingRow = {
+  line_id: string;
+  month: string;
+  edition_code: string;
+  edition_name: string;
+  customer_id: string | null;
+  customer_name: string | null;
+  category: string | null;
+  section: string | null;
+  size: string | null;
+  premium_position: string | null;
+  salesperson: string | null;
+  net: number;
+  pages: number;
+  order_id: string;
+  order_number: string;
+  invoiced: boolean;
+};
+
+export type BookingGroup = "issue" | "month" | "edition" | "salesperson" | "customer" | "category" | "section" | "size" | "premium";
+export const bookingGroups: { key: BookingGroup; label: string }[] = [
+  { key: "issue", label: "Issue (edition and month)" },
+  { key: "month", label: "Month" },
+  { key: "edition", label: "Edition" },
+  { key: "salesperson", label: "Salesperson" },
+  { key: "customer", label: "Customer" },
+  { key: "category", label: "Category" },
+  { key: "section", label: "Section" },
+  { key: "size", label: "Advert size" },
+  { key: "premium", label: "Premium position" },
+];
+
+const monthName = (m: string) =>
+  new Date(`${m.slice(0, 7)}-01T12:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+
+// The group a booking falls in: a sortable key and a label.
+export function bookingKey(b: BookingRow, g: BookingGroup): [string, string] {
+  switch (g) {
+    case "issue":
+      return [`${b.month}|${b.edition_code}`, `${b.edition_code}. ${b.edition_name} · ${monthName(b.month)}`];
+    case "month":
+      return [b.month, monthName(b.month)];
+    case "edition":
+      return [b.edition_code, `${b.edition_code}. ${b.edition_name}`];
+    case "salesperson":
+      return [b.salesperson ?? "~", b.salesperson ?? "No salesperson"];
+    case "customer":
+      return [b.customer_name ?? "~", b.customer_name ?? "Unknown customer"];
+    case "category":
+      return [b.category ?? "~", b.category ?? "No category"];
+    case "section":
+      return [b.section ?? "~", b.section ?? "No section"];
+    case "size":
+      return [b.size ?? "~", b.size ?? "No size"];
+    case "premium":
+      return [b.premium_position ?? "~", b.premium_position ?? "Not premium"];
+  }
+}
+
+export type BookingSummary = { key: string; label: string; adverts: number; pages: number; net: number; customers: number; customerId: string | null };
+
+export function summariseBookings(rows: BookingRow[], g: BookingGroup): BookingSummary[] {
+  const map = new Map<string, BookingSummary & { ids: Set<string> }>();
+  for (const b of rows) {
+    const [key, label] = bookingKey(b, g);
+    const s = map.get(key) ?? { key, label, adverts: 0, pages: 0, net: 0, customers: 0, customerId: g === "customer" ? b.customer_id : null, ids: new Set<string>() };
+    s.adverts += 1;
+    s.pages += b.pages;
+    s.net += b.net;
+    if (b.customer_id) s.ids.add(b.customer_id);
+    map.set(key, s);
+  }
+  const list = [...map.values()].map(({ ids, ...s }) => ({ ...s, customers: ids.size }));
+  // Time and editions in order; everything else biggest first.
+  return ["issue", "month", "edition"].includes(g) ? list.sort((a, b) => a.key.localeCompare(b.key)) : list.sort((a, b) => b.net - a.net);
+}
+
+export async function getBookings(from: string, to: string): Promise<BookingRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("report_bookings", { p_from: from, p_to: to });
+  return ((data ?? []) as BookingRow[]).map((r) => ({ ...r, net: Number(r.net), pages: Number(r.pages) }));
+}
+
+// The magazine reports default to this month and the next five (booked ahead).
+export function magazinePeriod(sp: Record<string, string | string[] | undefined>): Period {
+  if (sp.period) return periodFrom(sp);
+  const ym = ukToday().slice(0, 7);
+  return { preset: "custom", from: `${ym}-01`, to: addDaysTo(`${addMonthsTo(ym, 6)}-01`, -1), label: "This month and the next five" };
+}
+
+// ─── Invoices and VAT ───────────────────────────────────────────────────────
+
+export type InvoiceRow = {
+  id: string;
+  doc_type: "invoice" | "credit_note";
+  number: string;
+  issue_date: string;
+  due_date: string | null;
+  status: string;
+  paid_on: string | null;
+  customer_name: string | null;
+  salesperson: string | null;
+  net: number;
+  vat: number;
+  total: number;
+  adverts: boolean;
+};
+
+export async function getInvoices(from: string, to: string): Promise<InvoiceRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("report_invoices", { p_from: from, p_to: to });
+  return ((data ?? []) as InvoiceRow[]).map((r) => ({ ...r, net: Number(r.net), vat: Number(r.vat), total: Number(r.total) }));
+}
+
+export type VatRow = { id: string; doc_type: "invoice" | "credit_note"; number: string; cash_date: string; customer_name: string | null; tax_rate: number; net: number; vat: number };
+
+export async function getVatCash(from: string, to: string): Promise<VatRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("report_vat_cash", { p_from: from, p_to: to });
+  return ((data ?? []) as VatRow[]).map((r) => ({ ...r, tax_rate: Number(r.tax_rate), net: Number(r.net), vat: Number(r.vat) }));
+}
+
+// ─── Direct Debits ──────────────────────────────────────────────────────────
+
+export type DirectDebitRow = { id: string; name: string; general: string | null; fmn: string | null; owner: string | null };
+
+// Customers with an active Direct Debit (either field on the customer record).
+export async function getDirectDebits(): Promise<DirectDebitRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("customers")
+    .select("id, name, direct_debit_status, direct_debit_status_fmn, owner_id")
+    .is("erased_at", null)
+    .or("direct_debit_status.in.(Active,FMN Active),direct_debit_status_fmn.eq.Active")
+    .order("name");
+  const ownerIds = [...new Set((data ?? []).map((c) => c.owner_id).filter(Boolean))] as string[];
+  const { data: people } = ownerIds.length ? await supabase.from("profiles").select("id, full_name, email").in("id", ownerIds) : { data: [] };
+  const nameOf = (id: string | null) => {
+    const p = (people ?? []).find((x) => x.id === id);
+    return p ? (p.full_name ?? p.email) : null;
+  };
+  return (data ?? []).map((c) => ({ id: c.id, name: c.name, general: c.direct_debit_status, fmn: c.direct_debit_status_fmn, owner: nameOf(c.owner_id) }));
+}
+
 // ─── CSV ────────────────────────────────────────────────────────────────────
 export function toCsv(header: string[], rows: (string | number | null | undefined)[][]) {
   const cell = (v: string | number | null | undefined) => {

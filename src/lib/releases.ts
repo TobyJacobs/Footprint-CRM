@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.44.0",
+    date: "2026-11-01",
+    title: "Magazine reports: bookings and financial",
+    changes: [
+      "New Bookings report (Reports, Magazines access): every Forget Me Not advert booked, grouped by issue, month, edition, salesperson, customer, category, section, advert size or premium position, with filters, a list of every advert and a CSV download. Click a customer to see just their bookings.",
+      "New Invoices, VAT (cash) and Direct Debits reports. VAT on a cash basis counts invoices when they're marked paid and credit notes when issued, by VAT rate.",
+      "Magazines → Setup has two new lists: advertiser categories (set on each customer) and magazine sections. When adding adverts to a quote you can now choose a section and a premium position (e.g. Back cover); they stay with the order.",
+    ],
+  },
+  {
     version: "0.43.0",
     date: "2026-11-01",
     title: "Website enquiry forms",

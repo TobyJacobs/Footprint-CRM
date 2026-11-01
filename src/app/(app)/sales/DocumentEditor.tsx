@@ -41,6 +41,8 @@ export type EditorLine = {
   // Forget Me Not adverts: the issue and size this line books.
   magazine_issue_id?: string | null;
   advert_size_id?: string | null;
+  magazine_section_id?: string | null;
+  premium_position?: string | null;
   // What's being typed in the margin box (screen only, never saved).
   margin_input?: string;
 };
@@ -367,6 +369,8 @@ export default function DocumentEditor({
               tax_rate: l.tax_rate,
               magazine_issue_id: l.magazine_issue_id ?? null,
               advert_size_id: l.advert_size_id ?? null,
+              magazine_section_id: l.magazine_section_id ?? null,
+              premium_position: l.premium_position ?? null,
             })),
         )}
       />

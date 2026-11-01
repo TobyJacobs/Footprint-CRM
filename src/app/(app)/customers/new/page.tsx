@@ -4,6 +4,7 @@ import PageHeader from "@/components/PageHeader";
 import { Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { getStaffOptions } from "@/lib/customers/staff";
+import { createClient } from "@/lib/supabase/server";
 import { saveCustomer } from "../actions";
 import CustomerForm from "../CustomerForm";
 
@@ -12,7 +13,11 @@ export const metadata: Metadata = { title: "New customer" };
 export default async function NewCustomerPage(props: PageProps<"/customers/new">) {
   const user = await requirePermission("customers", "edit");
   const searchParams = await props.searchParams;
-  const staff = await getStaffOptions();
+  const supabase = await createClient();
+  const [staff, { data: categories }] = await Promise.all([
+    getStaffOptions(),
+    supabase.from("magazine_categories").select("id, name, active").eq("active", true).order("position").order("name"),
+  ]);
 
   return (
     <>
@@ -23,7 +28,7 @@ export default async function NewCustomerPage(props: PageProps<"/customers/new">
         </Link>
         <div className="mt-4">
           <Notice searchParams={searchParams} />
-          <CustomerForm staff={staff} action={saveCustomer.bind(null, null)} cancelHref="/customers" defaultOwnerId={user.id} />
+          <CustomerForm staff={staff} action={saveCustomer.bind(null, null)} cancelHref="/customers" defaultOwnerId={user.id} magazineCategories={categories ?? []} />
         </div>
       </div>
     </>

@@ -18,6 +18,7 @@ export default function CustomerForm({
   action,
   cancelHref,
   defaultOwnerId,
+  magazineCategories = [],
 }: {
   customer?: CustomerRecord;
   staff: { id: string; name: string }[];
@@ -25,6 +26,8 @@ export default function CustomerForm({
   cancelHref: string;
   // For a new customer: the person filling it in becomes the account owner.
   defaultOwnerId?: string;
+  // Forget Me Not advertiser categories (Magazines → Setup), if any.
+  magazineCategories?: { id: string; name: string; active: boolean }[];
 }) {
   const v = (k: string) => (customer?.[k] as string | number | null | undefined) ?? null;
   const arr = (k: string) => (customer?.[k] as string[] | undefined) ?? [];
@@ -70,6 +73,15 @@ export default function CustomerForm({
           <Field label="Industry">
             <TextInput name="industry" defaultValue={v("industry")} />
           </Field>
+          {magazineCategories.length > 0 && (
+            <Field label="Advertiser category (Forget Me Not)">
+              <Select
+                name="magazine_category_id"
+                options={magazineCategories.map((c) => ({ value: c.id, label: c.active ? c.name : `${c.name} (no longer used)` }))}
+                defaultValue={(v("magazine_category_id") as string) ?? null}
+              />
+            </Field>
+          )}
           {/* Existing customers only. For new ones, services are ticked
               automatically from what they order. */}
           {customer && (

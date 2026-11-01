@@ -4,6 +4,11 @@ import { addDaysTo, addMonthsTo, ukToday } from "@/lib/dates";
 import { monthLabel } from "@/lib/magazines";
 import {
   debtBands,
+  getBookings,
+  getDirectDebits,
+  getInvoices,
+  getVatCash,
+  magazinePeriod,
   getCustomers,
   getDebt,
   getMagazineReport,
@@ -89,6 +94,42 @@ export async function GET(request: NextRequest) {
         ...r.salespeople.map((s) => ["Salesperson", s.name, r2(s.net), "", s.adverts, "", "", "", ""]),
       ],
     );
+  } else if (report === "bookings" && user.can("magazines", "view")) {
+    // Every advert matching the page's filters (grouping is for the screen).
+    const period = magazinePeriod(sp);
+    const rows = (await getBookings(period.from, period.to)).filter(
+      (b) =>
+        (!sp.edition || b.edition_code === sp.edition) &&
+        (!sp.salesperson || (b.salesperson ?? "No salesperson") === sp.salesperson) &&
+        (!sp.customer || b.customer_id === sp.customer) &&
+        (sp.premium !== "1" || b.premium_position),
+    );
+    name = `bookings-${period.from}-to-${period.to}`;
+    csv = toCsv(
+      ["Issue month", "Edition", "Customer", "Category", "Advert size", "Section", "Premium position", "Salesperson", "Order", "Invoiced", "Pages", "Booked (before VAT)"],
+      rows.map((b) => [monthLabel(b.month), `${b.edition_code}. ${b.edition_name}`, b.customer_name, b.category, b.size, b.section, b.premium_position, b.salesperson, b.order_number, b.invoiced ? "Yes" : "No", r2(b.pages), r2(b.net)]),
+    );
+  } else if (report === "invoices") {
+    const period = periodFrom(sp, "last_month");
+    const rows = (await getInvoices(period.from, period.to)).filter((r) => sp.adverts !== "1" || r.adverts);
+    const sign = (t: string) => (t === "credit_note" ? -1 : 1);
+    name = `invoices-${period.from}-to-${period.to}`;
+    csv = toCsv(
+      ["Number", "Type", "Issued", "Due", "Customer", "Salesperson", "Status", "Paid on", "Net", "VAT", "Total", "Magazine adverts"],
+      rows.map((r) => [r.number, r.doc_type === "credit_note" ? "Credit note" : "Invoice", r.issue_date, r.due_date, r.customer_name, r.salesperson, r.status, r.paid_on, r2(sign(r.doc_type) * r.net), r2(sign(r.doc_type) * r.vat), r2(sign(r.doc_type) * r.total), r.adverts ? "Yes" : "No"]),
+    );
+  } else if (report === "vat") {
+    const period = periodFrom(sp, "last_3");
+    const rows = await getVatCash(period.from, period.to);
+    name = `vat-cash-${period.from}-to-${period.to}`;
+    csv = toCsv(
+      ["Date", "Number", "Type", "Customer", "VAT rate %", "Net", "VAT"],
+      rows.map((r) => [r.cash_date, r.number, r.doc_type === "credit_note" ? "Credit note" : "Invoice paid", r.customer_name, r.tax_rate, r2(r.net), r2(r.vat)]),
+    );
+  } else if (report === "direct-debits") {
+    const rows = await getDirectDebits();
+    name = `direct-debits-${ukToday()}`;
+    csv = toCsv(["Customer", "Direct Debit – Print & Digital", "Direct Debit – Forget Me Not", "Account owner"], rows.map((r) => [r.name, r.general, r.fmn, r.owner]));
   } else {
     return new NextResponse("Unknown report", { status: 400 });
   }

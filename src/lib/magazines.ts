@@ -42,6 +42,7 @@ export type AdvertSetup = {
   editions: Pick<Edition, "id" | "code" | "name">[];
   issues: Pick<Issue, "id" | "edition_id" | "month" | "complete">[];
   sizes: Pick<AdvertSize, "id" | "name" | "width_mm" | "height_mm" | "default_price">[];
+  sections: { id: string; name: string }[];
 };
 
 export const editionLabel = (e: { code: string; name: string }) => `${e.code}. ${e.name}`;
@@ -51,10 +52,11 @@ export const monthLabel = (month: string) =>
 
 export async function getAdvertSetup(fromMonth: string): Promise<AdvertSetup> {
   const supabase = await createClient();
-  const [{ data: editions }, { data: issues }, { data: sizes }] = await Promise.all([
+  const [{ data: editions }, { data: issues }, { data: sizes }, { data: sections }] = await Promise.all([
     supabase.from("magazine_editions").select("id, code, name").eq("active", true).order("code"),
     supabase.from("magazine_issues").select("id, edition_id, month, complete").gte("month", `${fromMonth.slice(0, 7)}-01`).order("month"),
     supabase.from("advert_sizes").select("id, name, width_mm, height_mm, default_price").eq("active", true).order("position"),
+    supabase.from("magazine_sections").select("id, name").eq("active", true).order("position").order("name"),
   ]);
   return {
     editions: (editions ?? []) as AdvertSetup["editions"],
@@ -65,5 +67,6 @@ export async function getAdvertSetup(fromMonth: string): Promise<AdvertSetup> {
       height_mm: s.height_mm === null ? null : Number(s.height_mm),
       default_price: s.default_price === null ? null : Number(s.default_price),
     })) as AdvertSetup["sizes"],
+    sections: (sections ?? []) as AdvertSetup["sections"],
   };
 }

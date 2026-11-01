@@ -246,3 +246,27 @@ export async function removeFlipbook(issueId: string) {
   revalidatePath("/read", "layout");
   redirect(flatplanBack(issueId, "?saved=1"));
 }
+
+// ─── Advertiser categories and magazine sections (for the reports) ──────────
+
+const listTable = (kind: string) => (kind === "section" ? "magazine_sections" : "magazine_categories");
+
+export async function addMagazineListItem(kind: "category" | "section", fd: FormData) {
+  await requirePermission("magazines", "edit");
+  const name = str(fd, "name")?.slice(0, 80);
+  if (!name) fail("Give it a name");
+  const supabase = await createClient();
+  const { error } = await supabase.from(listTable(kind)).insert({ name, position: int(fd, "position") ?? 0 });
+  if (error) fail(error.code === "23505" ? `There's already one called "${name}"` : error.message);
+  done();
+}
+
+export async function saveMagazineListItem(kind: "category" | "section", id: string, fd: FormData) {
+  await requirePermission("magazines", "edit");
+  const name = str(fd, "name")?.slice(0, 80);
+  if (!name) fail("Give it a name");
+  const supabase = await createClient();
+  const { error } = await supabase.from(listTable(kind)).update({ name, position: int(fd, "position") ?? 0, active: bool(fd, "active") }).eq("id", id);
+  if (error) fail(error.code === "23505" ? `There's already one called "${name}"` : error.message);
+  done();
+}
