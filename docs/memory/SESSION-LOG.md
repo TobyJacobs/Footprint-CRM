@@ -5,7 +5,9 @@ One short entry per session. Newest at the top.
 ---
 
 ## 1 November 2026: T-002 seats and costs; GoHighLevel stays in use
-- Made the T-002 AI and software seats-and-costs page for Teams (kept outside the repo). Owner confirmed GoHighLevel is used for Footprint's own marketing and its customers' marketing, so it was added to the costs (Unlimited plan assumed, still to confirm).
+- Made the T-002 AI and software seats-and-costs page for Teams (kept outside the repo). Owner confirmed GoHighLevel is used for Footprint's own marketing and its customers' marketing, so it was added to the costs (Unlimited plan, confirmed).
+- Owner chose to keep GoHighLevel for customers and move Footprint's own marketing into FootprintOS; Wave 8 reopened with five tasks.
+- Built Website enquiry forms (0.43.0, #87): 20 database checks, previewed, merged and tested live (test form and lead). Roadmap task ticked.
 
 ## 27 October 2026: Drag design jobs on the board
 - Built drag and drop between stages on the Design Workload board (0.33.0, #77). Merged at the owner's request and checked live (job moved and moved back).
