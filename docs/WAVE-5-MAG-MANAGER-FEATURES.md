@@ -65,7 +65,7 @@ About 60 reports. The groups: artwork statuses; bookings (by issue, user, catego
 2. **Commission:** set per salesperson. _(Rules to be confirmed.)_
 3. **Timetable:** yes, there's a monthly timetable. _(Send Claude a copy: booking deadline, artwork deadline, print and delivery dates.)_
 4. **Reach:** around **50,000 homes a month** across all editions.
-5. **Reports:** not many are used. _(Priorities to be confirmed.)_
+5. **Reports:** not many are used. _(Priorities to be confirmed.)_ **Update 1 November 2026:** the director looks at **all** the report groups in section 12, so all need an equivalent in FootprintOS.
 6. Other features in use:
    - **Articles library:** used, but we accept we may need another source.
    - **Flipbooks:** used; they're published on our website. **Keep**
