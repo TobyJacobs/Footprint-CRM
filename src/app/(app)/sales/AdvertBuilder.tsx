@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Newspaper } from "lucide-react";
 import { inputClass, secondaryButton } from "@/components/ui";
-import { premiumPositions, type AdvertSetup } from "@/lib/magazines";
+import { premiumPositions } from "@/lib/magazine-options";
+import type { AdvertSetup } from "@/lib/magazines";
 
 export type AdvertLine = {
   description: string;

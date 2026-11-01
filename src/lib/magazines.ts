@@ -45,9 +45,6 @@ export type AdvertSetup = {
   sections: { id: string; name: string }[];
 };
 
-// Premium positions an advert can have (the database only accepts these).
-export const premiumPositions = ["Front cover", "Back cover", "Inside front cover", "Inside back cover", "First page", "Centre spread", "Facing editorial"] as const;
-
 export const editionLabel = (e: { code: string; name: string }) => `${e.code}. ${e.name}`;
 
 export const monthLabel = (month: string) =>
