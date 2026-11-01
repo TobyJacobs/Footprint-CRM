@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.43.0",
+    date: "2026-11-01",
+    title: "Website enquiry forms",
+    changes: [
+      "New Website forms (Lead pipelines → Website forms, Marketing): enquiry forms for Footprint's own websites, in place of the GoHighLevel forms. Choose which pipeline each form feeds, who owns the leads and who's emailed, the wording and which details to ask for.",
+      "Each form has code to paste into a website (it works on footprintgroup.uk and forgetmenotonline.org) and its own link. Every enquiry becomes a lead in the first stage, with the message in its notes and “Website form” as where it came from; if that person already has an open lead in the pipeline, the message is added to it instead.",
+      "Spam protection is built in: a hidden trap for bots and limits on how often one person can send.",
+    ],
+  },
+  {
     version: "0.42.0",
     date: "2026-10-30",
     title: "Lead pipelines",

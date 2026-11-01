@@ -14,9 +14,9 @@ const securityHeaders = [
 ];
 
 // Don't let other websites show the platform inside a frame (stops
-// click-jacking), except the public flipbooks, which Footprint's own websites
-// may show.
-const flipbookSites = [
+// click-jacking), except the public flipbooks and enquiry forms, which
+// Footprint's own websites may show.
+const footprintSites = [
   "https://forgetmenotonline.org",
   "https://*.forgetmenotonline.org",
   "https://footprintgroup.uk",
@@ -34,13 +34,14 @@ const nextConfig: NextConfig = {
   },
   headers() {
     return [
-      // Everything except the public flipbooks: never shown inside another site.
-      { source: "/((?!read/).*)", headers: [...securityHeaders, { key: "X-Frame-Options", value: "DENY" }] },
-      // Flipbooks (/read/…) may be shown inside Footprint's own websites.
-      {
-        source: "/read/:path*",
-        headers: [...securityHeaders, { key: "Content-Security-Policy", value: `frame-ancestors 'self' ${flipbookSites.join(" ")}` }],
-      },
+      // Everything except the flipbooks and forms: never shown inside another site.
+      { source: "/((?!read/|f/).*)", headers: [...securityHeaders, { key: "X-Frame-Options", value: "DENY" }] },
+      // Flipbooks (/read/…) and enquiry forms (/f/…) may be shown inside
+      // Footprint's own websites.
+      ...["/read/:path*", "/f/:path*"].map((source) => ({
+        source,
+        headers: [...securityHeaders, { key: "Content-Security-Policy", value: `frame-ancestors 'self' ${footprintSites.join(" ")}` }],
+      })),
     ];
   },
 };

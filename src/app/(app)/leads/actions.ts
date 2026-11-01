@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { int, num, str } from "@/lib/forms";
+import { bool, int, list, num, str } from "@/lib/forms";
 import { createClient } from "@/lib/supabase/server";
 
 // Lead pipelines. Everything runs as the signed-in person, so the database
@@ -183,4 +183,54 @@ export async function addPipeline(fd: FormData) {
     ].map(([n, kind], i) => ({ pipeline_id: p.id, name: n, position: i + 1, kind })),
   );
   done("/leads/settings?saved=1");
+}
+
+// ─── Website enquiry forms (Marketing edit) ─────────────────────────────────
+
+export async function saveLeadForm(id: string | null, fd: FormData) {
+  const back = id ? `/leads/forms?open=${id}` : "/leads/forms?add=1";
+  await needEdit(back);
+  const name = str(fd, "name");
+  const pipeline = uuid(str(fd, "pipeline_id"));
+  if (!name || !pipeline) fail(back, "Give the form a name and a pipeline");
+  const privacy = str(fd, "privacy_url");
+  if (privacy && !/^https:\/\/\S{3,300}$/.test(privacy)) fail(back, "The privacy policy link must start with https://");
+  const fields = {
+    name: name.slice(0, 100),
+    pipeline_id: pipeline,
+    owner_id: uuid(str(fd, "owner_id")),
+    notify_ids: list(fd, "notify_ids").filter((v) => UUID_RE.test(v)),
+    heading: str(fd, "heading")?.slice(0, 200) ?? null,
+    intro: str(fd, "intro")?.slice(0, 1000) ?? null,
+    button_label: str(fd, "button_label")?.slice(0, 40) ?? "Send",
+    thank_you: str(fd, "thank_you")?.slice(0, 500) ?? "Thanks for getting in touch. We'll be back to you soon.",
+    show_phone: bool(fd, "show_phone"),
+    show_company: bool(fd, "show_company"),
+    show_message: bool(fd, "show_message"),
+    privacy_url: privacy,
+    active: id ? bool(fd, "active") : true,
+  };
+  const supabase = await createClient();
+  if (!id) {
+    const { data, error } = await supabase.from("lead_forms").insert(fields).select("id").single();
+    if (error) fail(back, error.message);
+    revalidatePath("/leads/forms");
+    redirect(`/leads/forms?open=${data.id}&saved=1`);
+  }
+  const { data, error } = await supabase.from("lead_forms").update(fields).eq("id", id).select("id");
+  if (error) fail(back, error.message);
+  if (!data?.length) fail(back, "You can't change that form");
+  revalidatePath("/leads/forms");
+  redirect(`/leads/forms?open=${id}&saved=1`);
+}
+
+// Leads it made stay; only the form (and its spam-limit log) goes.
+export async function deleteLeadForm(id: string) {
+  await needEdit("/leads/forms");
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("lead_forms").delete().eq("id", id).select("id");
+  if (error) fail("/leads/forms", error.message);
+  if (!data?.length) fail("/leads/forms", "You can't delete that form");
+  revalidatePath("/leads/forms");
+  redirect("/leads/forms?deleted=1");
 }

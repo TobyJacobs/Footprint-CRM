@@ -10,8 +10,8 @@ import {
 // (view an invoice, credit note or order) and "/p/" (design proof approval)
 // are the private links sent to customers — they only work with a secret token.
 // "/portal" is the customer portal, which has its own sign-in (lib/portal).
-// "/read/" is the public magazine flipbooks.
-const PUBLIC_PATHS = ["/login", "/auth/", "/q/", "/d/", "/p/", "/api/cron/", "/invite/", "/portal", "/read/"];
+// "/read/" is the public magazine flipbooks, and "/f/" the website enquiry forms.
+const PUBLIC_PATHS = ["/login", "/auth/", "/q/", "/d/", "/p/", "/api/cron/", "/invite/", "/portal", "/read/", "/f/"];
 
 // Runs before every page request: keeps the login session fresh and sends
 // signed-out visitors to the login page. The real permission checks happen
