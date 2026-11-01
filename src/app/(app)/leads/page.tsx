@@ -150,9 +150,14 @@ export default async function LeadsBoard(props: PageProps<"/leads">) {
           <span className="text-sm text-fp-dark/75">· {money(openTotal)} in open leads</span>
           <span className="ml-auto flex gap-2">
             {user.can("marketing", "edit") && (
-              <Link href="/leads/settings" className={secondaryButton}>
-                Stages
-              </Link>
+              <>
+                <Link href="/leads/forms" className={secondaryButton}>
+                  Website forms
+                </Link>
+                <Link href="/leads/settings" className={secondaryButton}>
+                  Stages
+                </Link>
+              </>
             )}
             {canEdit && (
               <Link href={`${here}&add=1`} scroll={false} className={primaryButton}>
