@@ -7,8 +7,16 @@ export default function ReportsTabs({ magazines }: { magazines: boolean }) {
   const pathname = usePathname();
   const tabs = [
     { href: "/reports/sales", label: "Sales and profit" },
-    ...(magazines ? [{ href: "/reports/magazines", label: "Magazine MI" }] : []),
+    ...(magazines
+      ? [
+          { href: "/reports/magazines", label: "Magazine MI" },
+          { href: "/reports/bookings", label: "Bookings" },
+        ]
+      : []),
+    { href: "/reports/invoices", label: "Invoices" },
     { href: "/reports/debt", label: "Money owed" },
+    { href: "/reports/vat", label: "VAT (cash)" },
+    { href: "/reports/direct-debits", label: "Direct Debits" },
     { href: "/reports/customers", label: "Customers" },
   ];
   return (

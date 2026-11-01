@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { addMonthsTo, ukMonth } from "@/lib/dates";
 import { monthLabel, type AdvertSize, type Edition, type Issue } from "@/lib/magazines";
 import { createClient } from "@/lib/supabase/server";
-import { addIssueMonths, saveAdvertSize, saveEdition, saveIssue } from "../actions";
+import { addIssueMonths, addMagazineListItem, saveAdvertSize, saveEdition, saveIssue, saveMagazineListItem } from "../actions";
 import MagazineTabs from "../MagazineTabs";
 
 export const metadata: Metadata = { title: "Magazines setup" };
@@ -21,11 +21,13 @@ export default async function MagazinesSetupPage(props: PageProps<"/magazines/se
   const sp = await props.searchParams;
   const month = typeof sp.month === "string" && /^\d{4}-\d{2}$/.test(sp.month) ? sp.month : addMonthsTo(ukMonth(), 1);
   const supabase = await createClient();
-  const [{ data: editions }, { data: issues }, { data: sizes }, { data: lastIssue }] = await Promise.all([
+  const [{ data: editions }, { data: issues }, { data: sizes }, { data: lastIssue }, { data: categories }, { data: sections }] = await Promise.all([
     supabase.from("magazine_editions").select("*").order("code"),
     supabase.from("magazine_issues").select("*").eq("month", `${month}-01`),
     supabase.from("advert_sizes").select("*").order("position"),
     supabase.from("magazine_issues").select("month").order("month", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("magazine_categories").select("id, name, position, active").order("position").order("name"),
+    supabase.from("magazine_sections").select("id, name, position, active").order("position").order("name"),
   ]);
   const eds = (editions ?? []) as Edition[];
   const issueByEdition = new Map(((issues ?? []) as Issue[]).map((i) => [i.edition_id, i]));
@@ -221,6 +223,40 @@ export default async function MagazinesSetupPage(props: PageProps<"/magazines/se
             quotes once you add the rate card.
           </p>
         </Card>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {(
+            [
+              ["category", "Advertiser categories", "The kind of business, e.g. Trades or Food & Drink. Set on each customer; used by the Bookings report.", categories],
+              ["section", "Magazine sections", "Where in the magazine an advert goes. Chosen when adding adverts to a quote.", sections],
+            ] as const
+          ).map(([kind, title, help, rows]) => (
+            <Card key={kind} title={title}>
+              <p className="mb-3 text-xs text-fp-mid">{help}</p>
+              <ul className="grid gap-2 text-sm">
+                {(rows ?? []).map((r) => (
+                  <li key={r.id}>
+                    <form action={saveMagazineListItem.bind(null, kind, r.id)} className="flex flex-wrap items-center gap-2">
+                      <input name="position" type="number" defaultValue={r.position} aria-label="Order" className={`${inputClass} w-16`} />
+                      <input name="name" required maxLength={80} defaultValue={r.name} aria-label="Name" className={`${inputClass} w-40 flex-1`} />
+                      <label className="flex items-center gap-1 text-xs">
+                        <input name="active" type="checkbox" defaultChecked={r.active} className="accent-fp-pink" /> In use
+                      </label>
+                      <button type="submit" className={secondaryButton}>
+                        Save
+                      </button>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+              <form action={addMagazineListItem.bind(null, kind)} className="mt-3 flex gap-2 text-sm">
+                <input name="name" required maxLength={80} placeholder={kind === "category" ? "New category" : "New section"} aria-label={kind === "category" ? "New category" : "New section"} className={`${inputClass} w-56`} />
+                <button type="submit" className={secondaryButton}>
+                  Add
+                </button>
+              </form>
+            </Card>
+          ))}
+        </div>
       </div>
     </>
   );

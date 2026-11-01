@@ -74,6 +74,8 @@ function customerFields(fd: FormData) {
     phone: str(fd, "phone"),
     email: str(fd, "email"),
     industry: str(fd, "industry"),
+    // Only when the form showed the box (so saving never clears it by accident).
+    ...(fd.has("magazine_category_id") ? { magazine_category_id: str(fd, "magazine_category_id") } : {}),
     ownership: str(fd, "ownership"),
     description: str(fd, "description"),
     owner_id: str(fd, "owner_id"),

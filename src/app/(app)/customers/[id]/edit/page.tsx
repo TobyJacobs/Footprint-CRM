@@ -18,9 +18,10 @@ export default async function EditCustomerPage(props: PageProps<"/customers/[id]
   const { id } = await props.params;
   const searchParams = await props.searchParams;
   const supabase = await createClient();
-  const [{ data: customer }, staff] = await Promise.all([
+  const [{ data: customer }, staff, { data: categories }] = await Promise.all([
     supabase.from("customers").select("*").eq("id", id).maybeSingle(),
     getStaffOptions(),
+    supabase.from("magazine_categories").select("id, name, active").order("position").order("name"),
   ]);
   if (!customer) notFound();
 
@@ -36,6 +37,7 @@ export default async function EditCustomerPage(props: PageProps<"/customers/[id]
           <CustomerForm
             customer={customer}
             staff={staff}
+            magazineCategories={categories ?? []}
             action={saveCustomer.bind(null, id)}
             cancelHref={`/customers/${id}`}
           />

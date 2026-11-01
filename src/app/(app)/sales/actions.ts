@@ -54,6 +54,8 @@ type LineIn = {
   tax_rate: number;
   magazine_issue_id: string | null;
   advert_size_id: string | null;
+  magazine_section_id: string | null;
+  premium_position: string | null;
 };
 
 function parseLines(fd: FormData): LineIn[] | null {
@@ -73,6 +75,8 @@ function parseLines(fd: FormData): LineIn[] | null {
       // Forget Me Not adverts (the database checks they're real).
       magazine_issue_id: typeof l.magazine_issue_id === "string" && UUID_RE.test(l.magazine_issue_id) ? l.magazine_issue_id : null,
       advert_size_id: typeof l.advert_size_id === "string" && UUID_RE.test(l.advert_size_id) ? l.advert_size_id : null,
+      magazine_section_id: typeof l.magazine_section_id === "string" && UUID_RE.test(l.magazine_section_id) ? l.magazine_section_id : null,
+      premium_position: typeof l.premium_position === "string" && l.premium_position ? l.premium_position.slice(0, 40) : null,
     }));
   } catch {
     return null;
@@ -324,7 +328,7 @@ export async function convertDocument(documentId: string, to: DocType) {
   };
   const { data: srcLines } = await supabase
     .from("sales_document_lines")
-    .select("product_id, description, quantity, unit_price, unit_cost, discount_percent, tax_rate_id, tax_rate, position, magazine_issue_id, advert_size_id")
+    .select("product_id, description, quantity, unit_price, unit_cost, discount_percent, tax_rate_id, tax_rate, position, magazine_issue_id, advert_size_id, magazine_section_id, premium_position")
     .eq("document_id", documentId)
     .order("position");
 

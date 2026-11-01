@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Newspaper } from "lucide-react";
 import { inputClass, secondaryButton } from "@/components/ui";
-import type { AdvertSetup } from "@/lib/magazines";
+import { premiumPositions, type AdvertSetup } from "@/lib/magazines";
 
 export type AdvertLine = {
   description: string;
@@ -12,6 +12,8 @@ export type AdvertLine = {
   unit_cost: number | null;
   magazine_issue_id: string;
   advert_size_id: string;
+  magazine_section_id: string | null;
+  premium_position: string | null;
 };
 
 const monthLabel = (ym: string) =>
@@ -31,6 +33,8 @@ export default function AdvertBuilder({ firstMonth, setup, onAdd }: { firstMonth
   const [months, setMonths] = useState(1);
   const [price, setPrice] = useState(setup.sizes[0]?.default_price != null ? String(setup.sizes[0].default_price) : "");
   const [cost, setCost] = useState("");
+  const [sectionId, setSectionId] = useState("");
+  const [premium, setPremium] = useState("");
 
   const size = setup.sizes.find((s) => s.id === sizeId);
   const chosen = setup.editions.filter((e) => editions.includes(e.id));
@@ -56,6 +60,8 @@ export default function AdvertBuilder({ firstMonth, setup, onAdd }: { firstMonth
           unit_cost: cost === "" ? null : Math.round(Number(cost) * 100) / 100,
           magazine_issue_id: issueFor(e.id, ym)!.id,
           advert_size_id: size.id,
+          magazine_section_id: sectionId || null,
+          premium_position: premium || null,
         })),
       ),
     );
@@ -105,6 +111,28 @@ export default function AdvertBuilder({ firstMonth, setup, onAdd }: { firstMonth
             <input type="number" step="0.01" min={0} value={cost} onChange={(e) => setCost(e.target.value)} placeholder="Optional" className={inputClass} />
           </label>
         </div>
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <label className="grid gap-1 text-sm">
+          <span className="font-semibold">Section</span>
+          <select value={sectionId} onChange={(e) => setSectionId(e.target.value)} className={inputClass}>
+            <option value="">{setup.sections.length ? "Not chosen" : "None set up yet"}</option>
+            {setup.sections.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1 text-sm">
+          <span className="font-semibold">Premium position</span>
+          <select value={premium} onChange={(e) => setPremium(e.target.value)} className={inputClass}>
+            <option value="">None</option>
+            {premiumPositions.map((p) => (
+              <option key={p}>{p}</option>
+            ))}
+          </select>
+        </label>
       </div>
       <fieldset className="mt-3 text-sm">
         <legend className="mb-1 flex flex-wrap items-center gap-3 font-semibold">
