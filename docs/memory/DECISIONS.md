@@ -340,3 +340,7 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 30 October 2026 - No email or SMS campaigns in FootprintOS
 **Decision (owner):** email and SMS marketing are already done outside FootprintOS (the owner's Grok bot), so they won't be built. The Roadmap task "Email and SMS campaigns" is ticked with that note, so Wave 8 (Marketing) is complete. What GoHighLevel is still used for internally remains an open question before it's switched off.
+
+## 1 November 2026 - GoHighLevel: keep for customers, move Footprint's own marketing into FootprintOS
+**Context (owner):** Footprint is on GoHighLevel Agency Unlimited ($297 a month). It's used for Footprint's own marketing (website forms, chat widget, follow-up sequences, pipelines) and customers' marketing (their websites/landing pages, booking calendars, automated texts and emails, review requests). Customers don't pay for it separately.
+**Decision (owner):** keep GoHighLevel for customers' marketing (not rebuilt in FootprintOS). Move Footprint's **own** marketing into FootprintOS: lead pipelines (done, 0.42.0), website enquiry forms, website chat, automatic follow-ups for new leads, and moving existing leads across; then switch Footprint's own use off GoHighLevel. The GoHighLevel bill stays (one flat fee). Wave 8 reopened with these five tasks.
