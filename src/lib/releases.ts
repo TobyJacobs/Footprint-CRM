@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.46.0",
+    date: "2026-11-02",
+    title: "Lay out each flatplan page",
+    changes: [
+      "Flatplan pages are now drawn to scale (130 × 190 mm), with each advert shown at its booked size: full page, half page, quarter page and so on. Drag an advert or editorial to the exact spot it goes, on the same page or another one; it snaps to 5 mm.",
+      "Overlapping items are shown in red, and so is the page.",
+      "Editorial items use the same sizes as adverts (or a full or double page), and their size can be changed after adding them.",
+    ],
+  },
+  {
     version: "0.45.0",
     date: "2026-11-02",
     title: "Upload pages on the flatplan",

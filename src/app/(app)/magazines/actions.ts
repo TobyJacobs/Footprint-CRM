@@ -168,13 +168,24 @@ const pageFrom = (fd: FormData) => {
   const p = int(fd, "page");
   return p && p >= 1 ? p : null;
 };
+// Where on the page (mm from the top-left), when dragged to a spot.
+const spotFrom = (fd: FormData) => {
+  const x = num(fd, "x_mm");
+  const y = num(fd, "y_mm");
+  if (x === null || y === null) return {};
+  const clamp = (v: number) => Math.round(Math.min(300, Math.max(0, v)) * 10) / 10;
+  return { x_mm: clamp(x), y_mm: clamp(y) };
+};
+// The page area: the Full Page advert size.
+const PAGE_W = 130;
+const PAGE_H = 190;
 
 export async function placeAdvert(issueId: string, lineId: string, fd: FormData) {
   await requirePermission("magazines", "edit");
   const page = pageFrom(fd);
   if (!page) redirect(flatplanBack(issueId, "?error=Choose a page"));
   const supabase = await createClient();
-  const { error } = await supabase.from("magazine_flatplan_items").insert({ issue_id: issueId, line_id: lineId, page });
+  const { error } = await supabase.from("magazine_flatplan_items").insert({ issue_id: issueId, line_id: lineId, page, ...spotFrom(fd) });
   if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}`));
   revalidatePath("/magazines", "layout");
   redirect(flatplanBack(issueId));
@@ -185,7 +196,13 @@ export async function moveFlatplanItem(issueId: string, itemId: string, fd: Form
   const page = pageFrom(fd);
   if (!page) redirect(flatplanBack(issueId, "?error=Choose a page"));
   const supabase = await createClient();
-  const { error } = await supabase.from("magazine_flatplan_items").update({ page }).eq("id", itemId).eq("issue_id", issueId);
+  // Moved with the page box only: back to the automatic layout on that page.
+  const spot = spotFrom(fd);
+  const { error } = await supabase
+    .from("magazine_flatplan_items")
+    .update({ page, ...("x_mm" in spot ? spot : { x_mm: null, y_mm: null }) })
+    .eq("id", itemId)
+    .eq("issue_id", issueId);
   if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}`));
   revalidatePath("/magazines", "layout");
   redirect(flatplanBack(issueId));
@@ -200,16 +217,48 @@ export async function removeFlatplanItem(issueId: string, itemId: string) {
   redirect(flatplanBack(issueId));
 }
 
+// Editorial sizes: a full or double page, or any advert size (its mm size).
+async function editorialSize(fd: FormData) {
+  const size = str(fd, "size");
+  if (size === "full") return { page_fraction: 1, width_mm: PAGE_W, height_mm: PAGE_H };
+  if (size === "double") return { page_fraction: 2, width_mm: PAGE_W, height_mm: PAGE_H };
+  if (!size) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.from("advert_sizes").select("page_fraction, width_mm, height_mm").eq("name", size).maybeSingle();
+  if (!data) return null;
+  const f = Number(data.page_fraction);
+  return {
+    page_fraction: f,
+    width_mm: data.width_mm === null ? PAGE_W : Math.min(PAGE_W, Number(data.width_mm)),
+    height_mm: data.height_mm === null ? Math.round(PAGE_H * Math.min(1, f)) : Math.min(PAGE_H, Number(data.height_mm)),
+  };
+}
+
 export async function addEditorial(issueId: string, fd: FormData) {
   await requirePermission("magazines", "edit");
   const title = str(fd, "title");
   const page = pageFrom(fd);
-  const fraction = num(fd, "fraction");
-  if (!title || !page || !fraction) redirect(flatplanBack(issueId, "?error=Give the editorial a title, size and page"));
+  const size = await editorialSize(fd);
+  if (!title || !page || !size) redirect(flatplanBack(issueId, "?error=Give the editorial a title, size and page"));
+  const supabase = await createClient();
+  const { error } = await supabase.from("magazine_flatplan_items").insert({ issue_id: issueId, page, title: title.slice(0, 200), ...size });
+  if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}`));
+  revalidatePath("/magazines", "layout");
+  redirect(flatplanBack(issueId));
+}
+
+// Change an editorial item's size (an advert's size comes from its booking).
+export async function resizeEditorial(issueId: string, itemId: string, fd: FormData) {
+  await requirePermission("magazines", "edit");
+  const size = await editorialSize(fd);
+  if (!size) redirect(flatplanBack(issueId, "?error=Choose a size"));
   const supabase = await createClient();
   const { error } = await supabase
     .from("magazine_flatplan_items")
-    .insert({ issue_id: issueId, page, title: title.slice(0, 200), page_fraction: fraction });
+    .update(size)
+    .eq("id", itemId)
+    .eq("issue_id", issueId)
+    .is("line_id", null);
   if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}`));
   revalidatePath("/magazines", "layout");
   redirect(flatplanBack(issueId));
