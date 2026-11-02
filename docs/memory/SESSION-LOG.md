@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 2 November 2026: Flatplan page uploads
+- Owner asked for an upload button on each flatplan page (instead of one issue PDF) and for edition names to open the flatplan. Built (0.45.0, #89): 6 database checks, full build, merged and checked live.
+
 ## 1 November 2026: T-002 seats and costs; GoHighLevel stays in use
 - Made the T-002 AI and software seats-and-costs page for Teams (kept outside the repo). Owner confirmed GoHighLevel is used for Footprint's own marketing and its customers' marketing, so it was added to the costs (Unlimited plan, confirmed).
 - Owner chose to keep GoHighLevel for customers and move Footprint's own marketing into FootprintOS; Wave 8 reopened with five tasks.

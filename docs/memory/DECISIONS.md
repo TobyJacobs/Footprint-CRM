@@ -351,3 +351,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 ## 1 November 2026 - Magazine reports in five groups
 **Context:** the director uses all of Mag Manager's report groups (about 60 reports).
 **Decision (owner):** rebuild them as about five flexible reports rather than 60 copies, added to the Reporting wave as five tasks: 1 bookings and financial, 2 commission (needs the rules), 3 artwork and production, 4 copies and labels, 5 customers. Missing data (advertiser categories, sections, premium positions, ongoing flag, complimentary/voucher copy recipients) is added with the group that needs it.
+
+## 2 November 2026 - Flatplan: a file per page, not one issue PDF
+**Decision (owner):** replace the whole-issue "Upload the issue PDF" with an upload button on each flatplan page (PDF, JPG or PNG). The flipbook is published only when every page has a file, and is built from the page files in order (PDF.js for PDF pages, images shown directly); replacing a page updates it live. No single-PDF download any more. Clicking an edition on the Magazines dashboard opens its flatplan. PR #89 (0.45.0).
