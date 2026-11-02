@@ -11,10 +11,11 @@ import { designStageLabel, designStageTone } from "@/lib/design/options";
 import { monthLabel } from "@/lib/magazines";
 import { createClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/site-url";
-import { addEditorial, moveFlatplanItem, placeAdvert, removeFlatplanItem, removeFlipbook } from "../../actions";
+import { supabaseUrl } from "@/lib/supabase/config";
+import { addEditorial, moveFlatplanItem, placeAdvert, publishFlipbook, removeFlatplanItem, removeFlipbook, removePageFile } from "../../actions";
 import MagazineTabs from "../../MagazineTabs";
 import { DragItem, DropPage, FlatplanDrag } from "./FlatplanDrag";
-import FlipbookUploader from "./FlipbookUploader";
+import PageUploader from "./PageUploader";
 
 export const metadata: Metadata = { title: "Flatplan" };
 
@@ -61,13 +62,17 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
   const canEdit = user.can("magazines", "edit");
   const ym = issue.month.slice(0, 7);
 
-  const [{ data: siblings }, { data: editions }, { data: sizes }, { data: flip }, origin] = await Promise.all([
+  const [{ data: siblings }, { data: editions }, { data: sizes }, { data: flip }, origin, { data: pageFiles }] = await Promise.all([
     supabase.from("magazine_issues").select("id, month").eq("edition_id", issue.edition_id).in("month", [`${addMonthsTo(ym, -1)}-01`, `${addMonthsTo(ym, 1)}-01`]),
     supabase.from("magazine_issues").select("id, magazine_editions(code, name)").eq("month", issue.month),
     supabase.from("advert_sizes").select("name, page_fraction").eq("active", true).order("position"),
-    supabase.from("magazine_issues").select("flipbook_path, flipbook_published_at, magazine_editions(slug)").eq("id", issueId).maybeSingle(),
+    supabase.from("magazine_issues").select("flipbook_published_at, magazine_editions(slug)").eq("id", issueId).maybeSingle(),
     siteUrl(),
+    supabase.from("magazine_issue_pages").select("page, path, content_type").eq("issue_id", issueId),
   ]);
+  const fileFor = (p: number) => (pageFiles ?? []).find((f) => f.page === p);
+  const fileUrl = (path: string) => `${supabaseUrl}/storage/v1/object/public/flipbooks/${path.split("/").map(encodeURIComponent).join("/")}`;
+  const online = !!flip?.flipbook_published_at;
   const slug = (flip?.magazine_editions as unknown as { slug: string } | null)?.slug ?? null;
   const issueLink = slug ? `${origin}/read/${slug}/${ym}` : null;
   const latestLink = slug ? `${origin}/read/${slug}` : null;
@@ -143,11 +148,11 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
         <Card title="Digital edition (flipbook)">
           <div className="grid gap-4 text-sm lg:grid-cols-2">
             <div className="grid content-start gap-2">
-              {flip?.flipbook_path ? (
+              {online ? (
                 <>
                   <p>
                     <Badge tone="teal">Online</Badge>{" "}
-                    <span className="text-fp-dark/75">since {flip.flipbook_published_at ? new Date(flip.flipbook_published_at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/London" }) : "—"}</span>
+                    <span className="text-fp-dark/75">since {new Date(flip!.flipbook_published_at!).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/London" })}</span>
                   </p>
                   {issueLink && (
                     <p className="flex flex-wrap items-center gap-2">
@@ -157,12 +162,24 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
                       <CopyButton text={issueLink} label="Copy link" />
                     </p>
                   )}
+                  <p className="text-xs text-fp-mid">Replacing a page below updates the flipbook straight away.</p>
                 </>
               ) : (
-                <p className="text-fp-mid">Not online yet. Upload the finished PDF to publish it as a page-turning flipbook.</p>
+                <p className="text-fp-mid">
+                  Not online yet. Upload each page&apos;s finished file (PDF, JPG or PNG) on its page below, then put the flipbook online.{" "}
+                  <strong>
+                    {(pageFiles ?? []).filter((f) => f.page <= issue.pages).length} of {issue.pages} pages uploaded.
+                  </strong>
+                </p>
               )}
-              {canEdit && <FlipbookUploader issueId={issue.id} replacing={!!flip?.flipbook_path} />}
-              {canEdit && flip?.flipbook_path && (
+              {canEdit && !online && (
+                <form action={publishFlipbook.bind(null, issue.id)}>
+                  <button type="submit" className="rounded-md bg-fp-pink px-4 py-2 font-semibold text-white hover:bg-fp-pink/90">
+                    Put the flipbook online
+                  </button>
+                </form>
+              )}
+              {canEdit && online && (
                 <form action={removeFlipbook.bind(null, issue.id)}>
                   <button type="submit" className="text-xs font-semibold text-fp-error hover:underline">
                     Take the flipbook offline
@@ -311,6 +328,28 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
                         </DragItem>
                       ))}
                     </div>
+                    {(() => {
+                      const file = fileFor(p);
+                      return (
+                        <div className="mt-1 grid gap-0.5 border-t border-fp-border/60 pt-1">
+                          {file && (
+                            <p className="flex items-center justify-between gap-1 text-[11px]">
+                              <a href={fileUrl(file.path)} target="_blank" rel="noopener" className="font-semibold text-fp-teal-deep hover:underline">
+                                ✓ {file.content_type === "application/pdf" ? "PDF" : "Image"} uploaded
+                              </a>
+                              {canEdit && (
+                                <form action={removePageFile.bind(null, issue.id, p)}>
+                                  <button type="submit" className="text-fp-error hover:underline">
+                                    Remove
+                                  </button>
+                                </form>
+                              )}
+                            </p>
+                          )}
+                          {canEdit && <PageUploader issueId={issue.id} page={p} replacing={!!file} />}
+                        </div>
+                      );
+                    })()}
                   </DropPage>
                 );
               })}

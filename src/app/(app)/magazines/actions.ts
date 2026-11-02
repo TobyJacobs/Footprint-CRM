@@ -219,29 +219,65 @@ export async function addEditorial(issueId: string, fd: FormData) {
 // The issue's PDF is uploaded from the browser into the public "flipbooks"
 // store, then recorded here (replacing any earlier one).
 
-export async function recordFlipbook(issueId: string, path: string): Promise<{ ok: true } | { ok: false; error: string }> {
+const PAGE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+
+// A page's finished file (PDF, JPG or PNG) has been uploaded: remember it,
+// replacing (and deleting) any earlier file for that page.
+export async function recordPageFile(issueId: string, page: number, path: string, contentType: string): Promise<{ ok: true } | { ok: false; error: string }> {
   await requirePermission("magazines", "edit");
-  if (!path.startsWith(`${issueId}/`) || path.includes("..")) return { ok: false, error: "That upload doesn't belong to this issue" };
+  if (!path.startsWith(`${issueId}/pages/`) || path.includes("..")) return { ok: false, error: "That upload doesn't belong to this issue" };
+  if (!PAGE_TYPES.includes(contentType)) return { ok: false, error: "Pages must be a PDF, JPG or PNG" };
+  if (!Number.isInteger(page) || page < 1) return { ok: false, error: "Unknown page" };
   const supabase = await createClient();
-  const { data: old } = await supabase.from("magazine_issues").select("flipbook_path").eq("id", issueId).maybeSingle();
+  const { data: old } = await supabase.from("magazine_issue_pages").select("path").eq("issue_id", issueId).eq("page", page).maybeSingle();
   const { error } = await supabase
-    .from("magazine_issues")
-    .update({ flipbook_path: path, flipbook_published_at: new Date().toISOString() })
-    .eq("id", issueId);
+    .from("magazine_issue_pages")
+    .upsert({ issue_id: issueId, page, path, content_type: contentType }, { onConflict: "issue_id,page" });
   if (error) return { ok: false, error: error.message };
-  if (old?.flipbook_path && old.flipbook_path !== path) await supabase.storage.from("flipbooks").remove([old.flipbook_path]);
+  if (old?.path && old.path !== path) await supabase.storage.from("flipbooks").remove([old.path]);
   revalidatePath("/magazines", "layout");
   revalidatePath("/read", "layout");
   return { ok: true };
 }
 
+export async function removePageFile(issueId: string, page: number) {
+  await requirePermission("magazines", "edit");
+  const supabase = await createClient();
+  const { data: old } = await supabase.from("magazine_issue_pages").delete().eq("issue_id", issueId).eq("page", page).select("path");
+  if (old?.[0]?.path) await supabase.storage.from("flipbooks").remove([old[0].path]);
+  revalidatePath("/magazines", "layout");
+  revalidatePath("/read", "layout");
+  redirect(flatplanBack(issueId, "?saved=1"));
+}
+
+// Publish the flipbook once every page has its file.
+export async function publishFlipbook(issueId: string) {
+  await requirePermission("magazines", "edit");
+  const supabase = await createClient();
+  const [{ data: issue }, { data: files }] = await Promise.all([
+    supabase.from("magazine_issues").select("pages").eq("id", issueId).maybeSingle(),
+    supabase.from("magazine_issue_pages").select("page").eq("issue_id", issueId),
+  ]);
+  if (!issue) redirect(flatplanBack(issueId, `?error=${encodeURIComponent("Issue not found")}`));
+  const have = new Set((files ?? []).map((f) => f.page));
+  const missing = Array.from({ length: issue.pages }, (_, i) => i + 1).filter((p) => !have.has(p));
+  if (missing.length) {
+    const list = missing.length > 6 ? `${missing.slice(0, 6).join(", ")} and ${missing.length - 6} more` : missing.join(", ");
+    redirect(flatplanBack(issueId, `?error=${encodeURIComponent(`Upload every page first. Still to do: page${missing.length === 1 ? "" : "s"} ${list}.`)}`));
+  }
+  const { error } = await supabase.from("magazine_issues").update({ flipbook_published_at: new Date().toISOString() }).eq("id", issueId);
+  if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}`));
+  revalidatePath("/magazines", "layout");
+  revalidatePath("/read", "layout");
+  redirect(flatplanBack(issueId, "?saved=1"));
+}
+
+// Take the flipbook offline (the page files stay, ready to publish again).
 export async function removeFlipbook(issueId: string) {
   await requirePermission("magazines", "edit");
   const supabase = await createClient();
-  const { data: old } = await supabase.from("magazine_issues").select("flipbook_path").eq("id", issueId).maybeSingle();
-  const { error } = await supabase.from("magazine_issues").update({ flipbook_path: null, flipbook_published_at: null }).eq("id", issueId);
+  const { error } = await supabase.from("magazine_issues").update({ flipbook_published_at: null }).eq("id", issueId);
   if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}`));
-  if (old?.flipbook_path) await supabase.storage.from("flipbooks").remove([old.flipbook_path]);
   revalidatePath("/magazines", "layout");
   revalidatePath("/read", "layout");
   redirect(flatplanBack(issueId, "?saved=1"));

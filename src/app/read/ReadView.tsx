@@ -5,7 +5,7 @@ import { supabaseUrl } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import Flipbook from "./Flipbook";
 
-type FlipbookData = { code: string; name: string; slug: string; month: string; path: string; months: string[] };
+type FlipbookData = { code: string; name: string; slug: string; month: string; pages: { page: number; path: string; type: string }[]; months: string[] };
 
 const monthLabel = (m: string) =>
   new Date(`${m.slice(0, 7)}-01T12:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -30,7 +30,7 @@ export default function ReadView({ book, embed }: { book: FlipbookData | null; e
       </main>
     );
   }
-  const pdfUrl = `${supabaseUrl}/storage/v1/object/public/flipbooks/${book.path.split("/").map(encodeURIComponent).join("/")}`;
+  const pages = book.pages.map((p) => ({ url: `${supabaseUrl}/storage/v1/object/public/flipbooks/${p.path.split("/").map(encodeURIComponent).join("/")}`, type: p.type }));
   const title = flipbookTitle(book);
   return (
     <main className={`min-h-screen bg-fp-offwhite ${embed ? "p-2" : ""}`}>
@@ -43,7 +43,7 @@ export default function ReadView({ book, embed }: { book: FlipbookData | null; e
         </header>
       )}
       <div className={embed ? "" : "px-4 py-6"}>
-        <Flipbook pdfUrl={pdfUrl} title={title} />
+        <Flipbook pages={pages} title={title} />
       </div>
       {!embed && book.months.length > 1 && (
         <nav aria-label="Other issues" className="mx-auto flex max-w-6xl flex-wrap justify-center gap-2 px-4 pb-8 text-sm">
