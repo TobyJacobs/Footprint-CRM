@@ -14,7 +14,8 @@ import { siteUrl } from "@/lib/site-url";
 import { supabaseUrl } from "@/lib/supabase/config";
 import { addEditorial, moveFlatplanItem, placeAdvert, publishFlipbook, removeFlatplanItem, removeFlipbook, removePageFile, resizeEditorial } from "../../actions";
 import MagazineTabs from "../../MagazineTabs";
-import { DragItem, DropPage, FlatplanDrag, PAGE_H, PAGE_W } from "./FlatplanDrag";
+import { PAGE_H, PAGE_W } from "@/lib/magazine-options";
+import { DragItem, DropPage, FlatplanDrag } from "./FlatplanDrag";
 import PageUploader from "./PageUploader";
 
 export const metadata: Metadata = { title: "Flatplan" };

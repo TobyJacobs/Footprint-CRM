@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.46.1",
+    date: "2026-11-02",
+    title: "Fix: flatplan page items",
+    changes: ["Adverts and editorial now show at their size on flatplan pages (they were drawn with no size after the last update)."],
+  },
+  {
     version: "0.46.0",
     date: "2026-11-02",
     title: "Lay out each flatplan page",
