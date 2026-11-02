@@ -1,14 +1,13 @@
 "use client";
 
 import { createContext, useContext, useState, useTransition, type ReactNode } from "react";
+import { PAGE_H, PAGE_W } from "@/lib/magazine-options";
 import { moveFlatplanItem, placeAdvert } from "../../actions";
 
 // Drag an advert or editorial item onto a page, to the spot where it should go
 // (or to a new spot on the same page). Same browser drag and drop as the
 // Design board; on phones and tablets the "Put on page" / "Move to page"
 // boxes do the job (the item is then laid out automatically on that page).
-export const PAGE_W = 130;
-export const PAGE_H = 190;
 const SNAP = 5;
 
 type Drag = {
