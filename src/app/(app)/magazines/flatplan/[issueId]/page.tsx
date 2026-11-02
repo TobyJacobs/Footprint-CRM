@@ -12,9 +12,9 @@ import { monthLabel } from "@/lib/magazines";
 import { createClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/site-url";
 import { supabaseUrl } from "@/lib/supabase/config";
-import { addEditorial, moveFlatplanItem, placeAdvert, publishFlipbook, removeFlatplanItem, removeFlipbook, removePageFile } from "../../actions";
+import { addEditorial, moveFlatplanItem, placeAdvert, publishFlipbook, removeFlatplanItem, removeFlipbook, removePageFile, resizeEditorial } from "../../actions";
 import MagazineTabs from "../../MagazineTabs";
-import { DragItem, DropPage, FlatplanDrag } from "./FlatplanDrag";
+import { DragItem, DropPage, FlatplanDrag, PAGE_H, PAGE_W } from "./FlatplanDrag";
 import PageUploader from "./PageUploader";
 
 export const metadata: Metadata = { title: "Flatplan" };
@@ -32,8 +32,12 @@ type Placed = {
   cancelled: boolean;
   artwork_stage: string | null;
   artwork_job_id: string | null;
+  width_mm: number | null;
+  height_mm: number | null;
+  x_mm: number | null;
+  y_mm: number | null;
 };
-type Unplaced = Omit<Placed, "id" | "page" | "kind" | "cancelled"> & { line_id: string };
+type Unplaced = Omit<Placed, "id" | "page" | "kind" | "cancelled" | "x_mm" | "y_mm"> & { line_id: string };
 type Plan = {
   issue: { id: string; month: string; pages: number; complete: boolean; edition_id: string; code: string; name: string };
   placed: Placed[];
@@ -85,12 +89,56 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
   const pages = Array.from({ length: issue.pages }, (_, i) => i + 1);
   const onPage = (p: number) => plan.placed.filter((x) => x.page === p);
   const fill = (p: number) => onPage(p).reduce((s, x) => s + Number(x.fraction), 0);
+  // Size on the page in mm (from the booked size; capped at the page area).
+  const sizeOf = (x: { width_mm: number | null; height_mm: number | null; fraction: number }) => ({
+    w: Math.min(PAGE_W, Number(x.width_mm ?? PAGE_W)),
+    h: Math.min(PAGE_H, Number(x.height_mm ?? Math.round(PAGE_H * Math.min(1, Number(x.fraction))))),
+  });
+  // Items with a spot stay there; the rest are laid out in rows from the top
+  // until someone drags them. Items covering each other are marked.
+  const layout = (p: number) => {
+    const items = onPage(p).map((x) => ({ ...x, ...sizeOf(x), x: x.x_mm === null ? null : Number(x.x_mm), y: x.y_mm === null ? null : Number(x.y_mm), clash: false }));
+    let cx = 0;
+    let cy = Math.max(0, ...items.filter((i) => i.y !== null).map((i) => (i.y as number) + i.h));
+    let row = 0;
+    for (const i of items.filter((i) => i.x === null || i.y === null)) {
+      if (cx + i.w > PAGE_W + 0.1) {
+        cx = 0;
+        cy += row;
+        row = 0;
+      }
+      i.x = cx;
+      i.y = Math.min(cy, Math.max(0, PAGE_H - i.h));
+      cx += i.w;
+      row = Math.max(row, i.h);
+    }
+    const placedItems = items as ((typeof items)[number] & { x: number; y: number })[];
+    for (const a of placedItems)
+      for (const b of placedItems)
+        if (a !== b && a.x < b.x + b.w - 0.5 && b.x < a.x + a.w - 0.5 && a.y < b.y + b.h - 0.5 && b.y < a.y + a.h - 0.5) a.clash = true;
+    return placedItems;
+  };
   const fullPages = pages.filter((p) => fill(p) >= 0.999).length;
   const pageOptions = pages.map((p) => (
     <option key={p} value={p}>
       Page {p} {fill(p) > 0 ? `(${Math.round(fill(p) * 100)}% full)` : "(empty)"}
     </option>
   ));
+  const sizeOptions = [
+    <option key="full" value="full">
+      Full page
+    </option>,
+    <option key="double" value="double">
+      Double page
+    </option>,
+    ...(sizes ?? [])
+      .filter((s) => Number(s.page_fraction) < 1)
+      .map((s) => (
+        <option key={s.name} value={s.name}>
+          {s.name} ({fractionLabel(Number(s.page_fraction))})
+        </option>
+      )),
+  ];
   const artwork = (stage: string | null, jobId: string | null, orderId: string | null) =>
     stage && jobId ? (
       <Link href={`/design/${jobId}`} className="hover:underline">
@@ -217,7 +265,7 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
                   <ul className="grid gap-2 text-sm">
                     {plan.unplaced.map((u) => (
                       <li key={u.line_id}>
-                        <DragItem kind="line" id={u.line_id} page={null} canDrag={canEdit} className="rounded-md border border-fp-border bg-white p-2">
+                        <DragItem kind="line" id={u.line_id} w={sizeOf(u).w} h={sizeOf(u).h} canDrag={canEdit} className="rounded-md border border-fp-border bg-white p-2">
                           <p className="font-semibold">{u.title}</p>
                           <p className="text-xs text-fp-mid">
                             {u.size} · {fractionLabel(Number(u.fraction))} ·{" "}
@@ -249,16 +297,8 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
                 <Card title="Add editorial">
                   <form action={addEditorial.bind(null, issue.id)} className="grid gap-2 text-sm">
                     <input name="title" required maxLength={200} placeholder="e.g. Editor's Letter" aria-label="Title" className={inputClass} />
-                    <select name="fraction" required defaultValue="1" aria-label="Size" className={inputClass}>
-                      <option value="1">Full page</option>
-                      <option value="2">Double page</option>
-                      {(sizes ?? [])
-                        .filter((s) => Number(s.page_fraction) < 1)
-                        .map((s) => (
-                          <option key={s.name} value={String(s.page_fraction)}>
-                            {s.name} ({fractionLabel(Number(s.page_fraction))})
-                          </option>
-                        ))}
+                    <select name="size" required defaultValue="full" aria-label="Size" className={inputClass}>
+                      {sizeOptions}
                     </select>
                     <select name="page" required defaultValue="" aria-label="Page" className={inputClass}>
                       <option value="" disabled>
@@ -274,91 +314,122 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
               )}
             </aside>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4">
               {pages.map((p) => {
                 const f = fill(p);
-                const tone = f > 1.001 ? "border-fp-error bg-fp-error/5" : f >= 0.999 ? "border-fp-teal-deep/40 bg-fp-teal/5" : f > 0 ? "border-fp-amber/50 bg-fp-amber/5" : "border-fp-border bg-white";
+                const items = layout(p);
+                const clash = items.some((x) => x.clash);
+                const tone = clash || f > 1.001 ? "border-fp-error bg-fp-error/5" : f >= 0.999 ? "border-fp-teal-deep/40 bg-fp-teal/5" : f > 0 ? "border-fp-amber/50 bg-fp-amber/5" : "border-fp-border bg-white";
+                const file = fileFor(p);
                 return (
-                  <DropPage key={p} page={p} className={`flex min-h-56 flex-col rounded-md border-2 p-1.5 ${tone}`}>
-                    <p className="mb-1 flex items-center justify-between text-xs font-bold">
+                  <div key={p} className={`flex flex-col gap-1.5 rounded-md border-2 p-1.5 ${tone}`}>
+                    <p className="flex items-center justify-between text-xs font-bold">
                       <span>Page {p}</span>
-                      <span className={f > 1.001 ? "text-fp-error" : "text-fp-mid"}>{f > 0 ? `${Math.round(f * 100)}%` : ""}</span>
+                      <span className={clash || f > 1.001 ? "text-fp-error" : "text-fp-mid"}>
+                        {clash ? "Items overlap · " : ""}
+                        {f > 0 ? `${Math.round(f * 100)}%` : ""}
+                      </span>
                     </p>
-                    <div className="flex flex-1 flex-col gap-1">
-                      {onPage(p).map((x) => (
+                    <DropPage page={p} className="rounded-sm border border-fp-border bg-white">
+                      {items.map((x) => (
                         <DragItem
                           key={x.id}
                           kind="item"
                           id={x.id}
-                          page={p}
+                          w={x.w}
+                          h={x.h}
                           canDrag={canEdit}
-                          style={{ minHeight: `${Math.max(2.25, Math.min(1, Number(x.fraction)) * 12)}rem` }}
-                          className={`rounded border p-1 text-[11px] leading-tight ${
-                            x.kind === "editorial"
-                              ? "border-fp-mid/30 bg-fp-light"
-                              : x.cancelled
-                                ? "border-fp-error/40 bg-fp-error/10"
-                                : "border-fp-pink/30 bg-fp-pink/10"
+                          title={`${x.title} · ${x.kind === "editorial" ? "Editorial" : x.size} (${x.w} × ${x.h} mm)${canEdit ? " · drag to move" : ""}`}
+                          style={{ left: `${(x.x / PAGE_W) * 100}%`, top: `${(x.y / PAGE_H) * 100}%`, width: `${(x.w / PAGE_W) * 100}%`, height: `${(x.h / PAGE_H) * 100}%` }}
+                          className={`absolute overflow-hidden rounded-sm border p-0.5 text-[10px] leading-tight ${
+                            x.clash
+                              ? "border-fp-error bg-fp-error/20"
+                              : x.kind === "editorial"
+                                ? "border-fp-mid/40 bg-fp-light"
+                                : x.cancelled
+                                  ? "border-fp-error/40 bg-fp-error/10"
+                                  : "border-fp-pink/40 bg-fp-pink/15"
                           }`}
                         >
-                          <p className="font-semibold">{x.title}</p>
-                          <p className="text-fp-mid">
-                            {x.kind === "editorial" ? "Editorial" : x.size} · {fractionLabel(Number(x.fraction))}
-                            {x.cancelled ? " · order cancelled" : ""}
-                          </p>
-                          {x.kind === "advert" && <div className="mt-0.5">{artwork(x.artwork_stage, x.artwork_job_id, x.order_id)}</div>}
-                          {canEdit && (
-                            <details className="mt-1">
-                              <summary className="cursor-pointer text-fp-teal-deep">Move or remove</summary>
-                              <form action={moveFlatplanItem.bind(null, issue.id, x.id)} className="mt-1 flex gap-1">
-                                <select name="page" defaultValue={p} aria-label="Move to page" className={`${inputClass} px-1 py-0.5 text-[11px]`}>
-                                  {pageOptions}
-                                </select>
-                                <button type="submit" className="rounded border border-fp-border bg-white px-1.5 text-[11px] font-semibold">
-                                  Move
-                                </button>
-                              </form>
-                              <form action={removeFlatplanItem.bind(null, issue.id, x.id)} className="mt-1">
-                                <button type="submit" className="text-[11px] font-semibold text-fp-error hover:underline">
-                                  Take off the page
-                                </button>
-                              </form>
-                            </details>
-                          )}
+                          <p className="truncate font-semibold">{x.title}</p>
+                          <p className="truncate text-fp-mid">{x.kind === "editorial" ? "Editorial" : x.size}</p>
                         </DragItem>
                       ))}
-                    </div>
-                    {(() => {
-                      const file = fileFor(p);
-                      return (
-                        <div className="mt-1 grid gap-0.5 border-t border-fp-border/60 pt-1">
-                          {file && (
-                            <p className="flex items-center justify-between gap-1 text-[11px]">
-                              <a href={fileUrl(file.path)} target="_blank" rel="noopener" className="font-semibold text-fp-teal-deep hover:underline">
-                                ✓ {file.content_type === "application/pdf" ? "PDF" : "Image"} uploaded
-                              </a>
-                              {canEdit && (
-                                <form action={removePageFile.bind(null, issue.id, p)}>
-                                  <button type="submit" className="text-fp-error hover:underline">
-                                    Remove
+                    </DropPage>
+                    {items.length > 0 && (
+                      <ul className="grid gap-1 text-[11px] leading-tight">
+                        {items.map((x) => (
+                          <li key={x.id} className="rounded border border-fp-border bg-white p-1">
+                            <p className="font-semibold">
+                              {x.title}
+                              {x.cancelled ? <span className="text-fp-error"> · order cancelled</span> : null}
+                            </p>
+                            <p className="text-fp-mid">
+                              {x.kind === "editorial" ? "Editorial" : x.size} · {fractionLabel(Number(x.fraction))}
+                            </p>
+                            {x.kind === "advert" && <div className="mt-0.5">{artwork(x.artwork_stage, x.artwork_job_id, x.order_id)}</div>}
+                            {canEdit && (
+                              <details className="mt-1">
+                                <summary className="cursor-pointer text-fp-teal-deep">{x.kind === "editorial" ? "Size, move or remove" : "Move or remove"}</summary>
+                                {x.kind === "editorial" && (
+                                  <form action={resizeEditorial.bind(null, issue.id, x.id)} className="mt-1 flex gap-1">
+                                    <select name="size" defaultValue="" aria-label="Size" className={`${inputClass} px-1 py-0.5 text-[11px]`}>
+                                      <option value="" disabled>
+                                        New size…
+                                      </option>
+                                      {sizeOptions}
+                                    </select>
+                                    <button type="submit" className="rounded border border-fp-border bg-white px-1.5 text-[11px] font-semibold">
+                                      Change
+                                    </button>
+                                  </form>
+                                )}
+                                <form action={moveFlatplanItem.bind(null, issue.id, x.id)} className="mt-1 flex gap-1">
+                                  <select name="page" defaultValue={p} aria-label="Move to page" className={`${inputClass} px-1 py-0.5 text-[11px]`}>
+                                    {pageOptions}
+                                  </select>
+                                  <button type="submit" className="rounded border border-fp-border bg-white px-1.5 text-[11px] font-semibold">
+                                    Move
                                   </button>
                                 </form>
-                              )}
-                            </p>
+                                <form action={removeFlatplanItem.bind(null, issue.id, x.id)} className="mt-1">
+                                  <button type="submit" className="text-[11px] font-semibold text-fp-error hover:underline">
+                                    Take off the page
+                                  </button>
+                                </form>
+                              </details>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="grid gap-0.5 border-t border-fp-border/60 pt-1">
+                      {file && (
+                        <p className="flex items-center justify-between gap-1 text-[11px]">
+                          <a href={fileUrl(file.path)} target="_blank" rel="noopener" className="font-semibold text-fp-teal-deep hover:underline">
+                            ✓ {file.content_type === "application/pdf" ? "PDF" : "Image"} uploaded
+                          </a>
+                          {canEdit && (
+                            <form action={removePageFile.bind(null, issue.id, p)}>
+                              <button type="submit" className="text-fp-error hover:underline">
+                                Remove
+                              </button>
+                            </form>
                           )}
-                          {canEdit && <PageUploader issueId={issue.id} page={p} replacing={!!file} />}
-                        </div>
-                      );
-                    })()}
-                  </DropPage>
+                        </p>
+                      )}
+                      {canEdit && <PageUploader issueId={issue.id} page={p} replacing={!!file} />}
+                    </div>
+                  </div>
                 );
               })}
             </div>
           </div>
         </FlatplanDrag>
         <p className="text-xs text-fp-mid">
-          Colours: white = empty, amber = part full, green = full, red = over-full. Only adverts on sales orders appear (not quotes). Drag with a mouse, or use the boxes
-          on each item.
+          Each page is drawn to scale (130 × 190 mm). Drag an advert or editorial to the spot where it goes, on any page; it snaps to 5 mm. Colours: white = empty,
+          amber = part full, green = full, red = over-full or items overlapping. Only adverts on sales orders appear (not quotes). On a phone or tablet use the boxes
+          under each page instead.
         </p>
       </div>
     </>
