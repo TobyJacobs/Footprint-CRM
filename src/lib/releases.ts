@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.45.0",
+    date: "2026-11-02",
+    title: "Upload pages on the flatplan",
+    changes: [
+      "Each page on a flatplan now has its own Upload page button for its finished file (PDF, JPG or PNG), in place of uploading one PDF for the whole issue. You can see which pages are done, open them, replace them or remove them.",
+      "Once every page is uploaded, Put the flipbook online publishes the page-turning flipbook, built from the pages in order. Replacing a page updates it straight away.",
+      "On the Magazines dashboard, click an edition's name to open its flatplan (the separate Flatplan link has gone).",
+    ],
+  },
+  {
     version: "0.44.0",
     date: "2026-11-01",
     title: "Magazine reports: bookings and financial",

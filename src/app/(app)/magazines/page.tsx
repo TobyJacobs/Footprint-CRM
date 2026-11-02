@@ -147,11 +147,14 @@ export default async function MagazinesPage(props: PageProps<"/magazines">) {
                   return (
                     <tr key={r.edition_id}>
                       <td className="py-2 pr-3 font-semibold">
-                        {r.code}. {r.name}
-                        {r.issue_id && (
-                          <Link href={`/magazines/flatplan/${r.issue_id}`} className="ml-2 text-xs font-semibold text-fp-teal-deep hover:underline">
-                            Flatplan
+                        {r.issue_id ? (
+                          <Link href={`/magazines/flatplan/${r.issue_id}`} title="Open this issue's flatplan" className="text-fp-teal-deep hover:underline">
+                            {r.code}. {r.name}
                           </Link>
+                        ) : (
+                          <>
+                            {r.code}. {r.name}
+                          </>
                         )}
                         {r.complete && (
                           <span className="ml-2">
