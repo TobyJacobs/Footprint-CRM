@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Newspaper } from "lucide-react";
 import { inputClass, secondaryButton } from "@/components/ui";
-import { premiumPositions } from "@/lib/magazine-options";
+import { premiumPositions, premiumRateProduct, ratePrice } from "@/lib/magazine-options";
 import type { AdvertSetup } from "@/lib/magazines";
 
 export type AdvertLine = {
@@ -26,13 +26,16 @@ const addMonths = (ym: string, n: number) => {
 
 // Advertising quotes: pick the size, editions and months, and it adds one line
 // per edition per month, each tagged with its issue and size, so the
-// Magazines dashboard can count it once the quote becomes an order.
+// Magazines dashboard can count it once the quote becomes an order. Prices
+// come from the rate card (6+ months = long rate; 1st, 2nd… area each priced)
+// unless a different price is typed in.
 export default function AdvertBuilder({ firstMonth, setup, onAdd }: { firstMonth: string; setup: AdvertSetup; onAdd: (lines: AdvertLine[]) => void }) {
   const [sizeId, setSizeId] = useState(setup.sizes[0]?.id ?? "");
   const [editions, setEditions] = useState<string[]>([]);
   const [start, setStart] = useState(firstMonth);
   const [months, setMonths] = useState(1);
-  const [price, setPrice] = useState(setup.sizes[0]?.default_price != null ? String(setup.sizes[0].default_price) : "");
+  // A typed price replaces the rate card for every line; empty = rate card.
+  const [price, setPrice] = useState("");
   const [cost, setCost] = useState("");
   const [sectionId, setSectionId] = useState("");
   const [premium, setPremium] = useState("");
@@ -42,22 +45,27 @@ export default function AdvertBuilder({ firstMonth, setup, onAdd }: { firstMonth
   const monthList = /^\d{4}-\d{2}$/.test(start) ? Array.from({ length: months }, (_, i) => addMonths(start, i)) : [];
   const issueFor = (editionId: string, ym: string) => setup.issues.find((i) => i.edition_id === editionId && i.month.startsWith(ym));
   const missing = chosen.flatMap((e) => monthList.filter((ym) => !issueFor(e.id, ym)).map((ym) => `${e.name} ${monthLabel(ym)}`));
-  const ready = !!size && chosen.length > 0 && monthList.length > 0 && Number(price) > 0 && missing.length === 0;
+  const product = (premium && premiumRateProduct[premium]) || size?.rate_product || null;
+  const typed = price.trim() === "" ? null : Number(price);
+  // The price per month for the nth edition chosen (1st area, 2nd area…).
+  const priceFor = (index: number, ym: string) =>
+    typed ?? ratePrice(setup.rates, product, months, index + 1, Number(ym.slice(0, 4))) ?? size?.default_price ?? null;
+  const prices = chosen.map((_, i) => priceFor(i, monthList[0] ?? start));
+  const priced = chosen.length > 0 && monthList.every((ym) => chosen.every((_, i) => (priceFor(i, ym) ?? 0) > 0));
+  const ready = !!size && chosen.length > 0 && monthList.length > 0 && priced && missing.length === 0;
+  const total = monthList.reduce((sum, ym) => sum + chosen.reduce((t, _, i) => t + (priceFor(i, ym) ?? 0), 0), 0);
+  const ordinal = (n: number) => (n >= 5 ? "5th+" : ["1st", "2nd", "3rd", "4th"][n - 1]);
 
-  const pickSize = (id: string) => {
-    setSizeId(id);
-    const s = setup.sizes.find((x) => x.id === id);
-    if (s?.default_price != null) setPrice(String(s.default_price));
-  };
+  const pickSize = (id: string) => setSizeId(id);
 
   const add = () => {
     if (!ready || !size) return;
     onAdd(
       monthList.flatMap((ym) =>
-        chosen.map((e) => ({
+        chosen.map((e, i) => ({
           description: `${size.name} advert – Forget Me Not ${e.code}. ${e.name} – ${monthLabel(ym)}`,
           quantity: 1,
-          unit_price: Math.round(Number(price) * 100) / 100,
+          unit_price: Math.round((priceFor(i, ym) ?? 0) * 100) / 100,
           unit_cost: cost === "" ? null : Math.round(Number(cost) * 100) / 100,
           magazine_issue_id: issueFor(e.id, ym)!.id,
           advert_size_id: size.id,
@@ -105,7 +113,15 @@ export default function AdvertBuilder({ firstMonth, setup, onAdd }: { firstMonth
         <div className="grid grid-cols-2 gap-2">
           <label className="grid gap-1 text-sm">
             <span className="font-semibold">Price per edition £</span>
-            <input type="number" step="0.01" min={0} value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} />
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder={product ? "Rate card" : "Type a price"}
+              className={inputClass}
+            />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-semibold">Cost £</span>
@@ -159,6 +175,20 @@ export default function AdvertBuilder({ firstMonth, setup, onAdd }: { firstMonth
           ))}
         </div>
       </fieldset>
+      {chosen.length > 0 && (
+        <p className="mt-3 text-xs text-fp-dark/75">
+          {typed !== null ? (
+            <>Your price, £{typed.toFixed(2)} per edition per month, replaces the rate card.</>
+          ) : product ? (
+            <>
+              Rate card, {months >= 6 ? "6 months or more" : "under 6 months"}, per month:{" "}
+              {chosen.map((e, i) => `${e.code} £${prices[i]?.toFixed(2) ?? "—"} (${ordinal(i + 1)} area)`).join(" · ")}
+            </>
+          ) : (
+            <>This size has no rate-card price{premium ? " in this position" : ""}: type a price.</>
+          )}
+        </p>
+      )}
       {missing.length > 0 && (
         <p className="mt-3 text-sm text-fp-error">
           No issue set up yet for {missing.slice(0, 3).join(", ")}
@@ -171,8 +201,10 @@ export default function AdvertBuilder({ firstMonth, setup, onAdd }: { firstMonth
         </button>
         <span className="text-xs text-fp-mid">
           {ready
-            ? `${months} month${months === 1 ? "" : "s"} × ${chosen.length} edition${chosen.length === 1 ? "" : "s"} at £${Number(price).toFixed(2)} = £${(lineCount * Number(price)).toFixed(2)} before VAT`
-            : "Choose at least one edition and a price."}
+            ? `${months} month${months === 1 ? "" : "s"} × ${chosen.length} edition${chosen.length === 1 ? "" : "s"} = £${total.toFixed(2)} before VAT`
+            : chosen.length === 0
+              ? "Choose at least one edition."
+              : "Type a price for this size."}
         </span>
       </div>
     </section>

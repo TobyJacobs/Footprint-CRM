@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.47.0",
+    date: "2026-11-03",
+    title: "Magazine rate card",
+    changes: [
+      "Advertising quotes now price themselves from the 2026 rate card: the first edition at the 1st-area price, the second at the 2nd-area price and so on, with the cheaper rate for 6 months or more. Premium positions (front and back cover, inside covers, first page, centre spread) use their own prices. You can still type a different price.",
+      "Magazines → Setup: the rate card for each year (view and correct any price), and which rate-card row each advert size is priced as. Three quarter page and the double small ad have no rate-card price yet.",
+    ],
+  },
+  {
     version: "0.46.1",
     date: "2026-11-02",
     title: "Fix: flatplan page items",
