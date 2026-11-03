@@ -4,6 +4,10 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 3 November 2026: Magazine rate card
+- Answered the director's questions, drafted an email to Huw (19 questions on the rate card, contracts, commission, timetable, switch-over year) and compared the rate card with forgetmenotonline.org (website out of date: "from £18", "up to 39%").
+- Built the rate card (0.47.0, #92): 7 pricing checks passed; merged, 2026 prices loaded (140), checked live. Roadmap: rate card ticked; commission left as its own task.
+
 ## 2 November 2026: Flatplan page uploads
 - Owner asked for an upload button on each flatplan page (instead of one issue PDF) and for edition names to open the flatplan. Built (0.45.0, #89): 6 database checks, full build, merged and checked live.
 - Owner asked for different advert sizes on each page and dragging them around: built flatplan layout to scale (0.46.0, #90). Live test found items had no size (constants imported from a browser-only file); fixed (0.46.1, #91). Tested live: add, resize, drag; test items deleted.
