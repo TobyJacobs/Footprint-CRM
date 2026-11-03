@@ -92,11 +92,39 @@ export async function saveAdvertSize(id: string, fd: FormData) {
       height_mm: num(fd, "height_mm"),
       page_fraction: fraction,
       default_price: num(fd, "default_price"),
+      rate_product: str(fd, "rate_product"),
       active: bool(fd, "active"),
     })
     .eq("id", id);
   if (error) fail(error.message);
   done();
+}
+
+// One rate-card product for a year: 10 prices (under 6 months and 6 months
+// or more, 1st to 5th area). An empty box removes that price.
+export async function saveRates(year: number, product: string, fd: FormData) {
+  await requirePermission("magazines", "edit");
+  const supabase = await createClient();
+  const keep: { year: number; product: string; term: string; area: number; price: number }[] = [];
+  const drop: { term: string; area: number }[] = [];
+  for (const term of ["short", "long"]) {
+    for (let area = 1; area <= 5; area++) {
+      const price = num(fd, `${term}_${area}`);
+      if (price === null) drop.push({ term, area });
+      else if (price < 0) fail("Prices can't be negative");
+      else keep.push({ year, product, term, area, price: Math.round(price * 100) / 100 });
+    }
+  }
+  if (keep.length) {
+    const { error } = await supabase.from("magazine_rates").upsert(keep, { onConflict: "year,product,term,area" });
+    if (error) fail(error.message);
+  }
+  for (const d of drop) {
+    await supabase.from("magazine_rates").delete().eq("year", year).eq("product", product).eq("term", d.term).eq("area", d.area);
+  }
+  revalidatePath("/magazines", "layout");
+  revalidatePath("/sales", "layout");
+  redirect(`${SETUP}?year=${year}&saved=1`);
 }
 
 // Invoicing issue by issue (Wave 5, part 2): one draft invoice per sales order
