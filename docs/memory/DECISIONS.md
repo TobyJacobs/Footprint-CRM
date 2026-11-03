@@ -354,3 +354,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 2 November 2026 - Flatplan: a file per page, not one issue PDF
 **Decision (owner):** replace the whole-issue "Upload the issue PDF" with an upload button on each flatplan page (PDF, JPG or PNG). The flipbook is published only when every page has a file, and is built from the page files in order (PDF.js for PDF pages, images shown directly); replacing a page updates it live. No single-PDF download any more. Clicking an edition on the Magazines dashboard opens its flatplan. PR #89 (0.45.0).
+
+## 2 November 2026 - Flatplan layout to scale
+**Decision (owner asked; Claude's design):** flatplan pages are drawn to scale using the Full Page size (130 × 190 mm). Items store a top-left position in mm; adverts take their booked advert size (can't be changed on the flatplan, so it always matches what's billed); editorial takes a chosen size (Full, Double or any advert size) and can be resized. Dragging drops an item where it's let go, snapped to 5 mm and kept on the page; items without a position are laid out in rows. Overlaps show red. PRs #90 (0.46.0) and #91 (0.46.1 fix).

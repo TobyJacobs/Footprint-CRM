@@ -6,6 +6,7 @@ One short entry per session. Newest at the top.
 
 ## 2 November 2026: Flatplan page uploads
 - Owner asked for an upload button on each flatplan page (instead of one issue PDF) and for edition names to open the flatplan. Built (0.45.0, #89): 6 database checks, full build, merged and checked live.
+- Owner asked for different advert sizes on each page and dragging them around: built flatplan layout to scale (0.46.0, #90). Live test found items had no size (constants imported from a browser-only file); fixed (0.46.1, #91). Tested live: add, resize, drag; test items deleted.
 
 ## 1 November 2026: T-002 seats and costs; GoHighLevel stays in use
 - Made the T-002 AI and software seats-and-costs page for Teams (kept outside the repo). Owner confirmed GoHighLevel is used for Footprint's own marketing and its customers' marketing, so it was added to the costs (Unlimited plan, confirmed).
