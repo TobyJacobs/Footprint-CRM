@@ -8,6 +8,8 @@ import { bool, int, num, str } from "@/lib/forms";
 import { defaultStatus, docTypes, isDocType, isLockedRecord, isQuoteKind, isWarehouse, lossReasons, quoteKindLabel, statuses, type DocType } from "@/lib/sales/options";
 import { gbp } from "@/lib/customers/display";
 import { documentEmailText } from "@/lib/sales/email-text";
+import { balanceDueDate, depositAvailable, DEPOSIT_PERCENT } from "@/lib/magazine-deposit";
+import { getAdvertTiming } from "@/lib/magazines";
 import { planPartInvoice } from "@/lib/sales/part-billing";
 import { deliverDocument } from "@/lib/sales/send-document";
 
@@ -428,6 +430,9 @@ export async function convertDocument(documentId: string, to: DocType) {
 // amount before VAT or a percentage, or "the rest". The invoice has one summary
 // line (one per VAT rate if the order mixes rates), and the order only becomes
 // "Invoiced" once everything has been billed.
+// Advert deposits (owner, 6 November 2026): kind "deposit" bills 25% when the
+// first advert is 3+ months after the order date; "balance" bills the rest,
+// due by the first advert month's copy deadline (lib/magazine-deposit).
 export async function createPartInvoice(orderId: string, fd: FormData) {
   await requirePermission("quotes", "edit");
   const back = `/sales/${orderId}`;
@@ -443,21 +448,43 @@ export async function createPartInvoice(orderId: string, fd: FormData) {
   const orderNet = Number(so.subtotal);
   const already = (invoices ?? []).reduce((sum, i) => sum + Number(i.subtotal), 0);
   const amount = num(fd, "amount");
+  const kind = str(fd, "kind");
+  const timing = kind === "deposit" || kind === "balance" ? await getAdvertTiming(orderId) : null;
+  if (kind === "deposit") {
+    if ((invoices ?? []).length) fail(back, "This order has already been invoiced, so it can't take a deposit");
+    if (!timing || !depositAvailable(so.issue_date, timing.firstMonth)) fail(back, "A deposit is only for adverts starting 3 or more months after the order");
+  }
+  if (kind === "balance" && !timing) fail(back, "This order has no adverts");
   const plan = planPartInvoice(
     (lines ?? []).map((l) => ({ tax_rate_id: l.tax_rate_id, tax_rate: Number(l.tax_rate), line_net: Number(l.line_net) })),
     { net: orderNet, cost: Number(so.cost_total) },
     already,
     (invoices ?? []).length,
-    str(fd, "rest") === "1" ? { rest: true } : { amount: amount ?? 0, unit: str(fd, "unit") === "percent" ? "percent" : "gbp" },
+    kind === "deposit"
+      ? { amount: DEPOSIT_PERCENT, unit: "percent" }
+      : str(fd, "rest") === "1" || kind === "balance"
+        ? { rest: true }
+        : { amount: amount ?? 0, unit: str(fd, "unit") === "percent" ? "percent" : "gbp" },
   );
   if (!plan.ok) fail(back, plan.error);
   const { bill, share, isFinal, partNo, percent } = plan;
-  const heading = isFinal && partNo > 1 ? `Final invoice for order ${so.number}: the remaining` : `Part invoice ${partNo} for order ${so.number}:`;
+  const heading =
+    kind === "deposit"
+      ? `Deposit (${DEPOSIT_PERCENT}%) for order ${so.number}:`
+      : kind === "balance"
+        ? `Balance for order ${so.number}: the remaining`
+        : isFinal && partNo > 1
+          ? `Final invoice for order ${so.number}: the remaining`
+          : `Part invoice ${partNo} for order ${so.number}:`;
   const description = `${heading} ${gbp(bill)} of ${gbp(orderNet)} (${percent}%)`;
 
   const { data: settings } = await supabase.from("company_settings").select("*").single();
   const { data: customer } = await supabase.from("customers").select("invoice_due_days, invoice_due_terms").eq("id", so.customer_id).maybeSingle();
   const today = ukToday();
+  const normalDue = customerDueDate(today, customer?.invoice_due_days, customer?.invoice_due_terms) ?? addDaysTo(today, settings?.invoice_due_days ?? 30);
+  // A deposit is due on confirmation; the balance before the first print deadline.
+  const balanceDue = timing ? balanceDueDate(timing.firstMonth, timing.deadlines) : null;
+  const dueDate = kind === "deposit" ? today : kind === "balance" && balanceDue ? (balanceDue < today ? today : balanceDue) : normalDue;
   let number: string;
   try {
     number = await nextNumber("invoice");
@@ -477,7 +504,7 @@ export async function createPartInvoice(orderId: string, fd: FormData) {
       title: so.title,
       customer_reference: so.customer_reference,
       issue_date: today,
-      due_date: customerDueDate(today, customer?.invoice_due_days, customer?.invoice_due_terms) ?? addDaysTo(today, settings?.invoice_due_days ?? 30),
+      due_date: dueDate,
       business_unit: so.business_unit,
       quote_kind: so.quote_kind ?? "quote",
       billing_address: so.billing_address ?? null,
@@ -506,11 +533,14 @@ export async function createPartInvoice(orderId: string, fd: FormData) {
   );
   if (lineError) fail(`/sales/${created.id}`, `Created, but its line couldn't be added: ${lineError.message}`);
 
-  // Everything billed: the order is now invoiced.
+  // Everything billed: the order is now invoiced, and its adverts (if any)
+  // show as billed by this invoice on the Magazines dashboard.
   if (isFinal) {
     await supabase.from("sales_documents").update({ status: "invoiced" }).eq("id", so.id).in("status", ["open", "completed"]);
+    await supabase.rpc("magazine_mark_order_billed", { p_order: so.id, p_invoice: created.id });
   }
   revalidatePath("/sales", "layout");
+  revalidatePath("/magazines");
   redirect(`/sales/${created.id}?saved=1`);
 }
 

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { CheckCircle2, XCircle } from "lucide-react";
 import PrintableDocument, { type PrintableData } from "@/components/PrintableDocument";
 import { inputClass } from "@/components/ui";
-import { longDate } from "@/lib/customers/display";
+import { gbp, longDate } from "@/lib/customers/display";
 import { ukToday } from "@/lib/dates";
+import { DEPOSIT_PERCENT, depositAvailable, depositSplit } from "@/lib/magazine-deposit";
 import { createClient } from "@/lib/supabase/server";
 import { respondToQuote } from "./actions";
 
@@ -26,6 +27,7 @@ type QuoteView = {
   customer_name: string;
   contact_name: string | null;
   lines: PrintableData["lines"];
+  first_advert_month: string | null;
   company: PrintableData["company"];
 };
 
@@ -66,6 +68,12 @@ export default async function PublicQuotePage(props: PageProps<"/q/[token]">) {
   const error = typeof sp.error === "string" ? sp.error : null;
   const done = sp.done === "accepted" || sp.done === "declined" ? sp.done : null;
   const company = quote.company?.company_name ?? "Footprint Group";
+  // Forget Me Not adverts: deposit or full payment, as on the website.
+  const firstMonth = quote.first_advert_month;
+  const split = depositSplit(Number(quote.total));
+  const firstMonthLabel = firstMonth
+    ? new Date(`${firstMonth.slice(0, 7)}-01T12:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" })
+    : "";
 
   return (
     <Shell>
@@ -114,6 +122,23 @@ export default async function PublicQuotePage(props: PageProps<"/q/[token]">) {
           company: quote.company,
         }}
       />
+
+      {firstMonth && canRespond && (
+        <section className="mt-6 rounded-lg bg-white p-6 text-sm shadow-sm">
+          <h2 className="text-lg font-black">Paying for your adverts</h2>
+          {depositAvailable(ukToday(), firstMonth) ? (
+            <p className="mt-1">
+              Your first advert is in {firstMonthLabel}, so you can pay a {DEPOSIT_PERCENT}% deposit of <strong>{gbp(split.deposit)}</strong> when you
+              accept, and the balance of <strong>{gbp(split.balance)}</strong> before your first advert&apos;s print deadline. Or pay the full{" "}
+              {gbp(Number(quote.total))} when you accept. Just let us know which you&apos;d prefer.
+            </p>
+          ) : (
+            <p className="mt-1">
+              Your first advert is in {firstMonthLabel}, so the full {gbp(Number(quote.total))} is due when you accept, to confirm your space.
+            </p>
+          )}
+        </section>
+      )}
 
       {canRespond && (
         <section className="mt-6 rounded-lg bg-white p-6 shadow-sm">

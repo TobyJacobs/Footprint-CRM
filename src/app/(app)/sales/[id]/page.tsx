@@ -8,6 +8,9 @@ import CopyButton from "@/components/CopyButton";
 import { Badge, Card, Notice, dangerButton, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { gbp, longDate, personName, shortDateTime } from "@/lib/customers/display";
+import { ukToday } from "@/lib/dates";
+import { balanceDueDate, depositAvailable } from "@/lib/magazine-deposit";
+import { getAdvertTiming } from "@/lib/magazines";
 import { getDocumentLines } from "@/lib/sales/data";
 import { docTypes, isDocType, isLockedRecord, lossReasons, marginPercent, marginText, poStatusLabel, quoteKindLabel, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
@@ -16,7 +19,7 @@ import { raisePurchaseOrders } from "../(operations)/purchase-orders/actions";
 import { createProjectForOrder } from "../../projects/actions";
 import EmailCard from "../EmailCard";
 import { orderStages, quoteStages } from "@/lib/sales/stages";
-import { AdvertArtworkSection, DesignSection, FinanceSummary, PartInvoiceForm, ProjectSection, PurchaseOrdersSection, StageBar, type AdvertArtwork, type OrderPo, type OrderProject } from "./SalesOrderSections";
+import { AdvertArtworkSection, AdvertPaymentNote, AdvertPaymentSection, DesignSection, FinanceSummary, PartInvoiceForm, ProjectSection, PurchaseOrdersSection, StageBar, type AdvertArtwork, type OrderPo, type OrderProject } from "./SalesOrderSections";
 
 export async function generateMetadata(props: PageProps<"/sales/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -140,6 +143,19 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
     : null;
   const orderInvoices = (children ?? []).filter((c) => c.doc_type === "invoice" && c.status !== "void");
   const invoicedNet = Math.round(orderInvoices.reduce((sum, i) => sum + Number(i.subtotal), 0) * 100) / 100;
+  // Forget Me Not adverts: deposit or full payment (lib/magazine-deposit). An
+  // order is judged from its order date; a quote from today, as on the website.
+  const advertTiming = ["quote", "sales_order"].includes(type) && lines.some((l) => l.magazine_issue_id) ? await getAdvertTiming(id) : null;
+  const { data: partInvoiced } = advertTiming && isOrder && invoicedNet > 0 ? await supabase.rpc("order_is_part_invoiced", { p_order: id }) : { data: false };
+  const depositOk = advertTiming ? depositAvailable(isOrder ? doc.issue_date : ukToday(), advertTiming.firstMonth) : false;
+  const advertNote = advertTiming && (
+    <AdvertPaymentNote
+      firstMonth={advertTiming.firstMonth}
+      available={depositOk}
+      total={Number(doc.total)}
+      balanceDue={balanceDueDate(advertTiming.firstMonth, advertTiming.deadlines)}
+    />
+  );
   const emailCard = canEdit && !["void", "cancelled"].includes(doc.status) && (
     <div id="email" className="mt-6 scroll-mt-24">
       <EmailCard
@@ -320,6 +336,15 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
             )}
           </div>
 
+          {isOrder && advertNote && (
+            <AdvertPaymentSection
+              note={advertNote}
+              canDeposit={canEdit && ["open", "completed"].includes(doc.status) && invoicedNet === 0 && depositOk}
+              canBalance={canEdit && ["open", "completed"].includes(doc.status) && !!partInvoiced && Number(doc.subtotal) - invoicedNet > 0.005}
+              remainingNet={Math.round((Number(doc.subtotal) - invoicedNet) * 100) / 100}
+              partAction={createPartInvoice.bind(null, id)}
+            />
+          )}
           {isOrder && ["open", "completed"].includes(doc.status) && (
             <PartInvoiceForm orderNet={Number(doc.subtotal)} invoicedNet={invoicedNet} partAction={createPartInvoice.bind(null, id)} />
           )}
@@ -406,6 +431,11 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         </>
       )}
 
+      {!isOrder && advertNote && (
+        <p className="mt-6 rounded-md border border-fp-pink/30 bg-fp-pink/5 px-4 py-3 text-sm">
+          <span className="font-semibold">Payment.</span> {advertNote}
+        </p>
+      )}
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
         <Card title={isOrder ? "Order lines" : "Lines"}>
           <div className="overflow-x-auto">

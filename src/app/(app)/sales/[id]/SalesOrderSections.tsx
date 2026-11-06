@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Check, Minus, X } from "lucide-react";
 import DesignJobsPanel from "@/components/DesignJobsPanel";
 import { Badge, Card, inputClass, primaryButton, secondaryButton } from "@/components/ui";
-import { gbp } from "@/lib/customers/display";
+import { gbp, longDate } from "@/lib/customers/display";
+import { DEPOSIT_PERCENT, depositSplit } from "@/lib/magazine-deposit";
 import { designStageLabel, designStageTone, jobNumber } from "@/lib/design/options";
 import { projectStatusLabel, projectTone } from "@/lib/projects/options";
 import { poStatusLabel, statusToneFor } from "@/lib/sales/options";
@@ -221,6 +222,66 @@ export function ProjectSection({ project, create, canView }: { project: OrderPro
 // Design work: the existing Design jobs card (hidden from people without Design access).
 export function DesignSection({ orderId }: { orderId: string }) {
   return <DesignJobsPanel order={orderId} />;
+}
+
+// Advert deposits (owner, 6 November 2026), as the website: first advert 3+
+// months after the order → a 25% deposit now and the balance before the first
+// print deadline; otherwise payment in full. Shown on advert quotes and orders;
+// the buttons only on an order that can still be invoiced.
+export function AdvertPaymentNote({
+  firstMonth,
+  available,
+  total,
+  balanceDue,
+}: {
+  firstMonth: string;
+  available: boolean;
+  total: number;
+  balanceDue: string;
+}) {
+  const { deposit, balance } = depositSplit(total);
+  const month = new Date(`${firstMonth.slice(0, 7)}-01T12:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+  return available ? (
+    <>
+      First advert in <strong>{month}</strong>, 3 or more months away: the customer can pay a <strong>{DEPOSIT_PERCENT}% deposit</strong> ({gbp(deposit)} inc VAT) on
+      confirmation and the balance ({gbp(balance)}) by <strong>{longDate(balanceDue)}</strong>, or pay in full.
+    </>
+  ) : (
+    <>
+      First advert in <strong>{month}</strong>, within the next 2 months: <strong>full payment</strong> on confirmation.
+    </>
+  );
+}
+
+export function AdvertPaymentSection({
+  note,
+  canDeposit,
+  canBalance,
+  remainingNet,
+  partAction,
+}: {
+  note: React.ReactNode;
+  canDeposit: boolean;
+  canBalance: boolean;
+  remainingNet: number;
+  partAction: (fd: FormData) => Promise<void>;
+}) {
+  return (
+    <div className="mt-4 grid gap-3 rounded-md border border-fp-pink/30 bg-fp-pink/5 p-4 text-sm">
+      <p>
+        <span className="font-semibold">Payment.</span> {note}
+      </p>
+      {(canDeposit || canBalance) && (
+        <form action={partAction} className="flex flex-wrap items-center gap-3">
+          <input type="hidden" name="kind" value={canDeposit ? "deposit" : "balance"} />
+          <button type="submit" className={primaryButton}>
+            {canDeposit ? `Invoice the ${DEPOSIT_PERCENT}% deposit` : `Invoice the balance (${gbp(remainingNet)} + VAT)`}
+          </button>
+          {canDeposit && <span className="text-xs text-fp-mid">Or bill it in full with Create invoice.</span>}
+        </form>
+      )}
+    </div>
+  );
 }
 
 // Part billing (owner, 26 October 2026): bill part of the order as a £ amount

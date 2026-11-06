@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.48.0",
+    date: "2026-11-06",
+    title: "Advert deposits",
+    changes: [
+      "Forget Me Not adverts, as on the website: if the first advert is 3 or more months away, the customer can pay a 25% deposit when they confirm and the rest before the first print deadline; otherwise they pay in full. There are no contracts.",
+      "Advert quotes show the payment option, to staff and on the customer's quote page.",
+      "Advert orders have a Payment box: Invoice the 25% deposit, then Invoice the balance (due by the first advert month's copy deadline). Orders paid this way are left out of Create invoices for [month], so nothing is billed twice.",
+    ],
+  },
+  {
     version: "0.47.1",
     date: "2026-11-06",
     title: "Fix: rate card matches the website calculator",

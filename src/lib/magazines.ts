@@ -75,3 +75,16 @@ export async function getAdvertSetup(fromMonth: string): Promise<AdvertSetup> {
     rates: ((rates ?? []) as RateRow[]).map((r) => ({ ...r, price: Number(r.price) })),
   };
 }
+
+// The first advert month on a quote or order, and that month's copy deadlines
+// (for the deposit rule in lib/magazine-deposit). Null if it has no adverts.
+export async function getAdvertTiming(documentId: string): Promise<{ firstMonth: string; deadlines: (string | null)[] } | null> {
+  const supabase = await createClient();
+  const { data: lines } = await supabase.from("sales_document_lines").select("magazine_issue_id").eq("document_id", documentId).not("magazine_issue_id", "is", null);
+  const ids = [...new Set((lines ?? []).map((l) => l.magazine_issue_id as string))];
+  if (!ids.length) return null;
+  const { data: issues } = await supabase.from("magazine_issues").select("month, copy_deadline").in("id", ids);
+  if (!issues?.length) return null;
+  const firstMonth = issues.map((i) => i.month as string).sort()[0];
+  return { firstMonth, deadlines: issues.filter((i) => i.month === firstMonth).map((i) => i.copy_deadline as string | null) };
+}
