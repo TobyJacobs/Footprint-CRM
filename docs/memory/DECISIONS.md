@@ -369,3 +369,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 6 November 2026 - Deposit rule: by months booked
 **Decision (owner):** the deposit option depends on **how many months are booked**: more than 2 months (3 or more) → the customer can pay a deposit and the rest when their advert starts; 1–2 months → pay in full. The deposit is 25% (from the website calculator; not separately confirmed). Note: the website calculator currently offers the deposit by how far ahead the advert **starts**, not by length, so it differs from this rule.
+
+## 6 November 2026 - Deposit rule: same as the website (replaces the entry above)
+**Decision (owner):** use the website calculator's deposit rule, not months booked. If the first advert month is **3 or more months after the current month** (the website's "more than 2 months ahead"), the customer can pay a **25% deposit** on confirmation and the balance **before the first print deadline**, or pay in full. If it starts within the next 2 months, they pay in full on confirmation. How many months are booked doesn't matter. No contracts.
