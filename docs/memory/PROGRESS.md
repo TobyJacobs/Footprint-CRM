@@ -1,10 +1,10 @@
 # Progress — where we are right now
 
-_Last updated: 3 November 2026_
+_Last updated: 6 November 2026_
 
 ## Right now (28 October 2026)
 - **FootprintAI transition tracker LIVE (0.38.0, #82):** Transition menu (admins, Directors, invite list Mitch/Jyron/Toby, action owners). Plan imported from DJ's file with `scripts/import-transition.mjs` (40 actions, 4 board-only; owners Mitch 13, Jyron 11, Toby 8, DJ 8). Checked live: Week 2 shows 6 (5 when previewing a non-director role). The plan data is never committed (public repo). Next meeting Wed 4 Nov.
-- **Live version: FootprintOS 0.47.0** (magazine rate card).
+- **Live version: FootprintOS 0.47.1** (rate card matches Huw's website calculator: whole pounds per area; two thirds 6+ months 4th area £74). Checked live 6 November 2026: two thirds × 11 editions × 6 months = £4,962; half page × 11 × 3 months = £2,649, both as the website.
 - **Magazine rate card LIVE (0.47.0, #92), 3 November 2026:** advertising quotes price themselves from the rate card (size, 1st–5th+ area, under 6 months or 6+ months, premium positions); a typed price overrides it. Rate card editor in Magazines → Setup; each advert size has a "Priced as" link. 2026 prices (140) loaded from the owner's spreadsheet via the data API (never committed, public repo). Checked live: Setup shows all prices; a Half Page quote matched the spreadsheet (nothing saved). Assumptions waiting on Huw (see DECISIONS). Commission still waiting on the rules.
 - **Flatplan layout LIVE (0.46.0 #90, fix 0.46.1 #91), 2–3 November 2026:** pages drawn to scale (130 × 190 mm); adverts at their booked mm size, editorial with a chosen size (changeable); drag to a spot on any page (snaps to 5 mm); overlaps shown red. Tested live with test editorial items (added, resized, dragged to page 3 bottom half), then deleted. #90 had a bug (page-size numbers imported from a browser-only file, so items had no size); fixed in #91.
 - **Flatplan page uploads LIVE (0.45.0, #89), 2 November 2026:** each flatplan page has its own upload (PDF/JPG/PNG, 20 MB) instead of one issue PDF; "Put the flipbook online" needs every page; the flipbook is built from the page files. Dashboard edition names open the flatplan. Checked live (buttons, page count, refuses with pages missing). A real upload and the public flipbook from page files are not tested yet (needs real page files).
