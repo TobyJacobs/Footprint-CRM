@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.47.1",
+    date: "2026-11-06",
+    title: "Fix: rate card matches the website calculator",
+    changes: [
+      "Advertising quotes now round each edition's rate-card price to whole pounds (for example £116.60 becomes £117), so totals match the Forget Me Not website calculator and the sales spreadsheet.",
+      "Two thirds page, 6 months or more, 4th area corrected to £74.",
+    ],
+  },
+  {
     version: "0.47.0",
     date: "2026-11-03",
     title: "Magazine rate card",

@@ -196,7 +196,7 @@ export default async function MagazinesSetupPage(props: PageProps<"/magazines/se
         >
           <p className="mb-3 text-xs text-fp-mid">
             Price per advert per month, before VAT. Under 6 months and 6 months or more; 1st to 5th area (edition) booked, and every area after the 5th
-            at the 5th&apos;s price. Leave a box empty for no price. Each row saves on its own.
+            at the 5th&apos;s price. Quotes round each price to whole pounds (£116.60 → £117), as the website calculator does. Leave a box empty for no price. Each row saves on its own.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] text-left text-sm">
