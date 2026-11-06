@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 6 November 2026: Rate card checked against Huw's calculator
+- Huw pointed us to his "Forget Me Not Website Dev" Claude project (shared with the owner). It has no calculator files; its notes say the calculator lives on forgetmenotonline.org. Read the calculator's code (read only): one price differed (two thirds 6+ months 4th area, now £74) and it rounds each area to whole pounds. Corrected the price in the database and opened PR #93 (0.47.1) for the rounding; 616 totals match the website exactly.
+
 ## 3 November 2026: Magazine rate card
 - Answered the director's questions, drafted an email to Huw (19 questions on the rate card, contracts, commission, timetable, switch-over year) and compared the rate card with forgetmenotonline.org (website out of date: "from £18", "up to 39%").
 - Built the rate card (0.47.0, #92): 7 pricing checks passed; merged, 2026 prices loaded (140), checked live. Roadmap: rate card ticked; commission left as its own task.
