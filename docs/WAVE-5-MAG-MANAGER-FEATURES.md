@@ -81,7 +81,7 @@ About 60 reports. The groups: artwork statuses; bookings (by issue, user, catego
 
 ## What this means for FootprintOS (Claude's summary)
 - Magazines must live **inside FootprintOS**, using the same customers, sales orders, invoices and Xero link, so there's one database and proper MI.
-- New things Mag Manager can't do: **contracts for long-term bookings** (tied to terms and conditions, accepted online like quotes), and **online booking from the website with live availability** (Wave 6).
+- New things Mag Manager can't do: ~~contracts for long-term bookings~~ (**dropped 6 November 2026**: no contracts; bookings over 2 months can pay a deposit and the rest when the advert starts), and **online booking from the website with live availability** (Wave 6).
 - Must keep: editions and issues, rate card, bookings, renewals, actions, artwork and production, flatplans, flipbooks on the website, commission per salesperson, the reports actually used, Stripe and GoCardless payments.
 
 ## Still needed from the business
