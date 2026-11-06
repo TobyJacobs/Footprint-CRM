@@ -4,6 +4,10 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 6 November 2026: No contracts; advert deposits built
+- Owner: magazines have no contracts; customers buy months of space with a deposit option. Chose the website's rule (start 3+ months away → 25% deposit, balance before the first print deadline).
+- Built advert deposits (0.48.0, #94): 14 database checks and 10 rule checks passed; merged, checked live (pages load, version 0.48.0). Roadmap task ticked.
+
 ## 6 November 2026: Rate card checked against Huw's calculator
 - Huw pointed us to his "Forget Me Not Website Dev" Claude project (shared with the owner). It has no calculator files; its notes say the calculator lives on forgetmenotonline.org. Read the calculator's code (read only): one price differed (two thirds 6+ months 4th area, now £74) and it rounds each area to whole pounds. Corrected the price in the database and opened PR #93 (0.47.1) for the rounding; 616 totals match the website exactly.
 
