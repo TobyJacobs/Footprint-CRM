@@ -366,3 +366,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 6 November 2026 - No contracts for magazine adverts; deposit option instead
 **Decision (owner):** magazines will **not** have contracts. A customer buys a number of months of advert space. If it's **over 2 months**, they can choose to pay a **deposit** and pay the rest when their advert starts; otherwise they pay up front. Replaces the earlier plan (27 October 2026) for contracts tied to terms and accepted online. The roadmap task "Contracts for long-term advert bookings" became "Deposit option for advert bookings". The website calculator's version: a 25% deposit when the first advert is more than 2 months away, the balance before the first print deadline (to confirm with the owner whether "over 2 months" means how far ahead it starts or how many months are booked).
+
+## 6 November 2026 - Deposit rule: by months booked
+**Decision (owner):** the deposit option depends on **how many months are booked**: more than 2 months (3 or more) → the customer can pay a deposit and the rest when their advert starts; 1–2 months → pay in full. The deposit is 25% (from the website calculator; not separately confirmed). Note: the website calculator currently offers the deposit by how far ahead the advert **starts**, not by length, so it differs from this rule.
