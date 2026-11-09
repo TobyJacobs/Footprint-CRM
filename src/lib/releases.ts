@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.53.0",
+    date: "2026-11-09",
+    title: "Simpler customer buttons",
+    changes: [
+      "A customer's quick buttons are shorter: one New quote button (the quote form asks which kind: standard, advertising or proposal), plus New sales order, New invoice, New project and New content item.",
+      "Email customer, Log a call and Add contact are now in one Contact dropdown.",
+    ],
+  },
+  {
     version: "0.52.1",
     date: "2026-11-09",
     title: "Fix: website chat window",
