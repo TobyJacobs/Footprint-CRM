@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin, requirePermission } from "@/lib/auth";
 import { bool, dateTime, int, list, num, str } from "@/lib/forms";
+import { accountAreas } from "@/lib/customers/account-managers";
 import { createClient } from "@/lib/supabase/server";
 
 // Every action checks the person's "customers" permission and runs as them,
@@ -520,4 +521,28 @@ export async function markNotDuplicate(customerId: string, otherId: string) {
   if (error && error.code !== "23505") fail(`/customers/${customerId}`, error.message);
   revalidatePath("/customers");
   redirect(`/customers/${customerId}?saved=1`);
+}
+
+// Customer at a glance → Account managers: the main one (the customer's
+// owner) and one per area (DJ, 9 November 2026). Empty = nobody.
+export async function saveAccountManagers(customerId: string, fd: FormData) {
+  await requirePermission("customers", "edit");
+  const back = `/customers/${customerId}#glance`;
+  const supabase = await createClient();
+  const isId = (v: string | null) => (v && /^[0-9a-f-]{36}$/i.test(v) ? v : null);
+  const { error } = await supabase.from("customers").update({ owner_id: isId(str(fd, "owner_id")) }).eq("id", customerId);
+  if (error) fail(back, error.message);
+  const chosen = accountAreas.map((area) => ({ area, profile_id: isId(str(fd, `am_${area}`)) }));
+  const set = chosen.filter((c) => c.profile_id).map((c) => ({ customer_id: customerId, area: c.area, profile_id: c.profile_id! }));
+  const cleared = chosen.filter((c) => !c.profile_id).map((c) => c.area);
+  if (set.length) {
+    const { error: setError } = await supabase.from("customer_account_managers").upsert(set, { onConflict: "customer_id,area" });
+    if (setError) fail(back, setError.message);
+  }
+  if (cleared.length) {
+    const { error: clearError } = await supabase.from("customer_account_managers").delete().eq("customer_id", customerId).in("area", cleared);
+    if (clearError) fail(back, clearError.message);
+  }
+  revalidatePath(`/customers/${customerId}`);
+  redirect(`/customers/${customerId}?saved=1#glance`);
 }

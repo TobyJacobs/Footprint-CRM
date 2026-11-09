@@ -4,13 +4,16 @@ import { Card } from "@/components/ui";
 import { longDate } from "@/lib/customers/display";
 import type { Glance } from "@/lib/customers/glance";
 
-// "Customer at a glance": spend, money owed, quotes and spend by service.
-export default function CustomerGlance({ g, customerName }: { g: Glance; customerName: string }) {
+// "Customer at a glance": the account managers, then (for people who can see
+// sales) spend, money owed, quotes and spend by service.
+export default function CustomerGlance({ g, customerName, managers }: { g: Glance | null; customerName: string; managers: React.ReactNode }) {
+  if (!g) return <Card title="Customer at a glance">{managers}</Card>;
   const change = g.lastYear > 0 ? Math.round(((g.thisYear - g.lastYear) / g.lastYear) * 100) : null;
   // The invoice list searches by customer name; "issued" = not paid yet.
   const invoicesLink = `/sales/invoices?status=issued&q=${encodeURIComponent(customerName)}`;
   return (
     <Card title="Customer at a glance">
+      {managers}
       {g.invoices === 0 && g.quotesWon + g.quotesLost + g.quotesOpen === 0 ? (
         <p className="text-sm text-fp-mid">No invoices or quotes yet, so there&apos;s nothing to show.</p>
       ) : (
