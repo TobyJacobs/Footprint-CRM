@@ -41,18 +41,27 @@ export default function AccountManagers({
   return (
     <div id="glance" className="mb-5 scroll-mt-24">
       <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-fp-mid">Account managers</h3>
-      <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-6">
-        <div>
-          <dt className="text-xs text-fp-mid">Main</dt>
-          <dd className="font-semibold">{name(ownerId) ?? "—"}</dd>
-        </div>
-        {accountAreas.map((area) => (
-          <div key={area}>
-            <dt className="text-xs text-fp-mid">{area}</dt>
-            <dd className={byArea[area] ? "font-semibold" : "text-fp-mid"}>{name(byArea[area]) ?? "—"}</dd>
-          </div>
-        ))}
-      </dl>
+      {/* Only the ones that are set (owner, 9 November 2026). */}
+      {!name(ownerId) && !accountAreas.some((area) => name(byArea[area])) ? (
+        <p className="text-sm text-fp-mid">No account managers yet.</p>
+      ) : (
+        <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-6">
+          {name(ownerId) && (
+            <div>
+              <dt className="text-xs text-fp-mid">Main</dt>
+              <dd className="font-semibold">{name(ownerId)}</dd>
+            </div>
+          )}
+          {accountAreas
+            .filter((area) => name(byArea[area]))
+            .map((area) => (
+              <div key={area}>
+                <dt className="text-xs text-fp-mid">{area}</dt>
+                <dd className="font-semibold">{name(byArea[area])}</dd>
+              </div>
+            ))}
+        </dl>
+      )}
       {canEdit && (
         <details className="mt-2">
           <summary className="cursor-pointer text-sm font-semibold text-fp-teal-deep">Change account managers</summary>
