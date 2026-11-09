@@ -12,9 +12,10 @@ import { monthLabel } from "@/lib/magazines";
 import { createClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/site-url";
 import { supabaseUrl } from "@/lib/supabase/config";
-import { addEditorial, moveFlatplanItem, placeAdvert, publishFlipbook, removeFlatplanItem, removeFlipbook, removePageFile, resizeEditorial } from "../../actions";
+import { addEditorial, addPuzzle, deletePuzzle, moveFlatplanItem, placeAdvert, publishFlipbook, removeFlatplanItem, removeFlipbook, remakePuzzle, removePageFile, resizeEditorial } from "../../actions";
 import MagazineTabs from "../../MagazineTabs";
 import { PAGE_H, PAGE_W } from "@/lib/magazine-options";
+import { difficulties, puzzleKinds } from "@/lib/puzzles";
 import { DragItem, DropPage, FlatplanDrag } from "./FlatplanDrag";
 import PageUploader from "./PageUploader";
 
@@ -75,6 +76,12 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
     siteUrl(),
     supabase.from("magazine_issue_pages").select("page, path, content_type").eq("issue_id", issueId),
   ]);
+  // Word searches and sudoku in this issue, and the pages they're on.
+  const [{ data: puzzles }, { data: puzzleSpots }] = await Promise.all([
+    supabase.from("magazine_puzzles").select("id, kind, title, difficulty").eq("issue_id", issueId).order("created_at"),
+    supabase.from("magazine_flatplan_items").select("puzzle_id, puzzle_part, page").eq("issue_id", issueId).not("puzzle_id", "is", null),
+  ]);
+  const spotOf = (id: string, part: string) => (puzzleSpots ?? []).find((x) => x.puzzle_id === id && x.puzzle_part === part)?.page ?? null;
   const fileFor = (p: number) => (pageFiles ?? []).find((f) => f.page === p);
   const fileUrl = (path: string) => `${supabaseUrl}/storage/v1/object/public/flipbooks/${path.split("/").map(encodeURIComponent).join("/")}`;
   const online = !!flip?.flipbook_published_at;
@@ -313,6 +320,107 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
                   </form>
                 </Card>
               )}
+              <div id="puzzles" className="scroll-mt-24">
+                <Card title="Puzzles">
+                  {sp.puzzle === "1" && <p className="mb-2 rounded-md bg-fp-teal/10 px-2 py-1 text-xs">Puzzle ready: download the PDFs below for the page layout.</p>}
+                  {(puzzles ?? []).length > 0 && (
+                    <ul className="mb-3 grid gap-2 text-sm">
+                      {(puzzles ?? []).map((pz) => {
+                        const pPage = spotOf(pz.id, "puzzle");
+                        const aPage = spotOf(pz.id, "answers");
+                        return (
+                          <li key={pz.id} className="rounded-md border border-fp-border bg-white p-2">
+                            <p className="font-semibold">{pz.title}</p>
+                            <p className="text-xs text-fp-mid">
+                              {pPage ? `Page ${pPage}` : "Not on a page"} · answers {aPage ? `on page ${aPage}` : "not on a page"}
+                            </p>
+                            <p className="mt-1 flex flex-wrap gap-x-3 text-xs font-semibold">
+                              <a href={`/magazines/puzzles/${pz.id}/pdf?view=1`} target="_blank" rel="noopener" className="text-fp-teal-deep hover:underline">
+                                Puzzle PDF
+                              </a>
+                              <a href={`/magazines/puzzles/${pz.id}/pdf?part=answers&view=1`} target="_blank" rel="noopener" className="text-fp-teal-deep hover:underline">
+                                Answers PDF
+                              </a>
+                            </p>
+                            {canEdit && (
+                              <div className="mt-1 flex flex-wrap gap-3 text-xs">
+                                <form action={remakePuzzle.bind(null, issue.id, pz.id)}>
+                                  <button type="submit" className="font-semibold text-fp-teal-deep hover:underline">
+                                    Make a new one
+                                  </button>
+                                </form>
+                                <form action={deletePuzzle.bind(null, issue.id, pz.id)}>
+                                  <button type="submit" className="font-semibold text-fp-error hover:underline">
+                                    Delete
+                                  </button>
+                                </form>
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  {canEdit ? (
+                    <form action={addPuzzle.bind(null, issue.id)} className="grid gap-2 text-sm">
+                      <div className="grid grid-cols-2 gap-2">
+                        <select name="kind" defaultValue="wordsearch" aria-label="Puzzle" className={inputClass}>
+                          {puzzleKinds.map((k) => (
+                            <option key={k.value} value={k.value}>
+                              {k.label}
+                            </option>
+                          ))}
+                        </select>
+                        <select name="difficulty" defaultValue="medium" aria-label="How hard" className={inputClass}>
+                          {difficulties.map((d) => (
+                            <option key={d.value} value={d.value}>
+                              {d.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <input name="theme" maxLength={80} placeholder="Theme, e.g. Garden birds (optional)" aria-label="Theme" className={inputClass} />
+                      <label className="grid gap-1">
+                        <span className="text-xs text-fp-mid">Word search only: the words to hide, one per line or separated by commas</span>
+                        <textarea name="words" rows={4} placeholder={"Robin\nBlue tit\nSparrow…"} aria-label="Words to hide" className={inputClass} />
+                      </label>
+                      <select name="grid" defaultValue="12" aria-label="Word search grid" className={inputClass}>
+                        {[10, 12, 15].map((n) => (
+                          <option key={n} value={n}>
+                            Word search grid {n} × {n}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="text-xs font-semibold">Puzzle</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        <select name="size" required defaultValue="Half Page - Landscape" aria-label="Puzzle size" className={inputClass}>
+                          {sizeOptions}
+                        </select>
+                        <select name="page" required defaultValue="" aria-label="Puzzle page" className={inputClass}>
+                          <option value="" disabled>
+                            Page…
+                          </option>
+                          {pageOptions}
+                        </select>
+                      </div>
+                      <span className="text-xs font-semibold">Answers (on a different page)</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        <select name="answers_size" required defaultValue="Eighth Page" aria-label="Answers size" className={inputClass}>
+                          {sizeOptions}
+                        </select>
+                        <select name="answers_page" required defaultValue={issue.pages > 2 ? issue.pages - 1 : issue.pages} aria-label="Answers page" className={inputClass}>
+                          {pageOptions}
+                        </select>
+                      </div>
+                      <button type="submit" className={secondaryButton}>
+                        Make the puzzle
+                      </button>
+                    </form>
+                  ) : (
+                    (puzzles ?? []).length === 0 && <p className="text-sm text-fp-mid">No puzzles in this issue yet.</p>
+                  )}
+                </Card>
+              </div>
             </aside>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4">
