@@ -242,7 +242,11 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         <div className="mb-6">
           <StageBar
             label="Quote stage"
-            {...quoteStages({ status: doc.status, orderNumber: (children ?? []).find((c) => c.doc_type === "sales_order")?.number ?? null })}
+            {...quoteStages({
+              status: doc.status,
+              orderNumber: (children ?? []).find((c) => c.doc_type === "sales_order")?.number ?? null,
+              orderId: (children ?? []).find((c) => c.doc_type === "sales_order")?.id ?? null,
+            })}
           />
         </div>
       )}

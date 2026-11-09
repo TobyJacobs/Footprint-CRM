@@ -6,7 +6,8 @@ import { designStageLabel } from "@/lib/design/options";
 // Operations dashboard. Nobody sets them by hand.
 
 export type StageState = "done" | "current" | "skipped" | "todo" | "stopped";
-export type Stage = { label: string; note: string | null; done: boolean };
+// href: the step opens that record (e.g. the sales order made from a quote).
+export type Stage = { label: string; note: string | null; done: boolean; href?: string | null };
 export type Stages = { stages: Stage[]; states: StageState[] };
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -59,7 +60,7 @@ export function orderStages(o: {
 
 // Quotes: Draft → Sent → Accepted → Sales order. A declined quote stops at
 // "Accepted", shown as declined.
-export function quoteStages(q: { status: string; orderNumber: string | null }): Stages {
+export function quoteStages(q: { status: string; orderNumber: string | null; orderId?: string | null }): Stages {
   const sent = ["sent", "accepted", "declined", "converted"].includes(q.status);
   const declined = q.status === "declined";
   return lightUp(
@@ -67,7 +68,8 @@ export function quoteStages(q: { status: string; orderNumber: string | null }): 
       { label: "Draft", note: null, done: true },
       { label: "Sent", note: null, done: sent },
       { label: declined ? "Declined" : "Accepted", note: declined ? "The customer said no" : null, done: ["accepted", "converted"].includes(q.status) },
-      { label: "Sales order", note: q.orderNumber, done: q.status === "converted" },
+      // Opens the order (DJ, 9 November 2026).
+      { label: "Sales order", note: q.orderNumber, done: q.status === "converted", href: q.orderId ? `/sales/${q.orderId}` : null },
     ],
     declined,
   );
