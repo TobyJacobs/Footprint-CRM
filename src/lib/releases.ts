@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.63.1",
+    date: "2026-11-09",
+    title: "Fix: product list on quote lines",
+    changes: ["Choosing a product on a quote, order or invoice line: the list now floats over the page and shows many products at once (it was cut off by the lines table, showing about one). It opens upwards if there isn't room below."],
+  },
+  {
     version: "0.63.0",
     date: "2026-11-09",
     title: "Standard margin button",
