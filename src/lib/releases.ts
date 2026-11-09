@@ -11,6 +11,17 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.50.0",
+    date: "2026-11-09",
+    title: "Magazine content library",
+    changes: [
+      "New Magazines → Content tab: puzzles and free articles ready to fill pages not sold as adverts.",
+      "Puzzles: make word searches and sudoku as drafts, preview them, and use the same one in as many editions as you like. Each issue gets the puzzle on one page and the answers on another.",
+      "Free articles only: search GOV.UK and save articles (free to reuse; print the credit line shown with it), or write your own. Edit to shorten, download the text, and put them on any issue's page.",
+      "Flatplans can add puzzles and articles from the library, and Take off this issue now leaves the puzzle in the library.",
+    ],
+  },
+  {
     version: "0.49.0",
     date: "2026-11-09",
     title: "Puzzles for the magazine",

@@ -1,10 +1,11 @@
 import Link from "next/link";
 
 // Tabs across the Magazines section.
-export default function MagazineTabs({ current, canEdit }: { current: "dashboard" | "renewals" | "setup"; canEdit: boolean }) {
+export default function MagazineTabs({ current, canEdit }: { current: "dashboard" | "renewals" | "content" | "setup"; canEdit: boolean }) {
   const tabs = [
     { key: "dashboard", label: "Dashboard", href: "/magazines" },
     { key: "renewals", label: "Renewals", href: "/magazines/renewals" },
+    { key: "content", label: "Content", href: "/magazines/content" },
     ...(canEdit ? [{ key: "setup", label: "Setup", href: "/magazines/setup" }] : []),
   ];
   return (

@@ -12,7 +12,7 @@ import { monthLabel } from "@/lib/magazines";
 import { createClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/site-url";
 import { supabaseUrl } from "@/lib/supabase/config";
-import { addEditorial, addPuzzle, deletePuzzle, moveFlatplanItem, placeAdvert, publishFlipbook, removeFlatplanItem, removeFlipbook, remakePuzzle, removePageFile, resizeEditorial } from "../../actions";
+import { addEditorial, addPuzzle, deletePuzzle, moveFlatplanItem, placeArticle, placeLibraryPuzzle, placeAdvert, publishFlipbook, removeFlatplanItem, removeFlipbook, removePageFile, resizeEditorial } from "../../actions";
 import MagazineTabs from "../../MagazineTabs";
 import { PAGE_H, PAGE_W } from "@/lib/magazine-options";
 import { difficulties, puzzleKinds } from "@/lib/puzzles";
@@ -76,11 +76,16 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
     siteUrl(),
     supabase.from("magazine_issue_pages").select("page, path, content_type").eq("issue_id", issueId),
   ]);
-  // Word searches and sudoku in this issue, and the pages they're on.
-  const [{ data: puzzles }, { data: puzzleSpots }] = await Promise.all([
-    supabase.from("magazine_puzzles").select("id, kind, title, difficulty").eq("issue_id", issueId).order("created_at"),
+  // Word searches and sudoku (from the content library) in this issue, the
+  // pages they're on, and the library's puzzles and articles to add.
+  const [{ data: library }, { data: articles }, { data: puzzleSpots }] = await Promise.all([
+    supabase.from("magazine_puzzles").select("id, kind, title, difficulty").order("created_at", { ascending: false }),
+    supabase.from("magazine_articles").select("id, title").order("updated_at", { ascending: false }),
     supabase.from("magazine_flatplan_items").select("puzzle_id, puzzle_part, page").eq("issue_id", issueId).not("puzzle_id", "is", null),
   ]);
+  const inIssue = new Set((puzzleSpots ?? []).map((x) => x.puzzle_id));
+  const puzzles = (library ?? []).filter((pz) => inIssue.has(pz.id));
+  const otherPuzzles = (library ?? []).filter((pz) => !inIssue.has(pz.id));
   const spotOf = (id: string, part: string) => (puzzleSpots ?? []).find((x) => x.puzzle_id === id && x.puzzle_part === part)?.page ?? null;
   const fileFor = (p: number) => (pageFiles ?? []).find((f) => f.page === p);
   const fileUrl = (path: string) => `${supabaseUrl}/storage/v1/object/public/flipbooks/${path.split("/").map(encodeURIComponent).join("/")}`;
@@ -323,9 +328,9 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
               <div id="puzzles" className="scroll-mt-24">
                 <Card title="Puzzles">
                   {sp.puzzle === "1" && <p className="mb-2 rounded-md bg-fp-teal/10 px-2 py-1 text-xs">Puzzle ready: download the PDFs below for the page layout.</p>}
-                  {(puzzles ?? []).length > 0 && (
+                  {puzzles.length > 0 && (
                     <ul className="mb-3 grid gap-2 text-sm">
-                      {(puzzles ?? []).map((pz) => {
+                      {puzzles.map((pz) => {
                         const pPage = spotOf(pz.id, "puzzle");
                         const aPage = spotOf(pz.id, "answers");
                         return (
@@ -335,33 +340,34 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
                               {pPage ? `Page ${pPage}` : "Not on a page"} · answers {aPage ? `on page ${aPage}` : "not on a page"}
                             </p>
                             <p className="mt-1 flex flex-wrap gap-x-3 text-xs font-semibold">
-                              <a href={`/magazines/puzzles/${pz.id}/pdf?view=1`} target="_blank" rel="noopener" className="text-fp-teal-deep hover:underline">
+                              <a href={`/magazines/puzzles/${pz.id}/pdf?issue=${issue.id}&view=1`} target="_blank" rel="noopener" className="text-fp-teal-deep hover:underline">
                                 Puzzle PDF
                               </a>
-                              <a href={`/magazines/puzzles/${pz.id}/pdf?part=answers&view=1`} target="_blank" rel="noopener" className="text-fp-teal-deep hover:underline">
+                              <a href={`/magazines/puzzles/${pz.id}/pdf?issue=${issue.id}&part=answers&view=1`} target="_blank" rel="noopener" className="text-fp-teal-deep hover:underline">
                                 Answers PDF
                               </a>
                             </p>
                             {canEdit && (
-                              <div className="mt-1 flex flex-wrap gap-3 text-xs">
-                                <form action={remakePuzzle.bind(null, issue.id, pz.id)}>
-                                  <button type="submit" className="font-semibold text-fp-teal-deep hover:underline">
-                                    Make a new one
-                                  </button>
-                                </form>
-                                <form action={deletePuzzle.bind(null, issue.id, pz.id)}>
-                                  <button type="submit" className="font-semibold text-fp-error hover:underline">
-                                    Delete
-                                  </button>
-                                </form>
-                              </div>
+                              <form action={deletePuzzle.bind(null, issue.id, pz.id)} className="mt-1 text-xs">
+                                <button type="submit" className="font-semibold text-fp-error hover:underline">
+                                  Take off this issue
+                                </button>
+                              </form>
                             )}
                           </li>
                         );
                       })}
                     </ul>
                   )}
+                  {canEdit && otherPuzzles.length > 0 && (
+                    <details className="mb-3 text-sm">
+                      <summary className="cursor-pointer font-semibold text-fp-teal-deep">Add one from the content library</summary>
+                      <LibraryPuzzleForm issueId={issue.id} puzzles={otherPuzzles} sizeOptions={sizeOptions} pageOptions={pageOptions} lastPage={issue.pages} />
+                    </details>
+                  )}
                   {canEdit ? (
+                    <details className="text-sm" open={otherPuzzles.length === 0 && puzzles.length === 0}>
+                    <summary className="mb-2 cursor-pointer font-semibold text-fp-teal-deep">Make a new puzzle</summary>
                     <form action={addPuzzle.bind(null, issue.id)} className="grid gap-2 text-sm">
                       <div className="grid grid-cols-2 gap-2">
                         <select name="kind" defaultValue="wordsearch" aria-label="Puzzle" className={inputClass}>
@@ -416,11 +422,47 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
                         Make the puzzle
                       </button>
                     </form>
+                    </details>
                   ) : (
-                    (puzzles ?? []).length === 0 && <p className="text-sm text-fp-mid">No puzzles in this issue yet.</p>
+                    puzzles.length === 0 && <p className="text-sm text-fp-mid">No puzzles in this issue yet.</p>
                   )}
                 </Card>
               </div>
+              {canEdit && (articles ?? []).length > 0 && (
+                <Card title="Free articles">
+                  <form action={placeArticle.bind(null, "")} className="grid gap-2 text-sm">
+                    <input type="hidden" name="back" value={`/magazines/flatplan/${issue.id}`} />
+                    <input type="hidden" name="issue_id" value={issue.id} />
+                    <select name="article_id" required defaultValue="" aria-label="Article" className={inputClass}>
+                      <option value="" disabled>
+                        Article from the content library…
+                      </option>
+                      {(articles ?? []).map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.title}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select name="size" required defaultValue="full" aria-label="Size" className={inputClass}>
+                        {sizeOptions}
+                      </select>
+                      <select name="page" required defaultValue="" aria-label="Page" className={inputClass}>
+                        <option value="" disabled>
+                          Page…
+                        </option>
+                        {pageOptions}
+                      </select>
+                    </div>
+                    <button type="submit" className={secondaryButton}>
+                      Add the article
+                    </button>
+                    <Link href="/magazines/content#articles" className="text-xs font-semibold text-fp-teal-deep hover:underline">
+                      Find more free articles
+                    </Link>
+                  </form>
+                </Card>
+              )}
             </aside>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4">
@@ -542,5 +584,57 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
         </p>
       </div>
     </>
+  );
+}
+
+// Put a puzzle from the content library into this issue (answers on another page).
+function LibraryPuzzleForm({
+  issueId,
+  puzzles,
+  sizeOptions,
+  pageOptions,
+  lastPage,
+}: {
+  issueId: string;
+  puzzles: { id: string; title: string }[];
+  sizeOptions: React.ReactNode;
+  pageOptions: React.ReactNode;
+  lastPage: number;
+}) {
+  return (
+    <form action={placeLibraryPuzzle.bind(null, "")} className="mt-2 grid gap-2">
+      <input type="hidden" name="back" value={`/magazines/flatplan/${issueId}`} />
+      <input type="hidden" name="issue_id" value={issueId} />
+      <select name="puzzle_id" required defaultValue="" aria-label="Puzzle" className={inputClass}>
+        <option value="" disabled>
+          Puzzle…
+        </option>
+        {puzzles.map((pz) => (
+          <option key={pz.id} value={pz.id}>
+            {pz.title}
+          </option>
+        ))}
+      </select>
+      <div className="grid grid-cols-2 gap-2">
+        <select name="size" required defaultValue="Half Page - Landscape" aria-label="Puzzle size" className={inputClass}>
+          {sizeOptions}
+        </select>
+        <select name="page" required defaultValue="" aria-label="Puzzle page" className={inputClass}>
+          <option value="" disabled>
+            Page…
+          </option>
+          {pageOptions}
+        </select>
+        <select name="answers_size" required defaultValue="Eighth Page" aria-label="Answers size" className={inputClass}>
+          {sizeOptions}
+        </select>
+        <select name="answers_page" required defaultValue={lastPage > 2 ? lastPage - 1 : lastPage} aria-label="Answers page" className={inputClass}>
+          {pageOptions}
+        </select>
+      </div>
+      <button type="submit" className={secondaryButton}>
+        Add the puzzle
+      </button>
+    </form>
   );
 }

@@ -6,17 +6,21 @@ import { createClient } from "@/lib/supabase/server";
 
 // "Puzzle PDF" / "Answers PDF" on the flatplan: the puzzle (or its answers)
 // as a print-ready PDF at the size of its spot on the page. ?part=answers for
-// the answers; ?view=1 opens it in the browser instead of downloading it.
+// the answers; ?issue=<id> for its spot in that issue (a puzzle can be in many);
+// ?view=1 opens it in the browser instead of downloading it.
 export async function GET(request: Request, ctx: RouteContext<"/magazines/puzzles/[puzzleId]/pdf">) {
   await requirePermission("magazines", "view");
   const { puzzleId } = await ctx.params;
   if (!/^[0-9a-f-]{36}$/i.test(puzzleId)) notFound();
   const url = new URL(request.url);
   const part = url.searchParams.get("part") === "answers" ? "answers" : "puzzle";
+  const issue = url.searchParams.get("issue");
   const supabase = await createClient();
   const [{ data: puzzle }, { data: items }] = await Promise.all([
     supabase.from("magazine_puzzles").select("title, data").eq("id", puzzleId).maybeSingle(),
-    supabase.from("magazine_flatplan_items").select("page, puzzle_part, width_mm, height_mm").eq("puzzle_id", puzzleId),
+    issue && /^[0-9a-f-]{36}$/i.test(issue)
+      ? supabase.from("magazine_flatplan_items").select("page, puzzle_part, width_mm, height_mm").eq("puzzle_id", puzzleId).eq("issue_id", issue)
+      : supabase.from("magazine_flatplan_items").select("page, puzzle_part, width_mm, height_mm").eq("puzzle_id", puzzleId),
   ]);
   if (!puzzle) notFound();
   const spot = (items ?? []).find((i) => i.puzzle_part === part);
@@ -24,9 +28,9 @@ export async function GET(request: Request, ctx: RouteContext<"/magazines/puzzle
   const pdf = await renderPuzzlePdf({
     title: puzzle.title,
     part,
-    // Taken off the flatplan: a quarter page, so it can still be downloaded.
-    widthMm: Number(spot?.width_mm ?? 60),
-    heightMm: Number(spot?.height_mm ?? 90),
+    // Not on a flatplan yet: a half page (answers: an eighth) to preview.
+    widthMm: Number(spot?.width_mm ?? (part === "answers" ? 60 : 130)),
+    heightMm: Number(spot?.height_mm ?? (part === "answers" ? 45 : 90)),
     answersPage: answers?.page ?? null,
     data: puzzle.data as WordSearch | Sudoku,
   });
