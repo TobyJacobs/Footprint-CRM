@@ -11,6 +11,14 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.56.0",
+    date: "2026-11-09",
+    title: "Tidier customers",
+    changes: [
+      "Customers no longer show a status (Active, Cancelled…) or the Sales & marketing box, on the customer's page, the edit form or the customer list. Anything already recorded is kept.",
+    ],
+  },
+  {
     version: "0.55.0",
     date: "2026-11-09",
     title: "Simpler customer addresses and account managers",

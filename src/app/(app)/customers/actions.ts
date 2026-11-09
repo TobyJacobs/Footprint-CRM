@@ -70,7 +70,9 @@ function customerFields(fd: FormData) {
     name: str(fd, "name"),
     parent_id: str(fd, "parent_id"),
     account_type: str(fd, "account_type"),
-    status: str(fd, "status"),
+    // Status and the old Sales & marketing details are no longer on the form
+    // (DJ, 9 November 2026): only saved if a form sends them, so stored values stay.
+    ...(fd.has("status") ? { status: str(fd, "status") } : {}),
     website: str(fd, "website"),
     phone: str(fd, "phone"),
     email: str(fd, "email"),
@@ -94,8 +96,8 @@ function customerFields(fd: FormData) {
       ]),
     ),
     services: list(fd, "services"),
-    heard_about_us: list(fd, "heard_about_us"),
-    brochures_sent: list(fd, "brochures_sent"),
+    ...(fd.has("heard_about_us") ? { heard_about_us: list(fd, "heard_about_us") } : {}),
+    ...(fd.has("brochures_sent") ? { brochures_sent: list(fd, "brochures_sent") } : {}),
     credit_status: str(fd, "credit_status"),
     direct_debit_status: str(fd, "direct_debit_status"),
     direct_debit_status_fmn: str(fd, "direct_debit_status_fmn"),
@@ -104,9 +106,9 @@ function customerFields(fd: FormData) {
     invoice_due_terms: str(fd, "invoice_due_terms"),
     default_sales_account: str(fd, "default_sales_account"),
     xero_contact_id: str(fd, "xero_contact_id"),
-    date_last_ordered: str(fd, "date_last_ordered"),
-    last_contacted_on: str(fd, "last_contacted_on"),
-    follow_up_at: dateTime(fd, "follow_up_at"),
+    ...(fd.has("date_last_ordered") ? { date_last_ordered: str(fd, "date_last_ordered") } : {}),
+    ...(fd.has("last_contacted_on") ? { last_contacted_on: str(fd, "last_contacted_on") } : {}),
+    ...(fd.has("follow_up_at") ? { follow_up_at: dateTime(fd, "follow_up_at") } : {}),
   };
 }
 

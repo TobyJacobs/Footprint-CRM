@@ -2,12 +2,11 @@ import Link from "next/link";
 import {
   Card, CheckboxGroup, Field, Select, TextArea, TextInput, primaryButton, secondaryButton,
 } from "@/components/ui";
-import { toLocalInput } from "@/lib/customers/display";
 import AddressFields from "./AddressFields";
 import { NewCustomerDuplicateWatcher } from "./DuplicateCheck";
 import {
-  accountTypes, brochures, creditStatuses, customerStatuses, directDebitStatuses,
-  directDebitStatusesFmn, heardAboutUs, invoiceDueTerms, ownershipTypes, services,
+  accountTypes, creditStatuses, directDebitStatuses,
+  directDebitStatusesFmn, invoiceDueTerms, ownershipTypes, services,
 } from "@/lib/customers/options";
 
 export type CustomerRecord = Record<string, unknown> & { id?: string };
@@ -43,14 +42,6 @@ export default function CustomerForm({
             <TextInput name="name" defaultValue={v("name")} required />
             {/* New customers only: warn about possible duplicates while typing. */}
             {!customer?.id && <NewCustomerDuplicateWatcher />}
-          </Field>
-          <Field label="Status">
-            <Select
-              name="status"
-              options={customerStatuses}
-              defaultValue={(v("status") as string) ?? (customer ? null : "Active")}
-              blank={false}
-            />
           </Field>
           <Field label="Account type">
             <Select name="account_type" options={accountTypes} defaultValue={v("account_type") as string} />
@@ -141,25 +132,6 @@ export default function CustomerForm({
         </div>
       </Card>
 
-      <Card title="Sales & marketing">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="How did they hear about us?" wide>
-            <Select name="heard_about_us" options={heardAboutUs} defaultValue={arr("heard_about_us")[0] ?? null} />
-          </Field>
-          <Field label="Brochures sent" wide>
-            <CheckboxGroup name="brochures_sent" options={brochures} selected={arr("brochures_sent")} />
-          </Field>
-          <Field label="Last contacted">
-            <TextInput name="last_contacted_on" type="date" defaultValue={v("last_contacted_on")} />
-          </Field>
-          <Field label="Follow up">
-            <TextInput name="follow_up_at" type="datetime-local" defaultValue={toLocalInput(v("follow_up_at") as string)} />
-          </Field>
-          <Field label="Date last ordered">
-            <TextInput name="date_last_ordered" type="date" defaultValue={v("date_last_ordered")} />
-          </Field>
-        </div>
-      </Card>
 
       <div className="flex gap-3">
         <button type="submit" className={primaryButton}>

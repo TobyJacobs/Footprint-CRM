@@ -4,8 +4,7 @@ import { Plus } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Badge, Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
-import { statusTone } from "@/lib/customers/display";
-import { customerStatuses, services } from "@/lib/customers/options";
+import { services } from "@/lib/customers/options";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Customers" };
@@ -86,15 +85,6 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
               />
             </label>
             <label className="grid gap-1 text-sm">
-              <span className="font-semibold">Status</span>
-              <select name="status" defaultValue={status} className={inputClass}>
-                <option value="">Any</option>
-                {customerStatuses.map((s) => (
-                  <option key={s}>{s}</option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm">
               <span className="font-semibold">Service</span>
               <select name="service" defaultValue={service} className={inputClass}>
                 <option value="">Any</option>
@@ -132,7 +122,6 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
                 <th className="px-4 py-3 font-semibold">Customer</th>
                 <th className="px-4 py-3 font-semibold">Primary contact</th>
                 <th className="px-4 py-3 font-semibold">Services</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -163,13 +152,12 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3">{c.status && <Badge tone={statusTone(c.status)}>{c.status}</Badge>}</td>
                   </tr>
                 );
               })}
               {(customers ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-10 text-center text-fp-mid">
+                  <td colSpan={3} className="px-4 py-10 text-center text-fp-mid">
                     {q || status || service || dupOnly ? "No customers match those filters." : "No customers yet."}
                   </td>
                 </tr>
