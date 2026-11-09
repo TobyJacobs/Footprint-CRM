@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { shortDateTime } from "@/lib/customers/display";
 import { ticketKindLabel, ticketNumber, ticketStatusLabel, ticketTone } from "@/lib/portal";
 import { createClient } from "@/lib/supabase/server";
+import SupportTabs from "./SupportTabs";
 
 export const metadata: Metadata = { title: "Customer support" };
 
@@ -37,6 +38,7 @@ export default async function SupportPage(props: PageProps<"/support">) {
   const sp = await props.searchParams;
   const filter = filters.find((f) => f.key === sp.show) ?? filters[0];
   const supabase = await createClient();
+  const { count: chatsNeedingPerson } = await supabase.from("chat_conversations").select("id", { count: "exact", head: true }).eq("status", "handover");
   const { data } = await supabase
     .from("support_tickets")
     .select("id, number, kind, subject, status, contact_name, contact_email, last_message_at, customers(id, name)")
@@ -48,6 +50,7 @@ export default async function SupportPage(props: PageProps<"/support">) {
   return (
     <>
       <PageHeader title="Customer support" intro="Change requests and questions customers send from their portal. Reply here and they'll see it in their portal and get an email." />
+      <SupportTabs current="portal" chatsNeedingPerson={chatsNeedingPerson ?? 0} />
       <div className="px-6 py-8 lg:px-10">
         <nav aria-label="Show" className="mb-4 flex flex-wrap gap-2 text-sm">
           {filters.map((f) => (
