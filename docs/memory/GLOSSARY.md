@@ -20,3 +20,4 @@ Plain-English meanings of words the business uses. Add to this whenever a new te
 | FootprintAI transition | The programme turning the digital unit into FootprintAI and putting AI to work across the group (from 28 October 2026). Tracked in FootprintOS → Transition. |
 | Week (transition) | A Wednesday meeting in the FootprintAI transition (Week 1 = Wed 28 Oct 2026, Week 8 = Wed 16 Dec, then After Christmas). Not the same as a FootprintOS build "wave". |
 | Gate | A board decision point in the transition; nothing moves past it until signed off. |
+- **Bishops Printers (Bishops):** the company that **prints Forget Me Not** (confirmed by the owner, 9 November 2026). They also supply the filler content (crosswords and other puzzles, copyright-free articles) used on pages not sold as adverts. Their print dates set each issue's print deadline.
