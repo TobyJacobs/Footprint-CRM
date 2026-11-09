@@ -48,7 +48,9 @@ export default function ChatBox({
   useEffect(() => {
     if (visitor) loadChat(publicId, visitor).then(setChat);
   }, [publicId, visitor]);
-  useEffect(() => end.current?.scrollIntoView({ block: "end" }), [chat.messages.length, busy, chat.status]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "end" });
+  }, [chat.messages.length, busy, chat.status]);
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
