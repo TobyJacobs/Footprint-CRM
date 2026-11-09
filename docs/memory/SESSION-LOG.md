@@ -7,6 +7,7 @@ One short entry per session. Newest at the top.
 ## 9 November 2026: Puzzles and the magazine content library
 - Filler content: crosswords/puzzles and copyright-free articles came from Mag Manager's library (Bishops Printers only prints). Researched suppliers (saved in OPEN-QUESTIONS).
 - Built word searches and sudoku (0.49.0, #95): 10 puzzle checks, 10 database checks, sample PDFs checked; merged and tested live.
+- Owner asked for word search themes that suggest words: built 51 ready-made theme lists (0.51.0, #98); 612 test puzzles from suggestions all worked; checked live with Christmas.
 - Owner asked for a free-articles box (no cost) and a section with drafts of everything: built Magazines → Content (0.50.0, #96): 13 database checks, real GOV.UK pages fetched; merged and tested live. Roadmap ticked.
 
 ## 6 November 2026: No contracts; advert deposits built

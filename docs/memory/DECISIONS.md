@@ -375,3 +375,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 9 November 2026 - Magazine filler: puzzles made by FootprintOS, free articles only
 **Decision (owner):** FootprintOS makes its own word searches and sudoku (no crosswords for now; AI clues would need a paid key). Answers go at the back / on another page of the same issue. Articles must cost nothing: GOV.UK text under the Open Government Licence v3.0 (credit line printed; no pictures) or written by the team. Everything lives in Magazines → Content and can be reused across editions. Other free sources (charity press releases, NHS content API) left for later. PRs #95 (0.49.0) and #96 (0.50.0).
+
+## 9 November 2026 - Word search themes from built-in lists, not an outside service
+**Decision (owner asked; Claude's design):** typing a theme suggests words from 51 ready-made, family-friendly lists in FootprintOS (`src/lib/theme-words.ts`), added to any words already typed, which staff can then edit. The free Datamuse word service was tried but rejected: its suggestions weren't fit to print (e.g. "larry", "adam" for garden birds). Themes not covered show the list of themes, or staff type their own words. New themes are added in that file. PR #98 (0.51.0).
