@@ -4,6 +4,10 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 9 November 2026 (afternoon): Website chat
+- Owner's choices: Grok bot answers, complex chats emailed to the owner to forward; both websites; alerts in OS + email; name/email/phone at handover; chats in Customer support. Owner isn't sure they have an xAI API key, so it works without one.
+- Built website chat (0.52.0, #99): 18 database checks, 8 bot checks. Live test found the chat window crashing after the first reply (an effect returning a value); fixed in 0.52.1 (#100), reproduced and confirmed locally, then the full flow tested live. Test chats and lead deleted. Roadmap ticked.
+
 ## 9 November 2026: Puzzles and the magazine content library
 - Filler content: crosswords/puzzles and copyright-free articles came from Mag Manager's library (Bishops Printers only prints). Researched suppliers (saved in OPEN-QUESTIONS).
 - Built word searches and sudoku (0.49.0, #95): 10 puzzle checks, 10 database checks, sample PDFs checked; merged and tested live.
