@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.52.1",
+    date: "2026-11-09",
+    title: "Fix: website chat window",
+    changes: ["The website chat window no longer shows \"Something went wrong\" after the first reply."],
+  },
+  {
     version: "0.52.0",
     date: "2026-11-09",
     title: "Website chat",
