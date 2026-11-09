@@ -193,6 +193,17 @@ export default async function DocumentForm({
               Save as draft
             </button>
           </>
+        ) : doc && docType === "quote" ? (
+          <>
+            {/* Editing a quote (DJ, 9 November 2026): save, or save and email the
+                updated quote (with its PDF) to the contact again. */}
+            <button type="submit" name="intent" value="resend" className={primaryButton}>
+              Save and resend
+            </button>
+            <button type="submit" name="intent" value="save" className={secondaryButton}>
+              Save changes
+            </button>
+          </>
         ) : (
           <button type="submit" className={primaryButton}>
             {doc ? "Save changes" : `Create ${label.toLowerCase()}`}

@@ -226,8 +226,10 @@ export async function saveDocument(docType: DocType, documentId: string | null, 
   if (lineError) fail(`/sales/${id}/edit`, lineError);
   revalidatePath("/sales", "layout");
 
-  // "Send quote": email it straight away to the contact, with its PDF.
-  if (!documentId && docType === "quote" && str(fd, "intent") === "send") {
+  // "Send quote" (new) or "Save and resend" (editing, DJ 9 November 2026):
+  // email it straight away to the contact, with its PDF.
+  const resend = !!documentId && str(fd, "intent") === "resend";
+  if (docType === "quote" && ((!documentId && str(fd, "intent") === "send") || resend)) {
     const [{ data: doc }, { data: settings }] = await Promise.all([
       supabase.from("sales_documents").select("number, total, quote_kind, contacts(first_name, email)").eq("id", id!).single(),
       supabase.from("company_settings").select("company_name").single(),
@@ -246,7 +248,8 @@ export async function saveDocument(docType: DocType, documentId: string | null, 
       senderName: user.fullName ?? user.email,
       companyName: settings?.company_name ?? "Footprint Group",
     });
-    const result = await deliverDocument(id!, { to: [email], cc: [], subject, message }, user);
+    // A resent quote says it's been updated.
+    const result = await deliverDocument(id!, { to: [email], cc: [], subject: resend ? `Updated: ${subject}` : subject, message }, user);
     if (!result.ok) fail(`/sales/${id}#email`, result.error);
     redirect(`/sales/${id}?emailed=${result.status}`);
   }
