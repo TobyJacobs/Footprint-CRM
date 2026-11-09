@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.50.1",
+    date: "2026-11-09",
+    title: "Fix: tidier GOV.UK articles",
+    changes: ["Articles saved from GOV.UK no longer have empty bullet points: each bullet's text stays on its own line."],
+  },
+  {
     version: "0.50.0",
     date: "2026-11-09",
     title: "Magazine content library",

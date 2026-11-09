@@ -44,6 +44,9 @@ export function htmlToText(html: string) {
     .replace(/ *\n */g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/\n\n•/g, "\n•")
+    // A bullet whose text was in its own block: keep them on one line.
+    .replace(/•[ \t]*\n+(?!•)/g, "• ")
+    .replace(/\n•[ \t]*(?=\n|$)/g, "")
     .trim();
 }
 
