@@ -121,11 +121,14 @@ export function Select({
   options,
   defaultValue,
   blank = "—",
+  required = false,
 }: {
   name: string;
   options: readonly string[] | readonly { value: string; label: string }[];
   defaultValue?: string | null;
   blank?: string | false;
+  // Must be chosen: the blank option can't be submitted.
+  required?: boolean;
 }) {
   const opts = options.map((o) => (typeof o === "string" ? { value: o, label: o } : o));
   // Keep an imported value that isn't in our list, rather than silently losing it.
@@ -133,7 +136,7 @@ export function Select({
     opts.push({ value: defaultValue, label: `${defaultValue} (from Zoho)` });
   }
   return (
-    <select name={name} defaultValue={defaultValue ?? ""} className={inputClass}>
+    <select name={name} defaultValue={defaultValue ?? ""} required={required} className={inputClass}>
       {blank !== false && <option value="">{blank}</option>}
       {opts.map((o) => (
         <option key={o.value} value={o.value}>

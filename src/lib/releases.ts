@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.65.0",
+    date: "2026-11-09",
+    title: "Probability and expected order required",
+    changes: ["Every quote now needs a Probability (Low, Confident, Definite) and an Expected order (This month, Next month, Future). They're always shown on the quote form, and it can't be saved or sent without them."],
+  },
+  {
     version: "0.64.0",
     date: "2026-11-09",
     title: "Margin on cost",
