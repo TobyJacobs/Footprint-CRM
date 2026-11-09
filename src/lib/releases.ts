@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.49.0",
+    date: "2026-11-09",
+    title: "Puzzles for the magazine",
+    changes: [
+      "Flatplans have a Puzzles box: FootprintOS makes a word search (from your own words, e.g. a theme like Garden birds) or a sudoku, easy, medium or hard, and puts it on the page you choose.",
+      "The answers go on a different page of the same issue (the last inside page unless you pick another), and the puzzle says which page.",
+      "Download the puzzle and the answers as print-ready PDFs at the exact size of their space, ready for the page layout. Not keen on one? Make a new one with the same words.",
+    ],
+  },
+  {
     version: "0.48.0",
     date: "2026-11-06",
     title: "Advert deposits",

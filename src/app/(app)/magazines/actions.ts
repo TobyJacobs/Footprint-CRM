@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { bool, int, num, str } from "@/lib/forms";
 import { addDaysTo, addMonthsTo, customerDueDate, ukToday } from "@/lib/dates";
+import { cleanWords, difficulties, isDifficulty, isPuzzleKind, makeSudoku, makeWordSearch, newSeed, type Difficulty, type Sudoku, type WordSearch } from "@/lib/puzzles";
 import { createClient } from "@/lib/supabase/server";
 
 // Magazines setup: editions, monthly issues and advert sizes. Needs Magazines
@@ -246,8 +247,8 @@ export async function removeFlatplanItem(issueId: string, itemId: string) {
 }
 
 // Editorial sizes: a full or double page, or any advert size (its mm size).
-async function editorialSize(fd: FormData) {
-  const size = str(fd, "size");
+async function editorialSize(fd: FormData, field = "size") {
+  const size = str(fd, field);
   if (size === "full") return { page_fraction: 1, width_mm: PAGE_W, height_mm: PAGE_H };
   if (size === "double") return { page_fraction: 2, width_mm: PAGE_W, height_mm: PAGE_H };
   if (!size) return null;
@@ -382,4 +383,82 @@ export async function saveMagazineListItem(kind: "category" | "section", id: str
   const { error } = await supabase.from(listTable(kind)).update({ name, position: int(fd, "position") ?? 0, active: bool(fd, "active") }).eq("id", id);
   if (error) fail(error.code === "23505" ? `There's already one called "${name}"` : error.message);
   done();
+}
+
+// ─── Puzzles ────────────────────────────────────────────────────────────────
+// Word searches and sudoku made by FootprintOS (lib/puzzles): the puzzle goes
+// on one page of the issue and its answers on another (owner, 9 November 2026).
+
+function makePuzzle(kind: "wordsearch" | "sudoku", difficulty: Difficulty, words: string[], grid: number, seed: number) {
+  if (kind === "sudoku") return { ok: true as const, data: makeSudoku(difficulty, seed) as WordSearch | Sudoku };
+  const made = makeWordSearch(words, grid, difficulty, seed);
+  return made.ok ? { ok: true as const, data: made.puzzle as WordSearch | Sudoku } : made;
+}
+
+export async function addPuzzle(issueId: string, fd: FormData) {
+  await requirePermission("magazines", "edit");
+  function back(msg: string): never {
+    redirect(flatplanBack(issueId, `?error=${encodeURIComponent(msg)}#puzzles`));
+  }
+  const kind = str(fd, "kind");
+  const difficulty = str(fd, "difficulty") ?? "medium";
+  if (!isPuzzleKind(kind) || !isDifficulty(difficulty)) back("Choose a word search or sudoku and how hard it is");
+  const page = pageFrom(fd);
+  const answersPage = int(fd, "answers_page");
+  if (!page || !answersPage || answersPage < 1) back("Choose a page for the puzzle and one for the answers");
+  if (page === answersPage) back("Put the answers on a different page from the puzzle");
+  const [size, answersSize] = await Promise.all([editorialSize(fd), editorialSize(fd, "answers_size")]);
+  if (!size || !answersSize) back("Choose a size for the puzzle and for the answers");
+
+  const theme = (str(fd, "theme") ?? "").slice(0, 80);
+  const grid = Math.min(20, Math.max(8, int(fd, "grid") ?? 12));
+  const seed = newSeed();
+  const made = makePuzzle(kind as "wordsearch" | "sudoku", difficulty as Difficulty, cleanWords(str(fd, "words") ?? ""), grid, seed);
+  if (!made.ok) back(made.error);
+  const level = difficulties.find((d) => d.value === difficulty)?.label ?? "";
+  const title = kind === "wordsearch" ? `Word search${theme ? `: ${theme}` : ""}` : `Sudoku${theme ? `: ${theme}` : ` (${level.toLowerCase()})`}`;
+
+  const supabase = await createClient();
+  const { data: puzzle, error } = await supabase
+    .from("magazine_puzzles")
+    .insert({ issue_id: issueId, kind, title, difficulty, seed, data: made.data })
+    .select("id")
+    .single();
+  if (error) back(error.message);
+  const { error: itemError } = await supabase.from("magazine_flatplan_items").insert([
+    { issue_id: issueId, page, title, puzzle_id: puzzle.id, puzzle_part: "puzzle", ...size },
+    { issue_id: issueId, page: answersPage, title: `Answers: ${title}`, puzzle_id: puzzle.id, puzzle_part: "answers", ...answersSize },
+  ]);
+  if (itemError) {
+    await supabase.from("magazine_puzzles").delete().eq("id", puzzle.id);
+    back(itemError.message);
+  }
+  revalidatePath("/magazines", "layout");
+  redirect(flatplanBack(issueId, "?puzzle=1#puzzles"));
+}
+
+// Not keen on it? Make a fresh one with the same words and difficulty.
+export async function remakePuzzle(issueId: string, puzzleId: string) {
+  await requirePermission("magazines", "edit");
+  const supabase = await createClient();
+  const { data: p } = await supabase.from("magazine_puzzles").select("kind, difficulty, data").eq("id", puzzleId).eq("issue_id", issueId).maybeSingle();
+  if (!p) redirect(flatplanBack(issueId, "?error=Puzzle not found#puzzles"));
+  const old = p.data as WordSearch | Sudoku;
+  const seed = newSeed();
+  const made = makePuzzle(p.kind as "wordsearch" | "sudoku", p.difficulty as Difficulty, old.kind === "wordsearch" ? old.words : [], old.kind === "wordsearch" ? old.size : 12, seed);
+  if (!made.ok) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(made.error)}#puzzles`));
+  const { error } = await supabase.from("magazine_puzzles").update({ seed, data: made.data }).eq("id", puzzleId);
+  if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}#puzzles`));
+  revalidatePath("/magazines", "layout");
+  redirect(flatplanBack(issueId, "?puzzle=1#puzzles"));
+}
+
+// Deleting a puzzle takes it and its answers off the flatplan.
+export async function deletePuzzle(issueId: string, puzzleId: string) {
+  await requirePermission("magazines", "edit");
+  const supabase = await createClient();
+  const { error } = await supabase.from("magazine_puzzles").delete().eq("id", puzzleId).eq("issue_id", issueId);
+  if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}#puzzles`));
+  revalidatePath("/magazines", "layout");
+  redirect(flatplanBack(issueId, "#puzzles"));
 }
