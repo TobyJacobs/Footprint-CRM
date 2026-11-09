@@ -3,6 +3,7 @@ import {
   Card, CheckboxGroup, Field, Select, TextArea, TextInput, primaryButton, secondaryButton,
 } from "@/components/ui";
 import { toLocalInput } from "@/lib/customers/display";
+import AddressFields from "./AddressFields";
 import { NewCustomerDuplicateWatcher } from "./DuplicateCheck";
 import {
   accountTypes, brochures, creditStatuses, customerStatuses, directDebitStatuses,
@@ -101,28 +102,14 @@ export default function CustomerForm({
       </Card>
 
       <Card title="Addresses">
-        <div className="grid gap-6 sm:grid-cols-2">
-          {(["billing", "shipping"] as const).map((kind) => (
-            <div key={kind} className="grid gap-3">
-              <p className="text-sm font-bold capitalize">{kind} address</p>
-              <Field label="Street">
-                <TextArea name={`${kind}_street`} rows={2} defaultValue={v(`${kind}_street`) as string} />
-              </Field>
-              <Field label="Town / city">
-                <TextInput name={`${kind}_city`} defaultValue={v(`${kind}_city`)} />
-              </Field>
-              <Field label="County">
-                <TextInput name={`${kind}_county`} defaultValue={v(`${kind}_county`)} />
-              </Field>
-              <Field label="Postcode">
-                <TextInput name={`${kind}_postcode`} defaultValue={v(`${kind}_postcode`)} />
-              </Field>
-              <Field label="Country">
-                <TextInput name={`${kind}_country`} defaultValue={v(`${kind}_country`) ?? (customer ? null : "United Kingdom")} />
-              </Field>
-            </div>
-          ))}
-        </div>
+        <AddressFields
+          isNew={!customer}
+          values={Object.fromEntries(
+            (["billing", "shipping"] as const).flatMap((k) =>
+              (["street", "city", "county", "postcode", "country"] as const).map((f) => [`${k}_${f}`, (v(`${k}_${f}`) as string | null) ?? null]),
+            ),
+          )}
+        />
       </Card>
 
       <Card title="Accounts & credit">

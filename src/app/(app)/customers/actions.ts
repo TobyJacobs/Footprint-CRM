@@ -85,11 +85,14 @@ function customerFields(fd: FormData) {
     billing_county: str(fd, "billing_county"),
     billing_postcode: str(fd, "billing_postcode"),
     billing_country: str(fd, "billing_country"),
-    shipping_street: str(fd, "shipping_street"),
-    shipping_city: str(fd, "shipping_city"),
-    shipping_county: str(fd, "shipping_county"),
-    shipping_postcode: str(fd, "shipping_postcode"),
-    shipping_country: str(fd, "shipping_country"),
+    // "Same as billing address" (DJ, 9 November 2026): the delivery address
+    // is a copy of the billing one, so orders still pick up an address.
+    ...Object.fromEntries(
+      (["street", "city", "county", "postcode", "country"] as const).map((f) => [
+        `shipping_${f}`,
+        str(fd, str(fd, "shipping_mode") === "same" ? `billing_${f}` : `shipping_${f}`),
+      ]),
+    ),
     services: list(fd, "services"),
     heard_about_us: list(fd, "heard_about_us"),
     brochures_sent: list(fd, "brochures_sent"),

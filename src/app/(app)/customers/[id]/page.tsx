@@ -216,8 +216,12 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                 <Detail label="Billing address">
                   {address([c.billing_street, c.billing_city, c.billing_county, c.billing_postcode, c.billing_country])}
                 </Detail>
-                <Detail label="Shipping address">
-                  {address([c.shipping_street, c.shipping_city, c.shipping_county, c.shipping_postcode, c.shipping_country])}
+                <Detail label="Delivery address">
+                  {(["street", "city", "county", "postcode", "country"] as const).every((f) => (c[`shipping_${f}`] ?? "") === (c[`billing_${f}`] ?? ""))
+                    ? c.billing_street || c.billing_postcode
+                      ? "Same as billing address"
+                      : null
+                    : address([c.shipping_street, c.shipping_city, c.shipping_county, c.shipping_postcode, c.shipping_country])}
                 </Detail>
               </dl>
               {c.description && <p className="mt-4 whitespace-pre-line text-sm text-fp-dark/80">{c.description}</p>}
