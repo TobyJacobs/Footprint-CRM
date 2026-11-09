@@ -7,7 +7,10 @@ import {
   businessUnits, quoteBusinessUnits, quoteKindLabel, creditReasons, deliveryTypes, docTypes, expectedDates, probabilities,
   type DocType,
 } from "@/lib/sales/options";
+import { termsTargetFor, type TermsPreset } from "@/lib/sales/terms-presets";
+import { createClient } from "@/lib/supabase/server";
 import AddressFields from "./AddressFields";
+import TermsField from "./TermsField";
 import DocumentEditor, { type EditorLine } from "./DocumentEditor";
 
 type Doc = Record<string, unknown>;
@@ -53,6 +56,11 @@ export default async function DocumentForm({
   const label = docType === "quote" && kind !== "quote" ? quoteKindLabel(kind) : docTypes[docType].label;
   // Advertising quotes book Forget Me Not editions and issues.
   const advertSetup = docType === "quote" && kind === "advertising" ? await getAdvertSetup(ukToday()) : undefined;
+  // Terms presets offered on this kind of document (Admin → Terms).
+  const target = termsTargetFor(docType, kind);
+  const { data: presetRows } = target
+    ? await (await createClient()).from("terms_presets").select("id, name, body, applies_to").eq("active", true).contains("applies_to", [target]).order("position").order("name")
+    : { data: [] as TermsPreset[] };
   const creditWarning =
     customer?.credit_status && /ON STOP|Up Front|before we order/i.test(customer.credit_status) ? customer.credit_status : null;
 
@@ -173,7 +181,7 @@ export default async function DocumentForm({
             <TextArea name="notes" rows={kind === "proposal" ? 6 : 4} defaultValue={(v("notes") as string) ?? defaults.notes ?? null} />
           </Field>
           <Field label={kind === "proposal" ? "Terms & conditions (editable)" : "Terms"}>
-            <TextArea name="terms" rows={kind === "proposal" ? 10 : 4} defaultValue={(v("terms") as string) ?? defaults.terms ?? null} />
+            <TermsField presets={(presetRows ?? []) as TermsPreset[]} rows={kind === "proposal" ? 10 : 4} defaultValue={(v("terms") as string) ?? defaults.terms ?? null} />
           </Field>
           <Field label="Internal notes" hint="Never shown to the customer.">
             <TextArea name="internal_notes" rows={4} defaultValue={v("internal_notes") as string} />

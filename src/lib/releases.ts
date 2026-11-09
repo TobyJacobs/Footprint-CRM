@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.67.0",
+    date: "2026-11-09",
+    title: "Terms presets",
+    changes: [
+      "The Terms box on quotes, advertising quotes, proposals, sales orders and invoices has a Use preset… list: pick a saved set of terms to fill the box, then edit if needed.",
+      "Admins manage the presets in Admin → Terms: name, the terms, and which documents each is offered on. It starts with the standard proposal terms and your current quote, order and invoice terms.",
+    ],
+  },
+  {
     version: "0.66.0",
     date: "2026-11-09",
     title: "Save and resend",

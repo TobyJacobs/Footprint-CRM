@@ -1,6 +1,7 @@
 "use server";
 
 import { createHash, randomBytes } from "node:crypto";
+import { isTermsTarget } from "@/lib/sales/terms-presets";
 import { revalidatePath } from "next/cache";
 import { siteUrl } from "@/lib/site-url";
 import { redirect } from "next/navigation";
@@ -547,4 +548,32 @@ export async function deleteEmailTemplate(templateId: string) {
   if (error) fail("/admin/email-templates", error.message);
   revalidatePath("/admin/email-templates");
   redirect("/admin/email-templates?deleted=1");
+}
+
+// ─── Terms presets (DJ, 9 November 2026) ───────────────────────────────────
+
+export async function saveTermsPreset(presetId: string | null, formData: FormData) {
+  await requireAdmin();
+  const name = text(formData, "name").slice(0, 100);
+  const body = String(formData.get("body") ?? "").trim().slice(0, 20000);
+  const appliesTo = formData.getAll("applies_to").map(String).filter(isTermsTarget);
+  if (!name || !body) fail("/admin/terms", "Please fill in the name and the terms");
+  if (appliesTo.length === 0) fail("/admin/terms", "Tick at least one kind of document to offer it on");
+  const supabase = await createClient();
+  const fields = { name, body, applies_to: appliesTo, active: formData.get("active") === "on" };
+  const { error } = presetId
+    ? await supabase.from("terms_presets").update(fields).eq("id", presetId)
+    : await supabase.from("terms_presets").insert({ ...fields, position: 100 });
+  if (error) fail("/admin/terms", error.code === "23505" ? "A preset with that name already exists" : error.message);
+  revalidatePath("/admin/terms");
+  redirect("/admin/terms?saved=1");
+}
+
+export async function deleteTermsPreset(presetId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("terms_presets").delete().eq("id", presetId);
+  if (error) fail("/admin/terms", error.message);
+  revalidatePath("/admin/terms");
+  redirect("/admin/terms?deleted=1");
 }
