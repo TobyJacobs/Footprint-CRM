@@ -21,6 +21,7 @@ import {
   saveGovukArticle,
 } from "../actions";
 import MagazineTabs from "../MagazineTabs";
+import WordSearchWords from "../WordSearchWords";
 
 export const metadata: Metadata = { title: "Magazine content" };
 
@@ -136,18 +137,7 @@ export default async function MagazineContentPage(props: PageProps<"/magazines/c
                       ))}
                     </select>
                   </div>
-                  <input name="theme" maxLength={80} placeholder="Theme, e.g. Christmas (optional)" aria-label="Theme" className={inputClass} />
-                  <label className="grid gap-1">
-                    <span className="text-xs text-fp-mid">Word search only: the words to hide, one per line or separated by commas</span>
-                    <textarea name="words" rows={5} placeholder={"Robin\nBlue tit\nSparrow…"} aria-label="Words to hide" className={inputClass} />
-                  </label>
-                  <select name="grid" defaultValue="12" aria-label="Word search grid" className={inputClass}>
-                    {[10, 12, 15].map((n) => (
-                      <option key={n} value={n}>
-                        Word search grid {n} × {n}
-                      </option>
-                    ))}
-                  </select>
+                  <WordSearchWords />
                   <button type="submit" className={primaryButton}>
                     Make the puzzle
                   </button>
