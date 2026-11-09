@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mail } from "lucide-react";
+import { Check, Copy, Mail } from "lucide-react";
 import { inputClass, primaryButton, secondaryButton } from "@/components/ui";
 
 type Template = { id: string; name: string; subject: string; body: string };
@@ -60,7 +60,18 @@ export default function EmailComposer({
     setBody(fill(t.body, v));
   };
 
-  const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  // "Copy email" (DJ, 9 November 2026) in place of "Open in my email app":
+  // the message goes on the clipboard to paste into any email.
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(body);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   return (
     <form action={sendAction} className="grid gap-3 text-sm">
@@ -127,9 +138,9 @@ export default function EmailComposer({
                 <Mail size={14} aria-hidden /> Send email
               </button>
             )}
-            <a href={mailto} className={secondaryButton}>
-              Open in my email app
-            </a>
+            <button type="button" onClick={copy} disabled={!body} className={`${secondaryButton} inline-flex items-center gap-2 disabled:opacity-50`}>
+              {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />} {copied ? "Copied" : "Copy email"}
+            </button>
           </div>
         </>
       )}
