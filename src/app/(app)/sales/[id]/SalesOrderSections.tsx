@@ -24,20 +24,8 @@ export function StageBar({ stages, states, cancelled, label = "Order stage" }: S
       <ol aria-label={label} className={`grid gap-2 sm:grid-cols-3 ${stages.length > 4 ? "lg:grid-cols-6" : "lg:grid-cols-4"}`}>
         {stages.map((s, i) => {
           const state = states[i];
-          return (
-            <li
-              key={s.label}
-              aria-current={state === "current" ? "step" : undefined}
-              className={`rounded-md border-2 p-3 text-sm ${
-                state === "done"
-                  ? "border-fp-teal-deep/30 bg-fp-teal/10"
-                  : state === "current"
-                    ? "border-fp-pink bg-fp-pink/5 shadow-sm"
-                    : state === "stopped"
-                      ? "border-fp-error/40 bg-fp-error/5 text-fp-error"
-                      : "border-fp-border bg-white text-fp-mid"
-              }`}
-            >
+          const body = (
+            <>
               <span className="flex items-center gap-2 font-bold">
                 <span
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${
@@ -75,7 +63,31 @@ export function StageBar({ stages, states, cancelled, label = "Order stage" }: S
                 ) : (
                   s.note ?? (state === "done" ? "Done" : "")
                 )}
+                {s.href && <span className="ml-1 font-semibold text-fp-teal-deep underline">Open</span>}
               </span>
+            </>
+          );
+          return (
+            <li
+              key={s.label}
+              aria-current={state === "current" ? "step" : undefined}
+              className={`rounded-md border-2 text-sm ${
+                state === "done"
+                  ? "border-fp-teal-deep/30 bg-fp-teal/10"
+                  : state === "current"
+                    ? "border-fp-pink bg-fp-pink/5 shadow-sm"
+                    : state === "stopped"
+                      ? "border-fp-error/40 bg-fp-error/5 text-fp-error"
+                      : "border-fp-border bg-white text-fp-mid"
+              } ${s.href ? "hover:border-fp-teal-deep" : "p-3"}`}
+            >
+              {s.href ? (
+                <Link href={s.href} className="block p-3">
+                  {body}
+                </Link>
+              ) : (
+                body
+              )}
             </li>
           );
         })}

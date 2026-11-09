@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.68.0",
+    date: "2026-11-09",
+    title: "Open the sales order from a quote",
+    changes: ["On a quote that's become an order, the Sales order step in the progress bar is now a link: click it to open the order."],
+  },
+  {
     version: "0.67.0",
     date: "2026-11-09",
     title: "Terms presets",
