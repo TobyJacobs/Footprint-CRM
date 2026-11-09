@@ -10,6 +10,7 @@ import { CUSTOMER_PICKED } from "./AddressFields";
 import type { AdvertSetup } from "@/lib/magazines";
 import AdvertBuilder, { type AdvertLine } from "./AdvertBuilder";
 import ProductDropdown, { productLineText } from "./ProductDropdown";
+import { BillingSelect, ProposalCatalogue, ProposalPayments } from "./ProposalTools";
 import { lineGp, lineMargin, lineNet, marginPercent, priceForMargin, totals } from "@/lib/sales/options";
 
 type TaxRate = { id: string; name: string; rate: number };
@@ -25,6 +26,8 @@ export type ProductHit = {
   cost_price: number | null;
   tax_rate_id: string | null;
   tax_rate: number;
+  billing?: string | null;
+  category?: string | null;
 };
 
 export type EditorLine = {
@@ -43,6 +46,8 @@ export type EditorLine = {
   advert_size_id?: string | null;
   magazine_section_id?: string | null;
   premium_position?: string | null;
+  // Proposals: one-off, monthly or included.
+  billing?: string | null;
   // What's being typed in the margin box (screen only, never saved).
   margin_input?: string;
 };
@@ -286,6 +291,8 @@ export default function DocumentEditor({
   kind = "quote",
   initialLabour,
   advertSetup,
+  initialPlan = null,
+  initialDeposit = 0,
 }: {
   initialCustomer: { id: string; name: string } | null;
   initialContacts: Contact[];
@@ -300,6 +307,9 @@ export default function DocumentEditor({
   initialLabour?: number | null;
   // Editions, issues and sizes for the advert builder.
   advertSetup?: AdvertSetup;
+  // Proposals: the payment plan (months) and deposit (%) chosen.
+  initialPlan?: number | null;
+  initialDeposit?: number;
 }) {
   const defaultTax = taxRates[0];
   const [customer, setCustomer] = useState(initialCustomer);
@@ -342,6 +352,22 @@ export default function DocumentEditor({
       ...adverts.map((a) => ({ ...blankLine(defaultTax), ...a })),
     ]);
   const nextMonth = addMonthsTo(ukMonth(), 1);
+  const proposal = kind === "proposal";
+  // A product from the proposal catalogue becomes a line (replacing an empty starting line).
+  const addProduct = (p: ProductHit) =>
+    setLines((ls) => [
+      ...ls.filter((l) => l.description.trim() || l.unit_price || l.product_id),
+      {
+        ...blankLine(defaultTax),
+        product_id: p.id,
+        description: productLineText(p),
+        unit_price: p.sale_price,
+        unit_cost: p.cost_price,
+        tax_rate_id: p.tax_rate_id ?? defaultTax?.id ?? null,
+        tax_rate: p.tax_rate_id ? p.tax_rate : (defaultTax?.rate ?? 0),
+        billing: p.billing ?? "oneoff",
+      },
+    ]);
 
   const t = totals(lines);
   const margin = marginPercent(t.subtotal, t.cost);
@@ -371,6 +397,7 @@ export default function DocumentEditor({
               advert_size_id: l.advert_size_id ?? null,
               magazine_section_id: l.magazine_section_id ?? null,
               premium_position: l.premium_position ?? null,
+              billing: proposal ? (l.billing ?? "oneoff") : "oneoff",
             })),
         )}
       />
@@ -426,12 +453,14 @@ export default function DocumentEditor({
       </div>
 
       {kind === "advertising" && advertSetup && <AdvertBuilder firstMonth={nextMonth} setup={advertSetup} onAdd={addAdvertLines} />}
+      {proposal && <ProposalCatalogue onAdd={addProduct} />}
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1100px] text-left text-sm">
           <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
             <tr>
               <th className="py-2 pr-2 font-semibold">Item</th>
+              {proposal && <th className="w-32 py-2 pr-2 font-semibold">Type</th>}
               <th className="w-20 py-2 pr-2 font-semibold">Qty</th>
               <th className="w-28 py-2 pr-2 font-semibold">Cost £</th>
               <th className="w-28 py-2 pr-2 font-semibold">Sell £</th>
@@ -458,6 +487,7 @@ export default function DocumentEditor({
                           unit_cost: p.cost_price,
                           tax_rate_id: p.tax_rate_id ?? l.tax_rate_id,
                           tax_rate: p.tax_rate_id ? p.tax_rate : l.tax_rate,
+                          billing: p.billing ?? l.billing ?? "oneoff",
                         })
                       }
                     />
@@ -470,6 +500,11 @@ export default function DocumentEditor({
                     />
                   </div>
                 </td>
+                {proposal && (
+                  <td className="py-2 pr-2">
+                    <BillingSelect value={l.billing} onChange={(v) => update(l.key, v === "included" ? { billing: v, unit_price: 0, margin_input: undefined } : { billing: v })} />
+                  </td>
+                )}
                 <td className="py-2 pr-2">
                   <input type="number" step="any" value={l.quantity} onChange={(e) => update(l.key, { quantity: num(e.target.value) })} className={inputClass} />
                 </td>
@@ -603,6 +638,13 @@ export default function DocumentEditor({
           )}
         </dl>
       </div>
+      {proposal && (
+        <ProposalPayments
+          lines={lines.map((l) => ({ billing: l.billing, line_net: lineNet(l), tax_rate: l.tax_rate }))}
+          initialPlan={initialPlan}
+          initialDeposit={initialDeposit}
+        />
+      )}
     </div>
   );
 }

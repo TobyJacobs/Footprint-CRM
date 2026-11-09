@@ -28,6 +28,10 @@ type QuoteView = {
   contact_name: string | null;
   lines: PrintableData["lines"];
   first_advert_month: string | null;
+  quote_kind: string | null;
+  plan_months: number | null;
+  deposit_percent: number | null;
+  prepared_by: string | null;
   company: PrintableData["company"];
 };
 
@@ -119,6 +123,10 @@ export default async function PublicQuotePage(props: PageProps<"/q/[token]">) {
           total: Number(quote.total),
           notes: quote.notes,
           terms: quote.terms,
+          proposal:
+            quote.quote_kind === "proposal"
+              ? { planMonths: quote.plan_months ?? null, depositPercent: Number(quote.deposit_percent ?? 0), preparedBy: quote.prepared_by }
+              : null,
           company: quote.company,
         }}
       />

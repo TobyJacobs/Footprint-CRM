@@ -5,7 +5,8 @@ import { requirePermission } from "@/lib/auth";
 import { getSalespersonOptions } from "@/lib/customers/staff";
 import { customerDueDate, ukToday } from "@/lib/dates";
 import { addDays, getCompanySettings, getCustomerWithContacts, getTaxRates } from "@/lib/sales/data";
-import { docTypes, isDocType, isQuoteKind, proposalTemplate, quoteKinds } from "@/lib/sales/options";
+import { docTypes, isDocType, isQuoteKind, quoteKinds } from "@/lib/sales/options";
+import { defaultProposalTerms } from "@/lib/sales/proposal";
 import { saveDocument } from "../actions";
 import DocumentForm from "../DocumentForm";
 import QuoteKindPicker from "../QuoteKindPicker";
@@ -62,10 +63,11 @@ export default async function NewDocumentPage(props: PageProps<"/sales/new">) {
           // The customer's own payment terms if they have any, else the company's.
           due_date:
             customerDueDate(today, picked.customer?.invoice_due_days, picked.customer?.invoice_due_terms) ?? addDays(settings?.invoice_due_days ?? 30),
-          terms,
+          // Proposals use Footprint's standard proposal terms (as on the quote builder).
+          terms: kind === "proposal" ? defaultProposalTerms : terms,
           // Kept when switching the kind of quote.
           contact_id: typeof sp.contact === "string" && picked.contacts.some((p) => p.id === sp.contact) ? sp.contact : null,
-          notes: docType === "invoice" ? settings?.invoice_notes : kind === "proposal" ? proposalTemplate : null,
+          notes: docType === "invoice" ? settings?.invoice_notes : null,
           title: kind === "proposal" ? "Proposal" : kind === "advertising" ? "Advertising in Forget Me Not" : null,
           business_unit: kind === "advertising" ? "Advertising" : null,
           owner_id: user.id,

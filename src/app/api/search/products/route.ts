@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("products")
-    .select("id, name, sku, description, unit, sale_price, cost_price, tax_rate_id, tax_rates(rate)")
+    .select("id, name, sku, description, unit, sale_price, cost_price, tax_rate_id, billing, category, tax_rates(rate)")
     .eq("active", true)
     .order("name");
   query = all ? query.limit(5000) : query.or(`name.ilike.${like},sku.ilike.${like}`).limit(15);
@@ -33,6 +33,9 @@ export async function GET(request: NextRequest) {
       cost_price: p.cost_price === null ? null : Number(p.cost_price),
       tax_rate_id: p.tax_rate_id,
       tax_rate: Number((p.tax_rates as unknown as { rate: number } | null)?.rate ?? 0),
+      // Proposals: one-off, monthly or included, and the catalogue group.
+      billing: p.billing,
+      category: p.category,
     })),
   );
 }

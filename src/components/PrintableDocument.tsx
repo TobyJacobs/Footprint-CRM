@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { address, gbp, longDate } from "@/lib/customers/display";
+import { billingLabel, paymentNextSteps, paymentSchedule, proposalTotals, scheduleTitle } from "@/lib/sales/proposal";
 
 export type PrintableLine = {
   description: string;
@@ -8,6 +9,7 @@ export type PrintableLine = {
   discount_percent: number;
   tax_rate: number;
   line_net: number;
+  billing?: string | null;
 };
 
 export type PrintableData = {
@@ -32,6 +34,8 @@ export type PrintableData = {
   notes?: string | null;
   terms?: string | null;
   bank_details?: string | null;
+  // Proposals: laid out like Footprint's quote builder (lib/sales/proposal).
+  proposal?: { planMonths: number | null; depositPercent: number; preparedBy?: string | null } | null;
   company: {
     company_name?: string | null;
     address?: string | null;
@@ -130,6 +134,10 @@ export default function PrintableDocument({ d }: { d: PrintableData }) {
 
       {d.title && <h1 className="mt-8 text-lg font-black">{d.title}</h1>}
 
+      {d.proposal ? (
+        <ProposalBody d={d} />
+      ) : (
+        <>
       <table className="mt-6 w-full text-left">
         <thead className="border-b-2 border-fp-black text-xs uppercase tracking-wide">
           <tr>
@@ -164,6 +172,8 @@ export default function PrintableDocument({ d }: { d: PrintableData }) {
         <dt className="border-t-2 border-fp-black pt-1 text-base font-black">Total</dt>
         <dd className="border-t-2 border-fp-black pt-1 text-right text-base font-black">{gbp(d.total)}</dd>
       </dl>
+        </>
+      )}
 
       {(d.notes || d.bank_details) && (
         <section className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -189,11 +199,113 @@ export default function PrintableDocument({ d }: { d: PrintableData }) {
       )}
 
       <footer className="mt-10 border-t border-fp-border pt-3 text-xs text-fp-mid">
+        {d.proposal && <p className="mb-1 font-semibold text-fp-dark">Your marketing, always moving. · All prices exclude VAT unless stated.</p>}
         {[c.company_number && `Registered in England & Wales no. ${c.company_number}`, c.vat_number && `VAT no. ${c.vat_number}`]
           .filter(Boolean)
           .join(" · ")}
       </footer>
     </article>
+  );
+}
+
+// A proposal's lines, one-off and monthly totals, payment schedule and next
+// steps, as on Footprint's quote builder (DJ, 9 November 2026).
+function ProposalBody({ d }: { d: PrintableData }) {
+  const p = d.proposal!;
+  const t = proposalTotals(d.lines);
+  const rows = paymentSchedule(t.oneOff.total, t.monthly.total, p.planMonths, p.depositPercent);
+  const next = paymentNextSteps(t.oneOff.net, t.monthly.net, p.depositPercent);
+  return (
+    <>
+      {p.preparedBy && <p className="mt-2 text-xs text-fp-mid">Prepared by {p.preparedBy}</p>}
+      <table className="mt-6 w-full text-left">
+        <thead className="border-b-2 border-fp-black text-xs uppercase tracking-wide">
+          <tr>
+            <th className="py-2 pr-3">Item</th>
+            <th className="py-2 pr-3 text-right">Qty</th>
+            <th className="py-2 pr-3 text-right">Unit</th>
+            <th className="py-2 pr-3 text-right">Type</th>
+            <th className="py-2 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {d.lines.map((l, i) => {
+            const included = l.billing === "included";
+            return (
+              <tr key={i} className="border-b border-fp-border align-top">
+                <td className="whitespace-pre-line py-2 pr-3">
+                  {l.description}
+                  {l.discount_percent > 0 && <span className="block text-xs text-fp-mid">Includes {l.discount_percent}% discount</span>}
+                </td>
+                <td className="py-2 pr-3 text-right">{included ? "—" : l.quantity}</td>
+                <td className="py-2 pr-3 text-right">{included ? "Included" : gbp(l.unit_price)}</td>
+                <td className="py-2 pr-3 text-right">{billingLabel(l.billing)}</td>
+                <td className="py-2 text-right">{gbp(included ? 0 : l.line_net)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <dl className="ml-auto mt-4 grid max-w-xs grid-cols-2 gap-x-6 gap-y-1">
+        {t.oneOff.net > 0 && (
+          <>
+            <dt>One-off subtotal</dt>
+            <dd className="text-right">{gbp(t.oneOff.net)}</dd>
+            <dt>VAT</dt>
+            <dd className="text-right">{gbp(t.oneOff.vat)}</dd>
+            <dt className="border-t-2 border-fp-black pt-1 font-black">One-off total</dt>
+            <dd className="border-t-2 border-fp-black pt-1 text-right font-black">{gbp(t.oneOff.total)}</dd>
+          </>
+        )}
+        {t.monthly.net > 0 && (
+          <>
+            <dt className={t.oneOff.net > 0 ? "mt-3" : ""}>Monthly subtotal</dt>
+            <dd className={`text-right ${t.oneOff.net > 0 ? "mt-3" : ""}`}>{gbp(t.monthly.net)}</dd>
+            <dt>VAT</dt>
+            <dd className="text-right">{gbp(t.monthly.vat)}</dd>
+            <dt className="border-t-2 border-fp-black pt-1 font-black">Monthly total</dt>
+            <dd className="border-t-2 border-fp-black pt-1 text-right font-black">{gbp(t.monthly.total)}/mo</dd>
+          </>
+        )}
+      </dl>
+
+      {rows.length > 0 && (
+        <section className="mt-8 break-inside-avoid rounded-md border border-fp-border p-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-fp-pink">{scheduleTitle(t.oneOff.total, p.planMonths, p.depositPercent)}</p>
+          <table className="mt-2 w-full text-left text-sm">
+            <thead className="text-xs uppercase tracking-wide text-fp-mid">
+              <tr>
+                <th className="py-1 pr-3">Payment</th>
+                <th className="py-1 pr-3">Due</th>
+                <th className="py-1 text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i} className={`border-t border-fp-border ${r.kind === "deposit" || r.kind === "full" ? "font-semibold" : ""}`}>
+                  <td className="py-1.5 pr-3">{r.label}</td>
+                  <td className="py-1.5 pr-3">{r.due}</td>
+                  <td className="py-1.5 text-right">
+                    {gbp(r.amount)}
+                    {r.kind === "subscription" ? "/mo" : ""}
+                  </td>
+                </tr>
+              ))}
+              {t.oneOff.total > 0 && (
+                <tr className="border-t-2 border-fp-black font-black">
+                  <td colSpan={2} className="py-1.5">
+                    Total one-off (inc. VAT)
+                  </td>
+                  <td className="py-1.5 text-right">{gbp(t.oneOff.total)}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          {next && <p className="mt-3 text-xs text-fp-dark/80">{next}</p>}
+        </section>
+      )}
+    </>
   );
 }
 
