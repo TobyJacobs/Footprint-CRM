@@ -70,7 +70,9 @@ export async function sendEmail(msg: {
         subject: msg.subject,
         content: [
           { type: "text/plain", value: msg.text },
-          { type: "text/html", value: msg.html },
+          // Every email gets the Footprint look (emailShell), unless it's
+          // already a full page (brandedHtml).
+          { type: "text/html", value: /^\s*<!doctype/i.test(msg.html) ? msg.html : emailShell(msg.html, "Footprint Group") },
         ],
         ...(msg.tag ? { categories: [msg.tag] } : {}),
         ...(msg.attachments?.length
@@ -134,12 +136,23 @@ ${(opts.table.foot ?? []).map((r) => `<tr>${r.map((v, i) => cell(v, i, "td", tru
     opts.buttonUrl && opts.buttonLabel
       ? `<p style="margin:22px 0"><a href="${escapeHtml(opts.buttonUrl)}" style="background:#de2277;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:6px;display:inline-block">${escapeHtml(opts.buttonLabel)}</a></p>`
       : "";
-  return `<!doctype html><html><body style="margin:0;background:#f7f7f7;font-family:Montserrat,Arial,sans-serif;color:#000">
+  return emailShell(`${paragraphs}${table}${button}`, opts.companyName);
+}
+
+// The Footprint email look (DJ, 9 November 2026): logo, brand stripe, a white
+// card on light grey and a footer. The logo is the hosted PNG (email programs
+// block built-in images); the stripe falls back to pink where gradients
+// aren't supported.
+export function emailShell(bodyHtml: string, companyName: string) {
+  const site = process.env.SITE_URL || "https://footprintgroupos.netlify.app";
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;background:#f7f7f7;font-family:Montserrat,Arial,sans-serif;color:#000">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f7f7;padding:24px 0"><tr><td align="center">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#fff;border-radius:8px;overflow:hidden">
-<tr><td style="height:4px;background:linear-gradient(90deg,#de2277,#e58207,#7bcbd1)"></td></tr>
-<tr><td style="padding:28px 28px 8px;font-size:15px;line-height:1.55">${paragraphs}${table}${button}
+<tr><td style="padding:22px 28px 18px"><img src="${site}/brand/footprint-logo-dark.png" width="170" height="50" alt="Footprint Group" style="display:block;border:0;width:170px;height:auto"></td></tr>
+<tr><td style="height:4px;line-height:4px;font-size:0;background:#de2277;background:linear-gradient(90deg,#de2277,#e58207,#7bcbd1)">&nbsp;</td></tr>
+<tr><td style="padding:26px 28px 8px;font-size:15px;line-height:1.55">${bodyHtml}
 </td></tr>
-<tr><td style="padding:12px 28px 24px;font-size:12px;color:#888">${escapeHtml(opts.companyName)}</td></tr>
+<tr><td style="padding:14px 28px 24px;font-size:12px;color:#888;border-top:1px solid #eee">${escapeHtml(companyName)} · <a href="https://footprintgroup.uk" style="color:#888">footprintgroup.uk</a></td></tr>
 </table></td></tr></table></body></html>`;
 }

@@ -11,6 +11,14 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.58.0",
+    date: "2026-11-09",
+    title: "Branded emails",
+    changes: [
+      "Every email FootprintOS sends now has the Footprint Group look: the logo at the top, the brand stripe, and a footer with footprintgroup.uk. That covers quotes, invoices, orders, purchase orders, design proofs, customer emails, portal sign-in codes, support replies, staff invites, and enquiry and chat alerts.",
+    ],
+  },
+  {
     version: "0.57.0",
     date: "2026-11-09",
     title: "Contacts on one line",
