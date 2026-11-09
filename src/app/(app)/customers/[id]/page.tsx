@@ -127,7 +127,6 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
           </Link>
           <div className="flex flex-wrap items-center gap-2">
             {c.erased_at && <Badge>Erased (GDPR)</Badge>}
-            {c.status && <Badge tone={statusTone(c.status)}>{c.status}</Badge>}
             {(c.services ?? []).map((s: string) => (
               <Badge key={s}>{s}</Badge>
             ))}
@@ -447,24 +446,6 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                 <Detail label="Default sales account">{c.default_sales_account}</Detail>
                 <Detail label="Xero contact ID">{c.xero_contact_id}</Detail>
                 <Detail label="Date last ordered">{longDate(c.date_last_ordered)}</Detail>
-              </dl>
-            </Card>
-
-            <Card title="Sales & marketing">
-              <dl className="grid gap-4">
-                <Detail label="Services">
-                  {(c.services ?? []).length > 0 && (
-                    <span className="flex flex-wrap gap-1">
-                      {(c.services as string[]).map((s) => (
-                        <Badge key={s}>{s}</Badge>
-                      ))}
-                    </span>
-                  )}
-                </Detail>
-                <Detail label="Heard about us">{(c.heard_about_us ?? []).join(", ")}</Detail>
-                <Detail label="Brochures sent">{(c.brochures_sent ?? []).join(", ")}</Detail>
-                <Detail label="Last contacted">{longDate(c.last_contacted_on)}</Detail>
-                <Detail label="Follow up">{shortDateTime(c.follow_up_at)}</Detail>
               </dl>
             </Card>
 
