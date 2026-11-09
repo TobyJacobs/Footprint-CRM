@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.66.0",
+    date: "2026-11-09",
+    title: "Save and resend",
+    changes: ["Editing a quote: Save and resend saves your changes and emails the updated quote, with its PDF, to the contact again (the subject starts \"Updated:\"). Save changes still just saves."],
+  },
+  {
     version: "0.65.0",
     date: "2026-11-09",
     title: "Probability and expected order required",
