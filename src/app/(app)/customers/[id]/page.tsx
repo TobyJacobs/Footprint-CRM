@@ -19,6 +19,7 @@ import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import DesignJobsPanel from "@/components/DesignJobsPanel";
 import CustomerActions from "./CustomerActions";
 import CustomerDocsCard, { type CustomerDoc } from "./CustomerDocsCard";
+import AccountManagers from "./AccountManagers";
 import CustomerGlance from "./CustomerGlance";
 
 export async function generateMetadata(props: PageProps<"/customers/[id]">): Promise<Metadata> {
@@ -103,6 +104,8 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
     ? await Promise.all([docsOf(["quote"]), docsOf(["sales_order"]), docsOf(["invoice", "credit_note"])])
     : [null, null, null];
   const glance = canSeeSales ? await loadGlance(supabase, id) : null;
+  const { data: areaManagers } = await supabase.from("customer_account_managers").select("area, profile_id").eq("customer_id", id);
+  const byArea = Object.fromEntries((areaManagers ?? []).map((m) => [m.area, m.profile_id]));
 
   const staffName = (pid: string | null) => {
     const p = (staff ?? []).find((s) => s.id === pid);
@@ -178,11 +181,13 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
           </div>
         )}
 
-        {glance && (
-          <div className="mb-6">
-            <CustomerGlance g={glance} customerName={c.name} />
-          </div>
-        )}
+        <div className="mb-6">
+          <CustomerGlance
+            g={glance}
+            customerName={c.name}
+            managers={<AccountManagers customerId={id} ownerId={c.owner_id} byArea={byArea} staff={staff ?? []} canEdit={canEdit && !c.erased_at} />}
+          />
+        </div>
 
         <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
           <div className="grid content-start gap-6">
@@ -203,7 +208,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                   )}
                 </Detail>
                 <Detail label="Type">{c.account_type}</Detail>
-                <Detail label="Account owner">{staffName(c.owner_id)}</Detail>
+                <Detail label="Main account manager">{staffName(c.owner_id)}</Detail>
                 <Detail label="Parent company">
                   {parent && <Link href={`/customers/${parent.id}`} className="hover:text-fp-pink">{parent.name}</Link>}
                 </Detail>

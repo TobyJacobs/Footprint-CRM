@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.54.0",
+    date: "2026-11-09",
+    title: "Account managers per area",
+    changes: [
+      "Customer at a glance now shows the customer's account managers: the main one, plus one for each area (Advertising, Marketing, Print/Merch, Signage, Footprint AI).",
+      "Anyone who can edit customers can change them with Change account managers. \"Account owner\" is now called the main account manager.",
+    ],
+  },
+  {
     version: "0.53.0",
     date: "2026-11-09",
     title: "Simpler customer buttons",
