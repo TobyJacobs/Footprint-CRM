@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { addTask, deleteProject, deleteTask, deleteTimeLog, logTime, startTimer, stopTimer, updateTask } from "../actions";
 import TimeForm from "../TimeForm";
 import DesignJobsPanel from "@/components/DesignJobsPanel";
+import { marginPercent } from "@/lib/sales/options";
 
 export async function generateMetadata(props: PageProps<"/projects/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -391,7 +392,8 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 // invoiced, the sales order's value is used instead.
 function ProfitBreakdown({ basis, invoiced, materials, time_cost, profit }: { basis: string; invoiced: number; materials: number; time_cost: number; profit: number }) {
   const money = (n: number) => gbp(Number(n)) ?? "£0.00";
-  const margin = Number(invoiced) > 0 ? Math.round((Number(profit) / Number(invoiced)) * 1000) / 10 : null;
+  // Margin on cost (materials and staff time), as everywhere.
+  const margin = marginPercent(Number(invoiced), Number(materials) + Number(time_cost));
   return (
     <div className="grid gap-0.5">
       <div className="flex justify-between gap-4">

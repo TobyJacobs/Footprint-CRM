@@ -1,6 +1,7 @@
 import "server-only";
 import { addMonthsTo, ukMonth } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
+import { marginPercent } from "./options";
 
 // Figures for the charts in Sales & Operations. The adding-up happens in the
 // database (sales_stats), as the signed-in person, so row-level security
@@ -44,7 +45,6 @@ type Raw = {
 };
 
 const round = (n: number) => Math.round(n * 100) / 100;
-const pct = (profit: number, sales: number) => (sales > 0 ? Math.round((profit / sales) * 1000) / 10 : null);
 
 export async function getSalesStats({ months = 12, ownerId }: { months?: number; ownerId?: string | null }): Promise<SalesStats> {
   const supabase = await createClient();
@@ -77,7 +77,7 @@ export async function getSalesStats({ months = 12, ownerId }: { months?: number;
       invoiced: round(invoiced),
       paid: round(Number(r?.paid ?? 0)),
       unpaid: round(Number(r?.unpaid ?? 0)),
-      marginPct: pct(invoiced - cost, invoiced),
+      marginPct: marginPercent(invoiced, cost),
     });
   }
 
@@ -100,7 +100,7 @@ export async function getSalesStats({ months = 12, ownerId }: { months?: number;
     totals: {
       invoiced: round(totalInvoiced),
       grossProfit: round(totalInvoiced - totalCost),
-      marginPct: pct(totalInvoiced - totalCost, totalInvoiced),
+      marginPct: marginPercent(totalInvoiced, totalCost),
       quotesWon: won,
       quotesLost: lost,
       winRate: won + lost > 0 ? Math.round((won / (won + lost)) * 100) : null,

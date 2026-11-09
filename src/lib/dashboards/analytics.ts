@@ -1,6 +1,7 @@
 import "server-only";
 import type { CurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { marginPercent } from "@/lib/sales/options";
 
 // Figures for the Dashboards section (Revenue, Pipeline, Renewals, Time).
 
@@ -70,7 +71,8 @@ export function monthKeys(from: string, to: string) {
 export const monthShort = (key: string) =>
   new Intl.DateTimeFormat("en-GB", { month: "short", year: "2-digit" }).format(new Date(`${key}-15T12:00:00`));
 
-export const marginPct = (net: number, cost: number) => (net > 0 ? Math.round(((net - cost) / net) * 1000) / 10 : null);
+// Margin on cost, as everywhere (lib/sales/options).
+export const marginPct = (net: number, cost: number) => marginPercent(net, cost);
 
 // ─── Revenue ────────────────────────────────────────────────────────────────
 

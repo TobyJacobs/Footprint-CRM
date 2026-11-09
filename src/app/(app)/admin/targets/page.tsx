@@ -74,7 +74,7 @@ export default async function TargetsPage(props: PageProps<"/admin/targets">) {
             <Field label="Monthly gross profit goal (£)">
               <input name="gross_profit" inputMode="decimal" defaultValue={group("gross_profit")?.amount ?? ""} className={inputClass} />
             </Field>
-            <Field label="Target margin (%)">
+            <Field label="Target margin (% on cost: 100% = double the cost)">
               <input name="margin_pct" inputMode="decimal" defaultValue={group("margin_pct")?.amount ?? ""} className={inputClass} />
             </Field>
           </div>

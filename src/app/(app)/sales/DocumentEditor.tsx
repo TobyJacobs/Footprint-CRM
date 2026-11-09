@@ -11,7 +11,7 @@ import type { AdvertSetup } from "@/lib/magazines";
 import AdvertBuilder, { type AdvertLine } from "./AdvertBuilder";
 import ProductDropdown, { productLineText } from "./ProductDropdown";
 import { BillingSelect, ProposalCatalogue, ProposalPayments } from "./ProposalTools";
-import { STANDARD_MARKUP, lineGp, lineMargin, lineNet, marginPercent, priceForMargin, standardPrice, totals } from "@/lib/sales/options";
+import { STANDARD_MARKUP, lineGp, lineMarginOnCost, lineNet, marginPercent, priceForMarginOnCost, standardPrice, totals } from "@/lib/sales/options";
 
 type TaxRate = { id: string; name: string; rate: number };
 type Contact = { id: string; first_name: string | null; last_name: string; email: string | null; is_primary: boolean };
@@ -338,10 +338,11 @@ export default function DocumentEditor({
   const update = (key: string, patch: Partial<EditorLine>) =>
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
 
-  // Typing a margin works out the sell price from the cost (after discount).
+  // Typing a margin (profit as a % of cost, up to 100,000%) works out the sell
+  // price from the cost (after discount).
   const setMargin = (l: EditorLine, value: string) => {
     const m = Number(value);
-    const price = value.trim() === "" || !Number.isFinite(m) ? null : priceForMargin(l.unit_cost, m, l.discount_percent);
+    const price = value.trim() === "" || !Number.isFinite(m) ? null : priceForMarginOnCost(l.unit_cost, m, l.discount_percent);
     update(l.key, price === null ? { margin_input: value } : { margin_input: value, unit_price: price });
   };
 
@@ -475,7 +476,7 @@ export default function DocumentEditor({
               <th className="w-20 py-2 pr-2 font-semibold">Disc %</th>
               <th className="w-36 py-2 pr-2 font-semibold">VAT</th>
               <th className="w-28 py-2 pr-2 text-right font-semibold" title="Before VAT">Total £</th>
-              <th className="w-24 py-2 pr-2 font-semibold" title="Type a margin to work out the sell price">Margin %</th>
+              <th className="w-28 py-2 pr-2 font-semibold" title="Profit as a % of the cost (2.5 × cost = 150%). Type one to work out the sell price.">Margin %</th>
               <th className="w-24 py-2 pr-2 text-right font-semibold" title="Margin in pounds (gross profit), before VAT">Margin £</th>
               <th className="w-8" />
             </tr>
@@ -568,17 +569,18 @@ export default function DocumentEditor({
                   {l.gp_override != null ? (
                     // A GP override (operations team) fixes the profit, so the margin can't be typed here.
                     <span className="block pt-2 text-right" title="GP overridden">
-                      {lineMargin(l) === null ? "—" : `${lineMargin(l)}%`}
+                      {lineMarginOnCost(l) === null ? "—" : `${lineMarginOnCost(l)}%`}
                     </span>
                   ) : (
                     <input
                       type="number"
                       step="any"
-                      // No "max" and any decimals: a line with no cost shows 100%, and a
-                      // browser limit here would stop the whole quote being saved.
+                      // No browser "max" and any decimals: a browser limit here would stop
+                      // the whole quote being saved (e.g. a tiny cost). Typed margins above
+                      // MAX_LINE_MARGIN are simply ignored when working out the price.
                       aria-label="Margin %"
-                      title={l.unit_cost ? "Type a margin to work out the sell price" : "Add a cost first to set the price from a margin"}
-                      value={l.margin_input ?? lineMargin(l) ?? ""}
+                      title={l.unit_cost ? "Profit as a % of the cost, up to 100,000%. Type one to work out the sell price." : "Add a cost first to set the price from a margin"}
+                      value={l.margin_input ?? lineMarginOnCost(l) ?? ""}
                       onChange={(e) => setMargin(l, e.target.value)}
                       onBlur={() => update(l.key, { margin_input: undefined })}
                       className={inputClass}

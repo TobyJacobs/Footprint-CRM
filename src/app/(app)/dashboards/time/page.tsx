@@ -5,6 +5,7 @@ import { Card, inputClass, primaryButton, secondaryButton } from "@/components/u
 import { addDays, isDateIso, minutesText, todayIso } from "@/lib/projects/options";
 import { createClient } from "@/lib/supabase/server";
 import { requireTab } from "../guard";
+import { marginPercent } from "@/lib/sales/options";
 
 type Sum = { minutes: number; billable: number };
 const add = (map: Map<string, Sum & { name: string; href?: string }>, key: string, name: string, minutes: number, billable: boolean, href?: string) => {
@@ -139,7 +140,7 @@ export default async function TimeDashboard(props: PageProps<"/dashboards/time">
           <Tile
             label="Profit after time"
             value={money(profitTotal.profit)}
-            note={`On jobs finished in the period${profitTotal.invoiced > 0 ? ` · ${Math.round((profitTotal.profit / profitTotal.invoiced) * 100)}% margin` : ""}${lossMakers ? ` · ${lossMakers} lost money` : ""}`}
+            note={`On jobs finished in the period${marginPercent(profitTotal.invoiced, profitTotal.invoiced - profitTotal.profit) === null ? "" : ` · ${marginPercent(profitTotal.invoiced, profitTotal.invoiced - profitTotal.profit)}% margin`}${lossMakers ? ` · ${lossMakers} lost money` : ""}`}
             tone={profitTotal.profit < 0 || lossMakers ? "red" : "teal"}
           />
         )}

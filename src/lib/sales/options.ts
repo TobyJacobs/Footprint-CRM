@@ -208,12 +208,14 @@ export const standardPrice = (unitCost: number) => round2(unitCost * STANDARD_MA
 export const lineGp = (l: LineInput) => round2(lineNet(l) - lineCost(l));
 export const lineMargin = (l: LineInput) => marginPercent(lineNet(l), lineCost(l));
 
-// The sell price per unit that gives a margin (%) on a unit cost, after the
-// line's discount: price × (1 − discount) × (1 − margin) = cost. Null when it
-// can't be worked out (no cost, or a margin of 100% or more).
-export function priceForMargin(unitCost: number | null, marginPct: number, discountPct = 0) {
-  if (unitCost === null || !(unitCost > 0) || !(marginPct < 100) || !(discountPct < 100)) return null;
-  return round2(unitCost / ((1 - marginPct / 100) * (1 - discountPct / 100)));
+// The margin box on a line: margin on cost (marginPercent), up to 100,000%.
+export const MAX_LINE_MARGIN = 100000;
+export const lineMarginOnCost = (l: LineInput) => marginPercent(lineNet(l), lineCost(l));
+// The sell price per unit that gives that margin on cost, after the discount:
+// price × (1 − discount) = cost × (1 + margin). Null if it can't be worked out.
+export function priceForMarginOnCost(unitCost: number | null, marginPct: number, discountPct = 0) {
+  if (unitCost === null || !(unitCost > 0) || !(marginPct > -100) || marginPct > MAX_LINE_MARGIN || !(discountPct < 100)) return null;
+  return round2((unitCost * (1 + marginPct / 100)) / (1 - discountPct / 100));
 }
 
 export function totals(lines: LineInput[]) {
@@ -238,6 +240,9 @@ export function marginText(net: number, cost: number, formatMoney: (n: number) =
   return `${formatMoney(Math.round((net - cost) * 100) / 100) ?? ""}${pct === null ? "" : ` (${pct}%)`}`;
 }
 
+// Margin % everywhere in FootprintOS (owner/DJ, 9 November 2026): profit as a
+// % of the cost, so 2 × cost = 100% and 2.5 × cost = 150%. Blank when there's
+// no cost (it can't be worked out).
 export function marginPercent(net: number, cost: number) {
-  return net > 0 ? Math.round(((net - cost) / net) * 1000) / 10 : null;
+  return cost > 0 ? Math.round(((net - cost) / cost) * 1000) / 10 : null;
 }

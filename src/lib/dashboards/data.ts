@@ -1,6 +1,7 @@
 import "server-only";
 import { addMonthsTo, ukDaysFromToday, ukMonth, ukToday } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
+import { marginPercent } from "@/lib/sales/options";
 
 // Shared figures for the role dashboards (home page) and the Staff hub.
 
@@ -100,7 +101,8 @@ export function sumStats(rows: OwnerStats[]): OwnerStats {
 }
 
 export const grossProfit = (s: OwnerStats) => s.invoiced - s.cost;
-export const marginOf = (s: OwnerStats) => (s.invoiced > 0 ? Math.round(((s.invoiced - s.cost) / s.invoiced) * 1000) / 10 : null);
+// Margin on cost, as everywhere (lib/sales/options).
+export const marginOf = (s: OwnerStats) => marginPercent(s.invoiced, s.cost);
 export const winRate = (s: OwnerStats) => (s.won + s.lost > 0 ? Math.round((s.won / (s.won + s.lost)) * 100) : null);
 
 // ─── Targets ────────────────────────────────────────────────────────────────

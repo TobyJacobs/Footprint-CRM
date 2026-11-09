@@ -1,6 +1,7 @@
 import "server-only";
 import { addDaysTo, addMonthsTo, ukToday } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
+import { marginPercent } from "@/lib/sales/options";
 
 // The Reports tab (Wave 7). Money is counted as on the Dashboards: invoices
 // issued or paid, before VAT, less issued credit notes. Each report has a date
@@ -59,7 +60,8 @@ export const dayLabel = (d: string) =>
   new Date(`${d}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
 export const periodQuery = (p: Period) => `period=${p.preset}${p.preset === "custom" ? `&from=${p.from}&to=${p.to}` : ""}`;
-export const marginOf = (net: number, cost: number) => (net > 0 ? Math.round(((net - cost) / net) * 1000) / 10 : null);
+// Margin on cost, as everywhere (lib/sales/options).
+export const marginOf = (net: number, cost: number) => marginPercent(net, cost);
 
 // ─── Loaders ────────────────────────────────────────────────────────────────
 

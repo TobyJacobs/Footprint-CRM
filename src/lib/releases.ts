@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.64.0",
+    date: "2026-11-09",
+    title: "Margin on cost",
+    changes: [
+      "Margin % now means profit as a % of the cost everywhere in FootprintOS: double the cost is 100%, the standard 2.5 × cost is 150%. That covers quote and order lines and totals, quote lists, products, the sales overview, dashboards, reports, projects and the time dashboard.",
+      "The margin box on a line goes up to 100,000%. Type a margin to set the sell price (e.g. 150% on a £40 cost = £100).",
+      "Lines or quotes with no cost show a blank margin instead of 100%. The margin target in Admin → Targets can be over 100%.",
+    ],
+  },
+  {
     version: "0.63.1",
     date: "2026-11-09",
     title: "Fix: product list on quote lines",
