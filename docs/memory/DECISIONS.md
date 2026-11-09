@@ -384,3 +384,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 9 November 2026 - Proposals mirror the quote builder (quotes.footprintgroup.uk)
 **Decision (DJ via owner):** FootprintOS proposals work like Footprint's quote builder: catalogue by group, one-off/monthly/included lines, separate one-off and monthly totals, payment plan for one-off costs (full or 3/6/9 months at 0%), deposit 0/25/50% on acceptance, payment schedule, and the builder's 8 standard terms. **Owner's choices:** the contract builder comes later; the schedule is shown only (no automatic deposit or instalment invoices). The catalogue is the products with a "Proposal catalogue group"; the 22 builder products were loaded through the data API. PR #110 (0.62.0).
+
+## 9 November 2026 - Margin % means profit ÷ cost (markup), everywhere
+**Decision (owner, for DJ):** "100% should equal 2 × cost". Every margin % in FootprintOS is profit as a % of the cost: quote/order lines and totals, lists, products, sales overview, dashboards, reports, projects and time dashboard, all through `marginPercent` in lib/sales/options.ts. The line margin box sets the price from it (up to 100,000%). No cost → blank (not 100%). Targets may be over 100%; the existing 45% example target was set on the old (sell) basis and should be re-entered (~82% on cost). PR #113 (0.64.0).
