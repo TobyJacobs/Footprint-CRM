@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { bool, int, num, str } from "@/lib/forms";
 import { addDaysTo, addMonthsTo, customerDueDate, ukToday } from "@/lib/dates";
+import { fetchGovukArticle, GOVUK_CREDIT } from "@/lib/govuk";
 import { cleanWords, difficulties, isDifficulty, isPuzzleKind, makeSudoku, makeWordSearch, newSeed, type Difficulty, type Sudoku, type WordSearch } from "@/lib/puzzles";
 import { createClient } from "@/lib/supabase/server";
 
@@ -441,7 +442,7 @@ export async function addPuzzle(issueId: string, fd: FormData) {
 export async function remakePuzzle(issueId: string, puzzleId: string) {
   await requirePermission("magazines", "edit");
   const supabase = await createClient();
-  const { data: p } = await supabase.from("magazine_puzzles").select("kind, difficulty, data").eq("id", puzzleId).eq("issue_id", issueId).maybeSingle();
+  const { data: p } = await supabase.from("magazine_puzzles").select("kind, difficulty, data").eq("id", puzzleId).maybeSingle();
   if (!p) redirect(flatplanBack(issueId, "?error=Puzzle not found#puzzles"));
   const old = p.data as WordSearch | Sudoku;
   const seed = newSeed();
@@ -453,12 +454,156 @@ export async function remakePuzzle(issueId: string, puzzleId: string) {
   redirect(flatplanBack(issueId, "?puzzle=1#puzzles"));
 }
 
-// Deleting a puzzle takes it and its answers off the flatplan.
+// Take a puzzle and its answers off one issue's flatplan (it stays in the
+// content library for other issues).
 export async function deletePuzzle(issueId: string, puzzleId: string) {
   await requirePermission("magazines", "edit");
   const supabase = await createClient();
-  const { error } = await supabase.from("magazine_puzzles").delete().eq("id", puzzleId).eq("issue_id", issueId);
+  const { error } = await supabase.from("magazine_flatplan_items").delete().eq("puzzle_id", puzzleId).eq("issue_id", issueId);
   if (error) redirect(flatplanBack(issueId, `?error=${encodeURIComponent(error.message)}#puzzles`));
   revalidatePath("/magazines", "layout");
   redirect(flatplanBack(issueId, "#puzzles"));
+}
+
+// ─── Content library (Magazines → Content) ──────────────────────────────────
+// Puzzles and free articles ready to fill pages, each usable in any issue.
+
+const CONTENT = "/magazines/content";
+// Back to the content library or the flatplan the form was on.
+const backTo = (fd: FormData) => {
+  const b = str(fd, "back") ?? "";
+  return /^\/magazines\/(content|flatplan\/[0-9a-f-]{36})$/i.test(b) ? b : CONTENT;
+};
+function contentFail(to: string, message: string): never {
+  redirect(`${to}?error=${encodeURIComponent(message)}`);
+}
+function contentDone(to: string, q = "saved=1"): never {
+  revalidatePath("/magazines", "layout");
+  redirect(`${to}?${q}`);
+}
+
+export async function makeDraftPuzzle(fd: FormData) {
+  await requirePermission("magazines", "edit");
+  const kind = str(fd, "kind");
+  const difficulty = str(fd, "difficulty") ?? "medium";
+  if (!isPuzzleKind(kind) || !isDifficulty(difficulty)) contentFail(CONTENT, "Choose a word search or sudoku and how hard it is");
+  const theme = (str(fd, "theme") ?? "").slice(0, 80);
+  const grid = Math.min(20, Math.max(8, int(fd, "grid") ?? 12));
+  const seed = newSeed();
+  const made = makePuzzle(kind, difficulty, cleanWords(str(fd, "words") ?? ""), grid, seed);
+  if (!made.ok) contentFail(CONTENT, made.error);
+  const level = difficulties.find((d) => d.value === difficulty)?.label ?? "";
+  const title = kind === "wordsearch" ? `Word search${theme ? `: ${theme}` : ""}` : `Sudoku${theme ? `: ${theme}` : ` (${level.toLowerCase()})`}`;
+  const supabase = await createClient();
+  const { error } = await supabase.from("magazine_puzzles").insert({ kind, title, difficulty, seed, data: made.data });
+  if (error) contentFail(CONTENT, error.message);
+  contentDone(CONTENT, "saved=1#puzzles");
+}
+
+export async function removeLibraryPuzzle(puzzleId: string) {
+  await requirePermission("magazines", "edit");
+  const supabase = await createClient();
+  const { error } = await supabase.from("magazine_puzzles").delete().eq("id", puzzleId);
+  if (error) contentFail(CONTENT, error.message);
+  contentDone(CONTENT, "saved=1#puzzles");
+}
+
+export async function remakeLibraryPuzzle(puzzleId: string) {
+  await requirePermission("magazines", "edit");
+  const supabase = await createClient();
+  const { data: p } = await supabase.from("magazine_puzzles").select("kind, difficulty, data").eq("id", puzzleId).maybeSingle();
+  if (!p) contentFail(CONTENT, "Puzzle not found");
+  const old = p.data as WordSearch | Sudoku;
+  const seed = newSeed();
+  const made = makePuzzle(p.kind as "wordsearch" | "sudoku", p.difficulty as Difficulty, old.kind === "wordsearch" ? old.words : [], old.kind === "wordsearch" ? old.size : 12, seed);
+  if (!made.ok) contentFail(CONTENT, made.error);
+  const { error } = await supabase.from("magazine_puzzles").update({ seed, data: made.data }).eq("id", puzzleId);
+  if (error) contentFail(CONTENT, error.message);
+  contentDone(CONTENT, "saved=1#puzzles");
+}
+
+// Put a library puzzle (and its answers on another page) into an issue. The
+// puzzle is given, or chosen in the form ("puzzle_id") on the flatplan.
+export async function placeLibraryPuzzle(givenId: string, fd: FormData) {
+  await requirePermission("magazines", "edit");
+  const to = backTo(fd);
+  const puzzleId = givenId || str(fd, "puzzle_id");
+  if (!puzzleId) contentFail(to, "Choose a puzzle");
+  const issueId = str(fd, "issue_id");
+  const page = pageFrom(fd);
+  const answersPage = int(fd, "answers_page");
+  if (!issueId || !page || !answersPage || answersPage < 1) contentFail(to, "Choose the issue, and a page for the puzzle and one for the answers");
+  if (page === answersPage) contentFail(to, "Put the answers on a different page from the puzzle");
+  const [size, answersSize] = await Promise.all([editorialSize(fd), editorialSize(fd, "answers_size")]);
+  if (!size || !answersSize) contentFail(to, "Choose a size for the puzzle and for the answers");
+  const supabase = await createClient();
+  const { data: p } = await supabase.from("magazine_puzzles").select("title").eq("id", puzzleId).maybeSingle();
+  if (!p) contentFail(to, "Puzzle not found");
+  const { error } = await supabase.from("magazine_flatplan_items").insert([
+    { issue_id: issueId, page, title: p.title, puzzle_id: puzzleId, puzzle_part: "puzzle", ...size },
+    { issue_id: issueId, page: answersPage, title: `Answers: ${p.title}`, puzzle_id: puzzleId, puzzle_part: "answers", ...answersSize },
+  ]);
+  if (error) contentFail(to, error.message.includes("puzzle_part_idx") ? "That puzzle is already in this issue" : error.message);
+  contentDone(to);
+}
+
+// Save a GOV.UK page's text as an article (free to reuse with the credit).
+export async function saveGovukArticle(fd: FormData) {
+  await requirePermission("magazines", "edit");
+  const link = str(fd, "link") ?? "";
+  let article: Awaited<ReturnType<typeof fetchGovukArticle>>;
+  try {
+    article = await fetchGovukArticle(link);
+  } catch (e) {
+    contentFail(CONTENT, e instanceof Error ? e.message : "Couldn't get that page from GOV.UK");
+  }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("magazine_articles")
+    .insert({ title: article.title, body: article.body, source: "govuk", source_url: article.url, credit: GOVUK_CREDIT });
+  if (error) contentFail(CONTENT, error.message);
+  contentDone(CONTENT, "saved=1#articles");
+}
+
+// Write an article (or correct one: shorten a GOV.UK one to fit).
+export async function saveArticle(id: string | null, fd: FormData) {
+  await requirePermission("magazines", "edit");
+  const title = (str(fd, "title") ?? "").slice(0, 200);
+  const body = (str(fd, "body") ?? "").slice(0, 30000);
+  if (!title || !body) contentFail(CONTENT, "Give the article a title and some text");
+  const supabase = await createClient();
+  const { error } = id
+    ? await supabase.from("magazine_articles").update({ title, body }).eq("id", id)
+    : await supabase.from("magazine_articles").insert({ title, body, source: "own" });
+  if (error) contentFail(CONTENT, error.message);
+  contentDone(CONTENT, "saved=1#articles");
+}
+
+export async function deleteArticle(id: string) {
+  await requirePermission("magazines", "edit");
+  const supabase = await createClient();
+  const { error } = await supabase.from("magazine_articles").delete().eq("id", id);
+  if (error) contentFail(CONTENT, error.message);
+  contentDone(CONTENT, "saved=1#articles");
+}
+
+// Put a library article on a page of an issue (the article is given, or
+// chosen in the form on the flatplan).
+export async function placeArticle(givenId: string, fd: FormData) {
+  await requirePermission("magazines", "edit");
+  const to = backTo(fd);
+  const articleId = givenId || str(fd, "article_id");
+  if (!articleId) contentFail(to, "Choose an article");
+  const issueId = str(fd, "issue_id");
+  const page = pageFrom(fd);
+  const size = await editorialSize(fd);
+  if (!issueId || !page || !size) contentFail(to, "Choose the issue, page and size");
+  const supabase = await createClient();
+  const { data: a } = await supabase.from("magazine_articles").select("title").eq("id", articleId).maybeSingle();
+  if (!a) contentFail(to, "Article not found");
+  const { error } = await supabase
+    .from("magazine_flatplan_items")
+    .insert({ issue_id: issueId, page, title: `Article: ${a.title}`.slice(0, 200), article_id: articleId, ...size });
+  if (error) contentFail(to, error.message);
+  contentDone(to);
 }
