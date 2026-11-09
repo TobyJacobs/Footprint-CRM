@@ -10,7 +10,7 @@ import { docTypes, isDocType, quoteKindLabel, type DocType } from "./options";
 export async function loadPrintableData(supabase: SupabaseClient, id: string): Promise<{ doc: Record<string, unknown>; data: PrintableData } | null> {
   const { data: doc } = await supabase
     .from("sales_documents")
-    .select("*, customers!sales_documents_customer_id_fkey(*), contacts(first_name, last_name)")
+    .select("*, customers!sales_documents_customer_id_fkey(*), contacts(first_name, last_name), owner:owner_id(full_name)")
     .eq("id", id)
     .maybeSingle();
   if (!doc || !isDocType(doc.doc_type)) return null;
@@ -45,6 +45,15 @@ export async function loadPrintableData(supabase: SupabaseClient, id: string): P
       terms: doc.terms,
       bank_details: type === "invoice" ? company?.bank_details : null,
       reason: type === "credit_note" ? doc.credit_reason : null,
+      // Proposals (and orders made from them) show the quote builder's layout.
+      proposal:
+        doc.quote_kind === "proposal" && (type === "quote" || type === "sales_order")
+          ? {
+              planMonths: doc.plan_months ?? null,
+              depositPercent: Number(doc.deposit_percent ?? 0),
+              preparedBy: (doc.owner as { full_name: string | null } | null)?.full_name ?? null,
+            }
+          : null,
       company,
     },
   };

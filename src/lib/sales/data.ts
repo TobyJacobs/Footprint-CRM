@@ -54,6 +54,7 @@ export async function getDocumentLines(documentId: string) {
     advert_size_id: (l.advert_size_id ?? null) as string | null,
     magazine_section_id: (l.magazine_section_id ?? null) as string | null,
     premium_position: (l.premium_position ?? null) as string | null,
+    billing: (l.billing ?? "oneoff") as string,
   }));
 }
 

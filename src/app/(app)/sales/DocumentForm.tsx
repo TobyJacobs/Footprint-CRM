@@ -72,6 +72,8 @@ export default async function DocumentForm({
           canAddCustomer={(await getCurrentUser()).can("customers", "edit")}
           creditWarning={creditWarning}
           advertSetup={advertSetup}
+          initialPlan={(v("plan_months") as number | null) ?? null}
+          initialDeposit={(v("deposit_percent") as number | null) ?? 0}
         />
       </Card>
 
@@ -170,15 +172,11 @@ export default async function DocumentForm({
 
       <Card title="Notes">
         <div className="grid gap-4 lg:grid-cols-3">
-          <Field
-            label={kind === "proposal" ? "The proposal (the customer sees this)" : "Notes for the customer"}
-            hint={kind === "proposal" ? "Fill in each section; the pricing comes from the lines above." : undefined}
-            wide={kind === "proposal"}
-          >
-            <TextArea name="notes" rows={kind === "proposal" ? 14 : 4} defaultValue={(v("notes") as string) ?? defaults.notes ?? null} />
+          <Field label={kind === "proposal" ? "Additional notes for this client (optional)" : "Notes for the customer"}>
+            <TextArea name="notes" rows={kind === "proposal" ? 6 : 4} defaultValue={(v("notes") as string) ?? defaults.notes ?? null} />
           </Field>
-          <Field label="Terms">
-            <TextArea name="terms" rows={4} defaultValue={(v("terms") as string) ?? defaults.terms ?? null} />
+          <Field label={kind === "proposal" ? "Terms & conditions (editable)" : "Terms"}>
+            <TextArea name="terms" rows={kind === "proposal" ? 10 : 4} defaultValue={(v("terms") as string) ?? defaults.terms ?? null} />
           </Field>
           <Field label="Internal notes" hint="Never shown to the customer.">
             <TextArea name="internal_notes" rows={4} defaultValue={v("internal_notes") as string} />

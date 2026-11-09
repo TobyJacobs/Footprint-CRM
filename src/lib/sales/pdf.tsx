@@ -3,6 +3,7 @@ import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@
 import type { PrintableData } from "@/components/PrintableDocument";
 import { gbp, longDate } from "@/lib/customers/display";
 import { footprintLogoDataUri } from "./logo";
+import { billingLabel, paymentNextSteps, paymentSchedule, proposalTotals, scheduleTitle } from "./proposal";
 
 // The same A4 layout as the printable page (components/PrintableDocument),
 // made as a PDF file on the server so it can be downloaded and attached to
@@ -125,6 +126,10 @@ function DocumentPdf({ d }: { d: PrintableData }) {
 
         {d.title ? <Text style={s.title}>{d.title}</Text> : null}
 
+        {d.proposal ? (
+          <ProposalPdf d={d} />
+        ) : (
+          <>
         <View style={s.th} fixed>
           <Text style={s.cDesc}>Description</Text>
           <Text style={s.cQty}>Qty</Text>
@@ -159,6 +164,8 @@ function DocumentPdf({ d }: { d: PrintableData }) {
             <Text>{money(d.total)}</Text>
           </View>
         </View>
+          </>
+        )}
 
         {d.notes ? (
           <View style={s.section}>
@@ -180,11 +187,88 @@ function DocumentPdf({ d }: { d: PrintableData }) {
         ) : null}
 
         <View style={s.footer} fixed>
-          <Text>{footer}</Text>
+          <Text>{d.proposal ? `Your marketing, always moving. · All prices exclude VAT unless stated.${footer ? ` · ${footer}` : ""}` : footer}</Text>
           <Text render={({ pageNumber, totalPages }) => (totalPages > 1 ? `Page ${pageNumber} of ${totalPages}` : "")} />
         </View>
       </Page>
     </Document>
+  );
+}
+
+// A proposal's lines, one-off and monthly totals and payment schedule, as on
+// Footprint's quote builder (DJ, 9 November 2026).
+function ProposalPdf({ d }: { d: PrintableData }) {
+  const p = d.proposal!;
+  const t = proposalTotals(d.lines);
+  const rows = paymentSchedule(t.oneOff.total, t.monthly.total, p.planMonths, p.depositPercent);
+  const next = paymentNextSteps(t.oneOff.net, t.monthly.net, p.depositPercent);
+  const pair = (label: string, value: string, strong = false) => (
+    <View style={strong ? s.grand : s.totalRow}>
+      <Text>{label}</Text>
+      <Text>{value}</Text>
+    </View>
+  );
+  return (
+    <>
+      {p.preparedBy ? <Text style={{ fontSize: 8, color: mid, marginBottom: 6 }}>Prepared by {p.preparedBy}</Text> : null}
+      <View style={s.th} fixed>
+        <Text style={s.cDesc}>Item</Text>
+        <Text style={s.cQty}>Qty</Text>
+        <Text style={s.cPrice}>Unit</Text>
+        <Text style={s.cPrice}>Type</Text>
+        <Text style={s.cAmt}>Total</Text>
+      </View>
+      {d.lines.map((l, i) => {
+        const included = l.billing === "included";
+        return (
+          <View key={i} style={s.tr} wrap={false}>
+            <View style={s.cDesc}>
+              <Text>{l.description}</Text>
+              {l.discount_percent > 0 ? <Text style={s.discount}>Includes {l.discount_percent}% discount</Text> : null}
+            </View>
+            <Text style={s.cQty}>{included ? "—" : l.quantity}</Text>
+            <Text style={s.cPrice}>{included ? "Included" : money(l.unit_price)}</Text>
+            <Text style={s.cPrice}>{billingLabel(l.billing)}</Text>
+            <Text style={s.cAmt}>{money(included ? 0 : l.line_net)}</Text>
+          </View>
+        );
+      })}
+      <View style={s.totals} wrap={false}>
+        {t.oneOff.net > 0 ? (
+          <>
+            {pair("One-off subtotal", money(t.oneOff.net))}
+            {pair("VAT", money(t.oneOff.vat))}
+            {pair("One-off total", money(t.oneOff.total), true)}
+          </>
+        ) : null}
+        {t.monthly.net > 0 ? (
+          <View style={{ marginTop: t.oneOff.net > 0 ? 8 : 0 }}>
+            {pair("Monthly subtotal", money(t.monthly.net))}
+            {pair("VAT", money(t.monthly.vat))}
+            {pair("Monthly total", `${money(t.monthly.total)}/mo`, true)}
+          </View>
+        ) : null}
+      </View>
+      {rows.length ? (
+        <View style={[s.section, { borderWidth: 0.5, borderColor: border, padding: 10 }]} wrap={false}>
+          <Text style={[s.label, { color: pink }]}>{scheduleTitle(t.oneOff.total, p.planMonths, p.depositPercent)}</Text>
+          {rows.map((r, i) => (
+            <View key={i} style={[s.tr, { paddingVertical: 3 }]}>
+              <Text style={[s.cDesc, r.kind === "deposit" || r.kind === "full" ? s.bold : {}]}>{r.label}</Text>
+              <Text style={{ width: 140 }}>{r.due}</Text>
+              <Text style={s.cAmt}>{`${money(r.amount)}${r.kind === "subscription" ? "/mo" : ""}`}</Text>
+            </View>
+          ))}
+          {t.oneOff.total > 0 ? (
+            <View style={[s.tr, s.bold, { borderBottomWidth: 0 }]}>
+              <Text style={s.cDesc}>Total one-off (inc. VAT)</Text>
+              <Text style={s.cAmt}>{money(t.oneOff.total)}</Text>
+            </View>
+          ) : null}
+          {next ? <Text style={[s.text, { fontSize: 8, color: "#444" }]}>{next}</Text> : null}
+        </View>
+      ) : null}
+    </>
   );
 }
 

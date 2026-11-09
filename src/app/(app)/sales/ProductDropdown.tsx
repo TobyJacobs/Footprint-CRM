@@ -8,7 +8,7 @@ const money = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP
 
 // Every product for sale, loaded once per page and shared by all lines.
 let cache: Promise<ProductHit[]> | null = null;
-function loadProducts(): Promise<ProductHit[]> {
+export function loadProducts(): Promise<ProductHit[]> {
   if (!cache) {
     cache = fetch("/api/search/products?all=1")
       .then((r) => (r.ok ? r.json() : []))

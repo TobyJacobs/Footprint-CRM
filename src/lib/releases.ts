@@ -11,6 +11,17 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.62.0",
+    date: "2026-11-09",
+    title: "Proposals like the quote builder",
+    changes: [
+      "Proposals now work like Footprint's quote builder (quotes.footprintgroup.uk): pick products and services from the catalogue by group, or add your own; each line is One-off, Monthly or Included.",
+      "Separate one-off and monthly totals, a payment plan for one-off costs (pay in full, or 3, 6 or 9 months at 0%), and a 25% or 50% deposit on acceptance.",
+      "The customer's proposal (link, PDF and print) shows the payment schedule, next steps and Footprint's standard terms (editable), in the same layout as the quote builder. Orders made from a proposal keep its payment plan.",
+      "Products have a Type (one-off, monthly, included) and a Proposal catalogue group. The 22 quote builder products are loaded.",
+    ],
+  },
+  {
     version: "0.61.0",
     date: "2026-11-09",
     title: "Customer timeline moved",

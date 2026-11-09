@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, Checkbox, Field, Select, TextArea, TextInput, primaryButton, secondaryButton } from "@/components/ui";
 import { businessUnits, units } from "@/lib/sales/options";
+import { billingOptions } from "@/lib/sales/proposal";
 
 export default function ProductForm({
   product,
@@ -48,6 +49,12 @@ export default function ProductForm({
           </Field>
           <Field label="Business unit">
             <Select name="business_unit" options={businessUnits} defaultValue={v("business_unit") as string} />
+          </Field>
+          <Field label="Type" hint="One-off, monthly or included (free as part of a package). Used on proposals.">
+            <Select name="billing" options={billingOptions} defaultValue={(v("billing") as string) ?? "oneoff"} blank={false} />
+          </Field>
+          <Field label="Proposal catalogue group" hint="e.g. Website, Hosting, YLK Add-Ons. Products with a group appear in the proposal catalogue.">
+            <TextInput name="category" defaultValue={v("category") as string} />
           </Field>
           <Field label="Product number" hint="From Zoho. Goes on quote lines and to Xero.">
             <TextInput name="sku" defaultValue={v("sku")} />

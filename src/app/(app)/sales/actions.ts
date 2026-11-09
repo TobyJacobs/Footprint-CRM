@@ -11,6 +11,7 @@ import { documentEmailText } from "@/lib/sales/email-text";
 import { balanceDueDate, depositAvailable, DEPOSIT_PERCENT } from "@/lib/magazine-deposit";
 import { getAdvertTiming } from "@/lib/magazines";
 import { planPartInvoice } from "@/lib/sales/part-billing";
+import { isBilling, isDepositPercent, isPlanMonths } from "@/lib/sales/proposal";
 import { deliverDocument } from "@/lib/sales/send-document";
 
 const isFinalised = (status: string) => ["accepted", "converted", "paid", "void", "invoiced"].includes(status);
@@ -58,6 +59,7 @@ type LineIn = {
   advert_size_id: string | null;
   magazine_section_id: string | null;
   premium_position: string | null;
+  billing: "oneoff" | "monthly" | "included";
 };
 
 function parseLines(fd: FormData): LineIn[] | null {
@@ -79,6 +81,8 @@ function parseLines(fd: FormData): LineIn[] | null {
       advert_size_id: typeof l.advert_size_id === "string" && UUID_RE.test(l.advert_size_id) ? l.advert_size_id : null,
       magazine_section_id: typeof l.magazine_section_id === "string" && UUID_RE.test(l.magazine_section_id) ? l.magazine_section_id : null,
       premium_position: typeof l.premium_position === "string" && l.premium_position ? l.premium_position.slice(0, 40) : null,
+      // Proposals: one-off, monthly or included.
+      billing: isBilling(l.billing) ? l.billing : "oneoff",
     }));
   } catch {
     return null;
@@ -119,6 +123,13 @@ function headerFields(fd: FormData, docType: DocType) {
     notes: str(fd, "notes"),
     terms: str(fd, "terms"),
     internal_notes: str(fd, "internal_notes"),
+    // Proposals: payment plan (months) and deposit (%), as on the quote builder.
+    ...(docType === "quote" && str(fd, "quote_kind") === "proposal"
+      ? {
+          plan_months: isPlanMonths(int(fd, "plan_months")) ? int(fd, "plan_months") : null,
+          deposit_percent: isDepositPercent(int(fd, "deposit_percent")) ? int(fd, "deposit_percent") : 0,
+        }
+      : {}),
   };
 }
 
@@ -330,7 +341,7 @@ export async function convertDocument(documentId: string, to: DocType) {
   };
   const { data: srcLines } = await supabase
     .from("sales_document_lines")
-    .select("product_id, description, quantity, unit_price, unit_cost, discount_percent, tax_rate_id, tax_rate, position, magazine_issue_id, advert_size_id, magazine_section_id, premium_position")
+    .select("product_id, description, quantity, unit_price, unit_cost, discount_percent, tax_rate_id, tax_rate, position, magazine_issue_id, advert_size_id, magazine_section_id, premium_position, billing")
     .eq("document_id", documentId)
     .order("position");
 
@@ -382,6 +393,9 @@ export async function convertDocument(documentId: string, to: DocType) {
       customer_reference: src.response_po ?? src.customer_reference,
       issue_date: today,
       due_date: due,
+      // A proposal's payment plan and deposit carry on to its order.
+      plan_months: src.plan_months ?? null,
+      deposit_percent: src.deposit_percent ?? 0,
       business_unit: src.business_unit,
       quote_kind: src.quote_kind ?? "quote",
       delivery_type: to === "invoice" || to === "credit_note" ? null : src.delivery_type,
@@ -574,6 +588,9 @@ export async function saveProduct(productId: string | null, fd: FormData) {
     tax_rate_id: str(fd, "tax_rate_id"),
     business_unit: str(fd, "business_unit"),
     sales_account_code: str(fd, "sales_account_code"),
+    // Proposals: one-off, monthly or included, and the catalogue group.
+    billing: isBilling(str(fd, "billing")) ? str(fd, "billing") : "oneoff",
+    category: str(fd, "category")?.slice(0, 60) ?? null,
     active: bool(fd, "active"),
   };
   if (!fields.name) fail(back, "Please give the product a name");
