@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 9 November 2026 (evening): DJ's improvements, part 1
+- Went through DJ's list one item at a time: built and checked live items 1–6 (#101–#106, 0.53.0–0.58.0). Owner then asked for email delivery confirmation ("some emails don't send"): email_log showed "sent" only means SendGrid accepted it; built SendGrid Event Webhook handling with signature checks and bounce alerts (#107, 0.59.0, 13 checks). Couldn't test saving an account manager on a real customer (permission declined, rightly); covered by database tests.
+
 ## 9 November 2026 (afternoon): Website chat
 - Owner's choices: Grok bot answers, complex chats emailed to the owner to forward; both websites; alerts in OS + email; name/email/phone at handover; chats in Customer support. Owner isn't sure they have an xAI API key, so it works without one.
 - Built website chat (0.52.0, #99): 18 database checks, 8 bot checks. Live test found the chat window crashing after the first reply (an effect returning a value); fixed in 0.52.1 (#100), reproduced and confirmed locally, then the full flow tested live. Test chats and lead deleted. Roadmap ticked.
