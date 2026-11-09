@@ -424,6 +424,61 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                 </ul>
               )}
             </Card>
+
+            {/* Timeline: in the main column, below Digital retainers (DJ, 9 November 2026). */}
+            <Card title="Timeline">
+              <div id="timeline" className="-mt-2" />
+              {canEdit && (
+                <form action={addActivity.bind(null, id)} className="mb-5 grid gap-2">
+                  <textarea name="body" rows={3} required placeholder="Add a note, call or meeting…" className={inputClass} />
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Keyed so "Log a call" picks Call even when moving within this page. */}
+                    <Select key={logKind} name="kind" options={activityKinds} defaultValue={logKind} blank={false} />
+                    <Select
+                      name="contact_id"
+                      options={(contacts ?? []).map((p) => ({ value: p.id, label: personName(p) }))}
+                      blank="No contact"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="datetime-local"
+                      name="occurred_at"
+                      defaultValue={toLocalInput(new Date().toISOString())}
+                      className={inputClass}
+                      aria-label="When"
+                    />
+                    <button type="submit" className={primaryButton}>
+                      Add
+                    </button>
+                  </div>
+                </form>
+              )}
+              {/* A fixed-height box that scrolls (DJ, 9 November 2026). */}
+              {(activity ?? []).length === 0 ? (
+                <p className="text-sm text-fp-mid">Nothing recorded yet.</p>
+              ) : (
+                <ol className="grid max-h-[32rem] gap-4 overflow-y-auto pr-2">
+                  {(activity ?? []).map((a) => (
+                    <li key={a.id} className="border-l-2 border-fp-pink/40 pl-3">
+                      <p className="text-xs text-fp-mid">
+                        {activityKinds.find((k) => k.value === a.kind)?.label ?? a.kind} · {shortDateTime(a.occurred_at)}
+                        {staffName(a.created_by) && ` · ${staffName(a.created_by)}`}
+                        {contactName(a.contact_id) && ` · with ${contactName(a.contact_id)}`}
+                      </p>
+                      <p className="mt-1 whitespace-pre-line text-sm">{a.body}</p>
+                      {canDelete && (
+                        <form action={deleteActivity.bind(null, id, a.id)}>
+                          <ConfirmSubmit message="Delete this timeline entry?" className="mt-1 text-xs text-fp-mid hover:text-fp-error">
+                            Delete
+                          </ConfirmSubmit>
+                        </form>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </Card>
           </div>
 
           <div className="grid content-start gap-6">
@@ -493,58 +548,6 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
               )}
             </Card>
 
-            <Card title="Timeline">
-              <div id="timeline" className="-mt-2" />
-              {canEdit && (
-                <form action={addActivity.bind(null, id)} className="mb-5 grid gap-2">
-                  <textarea name="body" rows={3} required placeholder="Add a note, call or meeting…" className={inputClass} />
-                  <div className="grid grid-cols-2 gap-2">
-                    {/* Keyed so "Log a call" picks Call even when moving within this page. */}
-                    <Select key={logKind} name="kind" options={activityKinds} defaultValue={logKind} blank={false} />
-                    <Select
-                      name="contact_id"
-                      options={(contacts ?? []).map((p) => ({ value: p.id, label: personName(p) }))}
-                      blank="No contact"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="datetime-local"
-                      name="occurred_at"
-                      defaultValue={toLocalInput(new Date().toISOString())}
-                      className={inputClass}
-                      aria-label="When"
-                    />
-                    <button type="submit" className={primaryButton}>
-                      Add
-                    </button>
-                  </div>
-                </form>
-              )}
-              {(activity ?? []).length === 0 ? (
-                <p className="text-sm text-fp-mid">Nothing recorded yet.</p>
-              ) : (
-                <ol className="grid gap-4">
-                  {(activity ?? []).map((a) => (
-                    <li key={a.id} className="border-l-2 border-fp-pink/40 pl-3">
-                      <p className="text-xs text-fp-mid">
-                        {activityKinds.find((k) => k.value === a.kind)?.label ?? a.kind} · {shortDateTime(a.occurred_at)}
-                        {staffName(a.created_by) && ` · ${staffName(a.created_by)}`}
-                        {contactName(a.contact_id) && ` · with ${contactName(a.contact_id)}`}
-                      </p>
-                      <p className="mt-1 whitespace-pre-line text-sm">{a.body}</p>
-                      {canDelete && (
-                        <form action={deleteActivity.bind(null, id, a.id)}>
-                          <ConfirmSubmit message="Delete this timeline entry?" className="mt-1 text-xs text-fp-mid hover:text-fp-error">
-                            Delete
-                          </ConfirmSubmit>
-                        </form>
-                      )}
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </Card>
           </div>
         </div>
 
