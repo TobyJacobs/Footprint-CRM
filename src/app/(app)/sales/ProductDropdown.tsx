@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Search } from "lucide-react";
 import type { ProductHit } from "./DocumentEditor";
 
@@ -44,7 +45,12 @@ export default function ProductDropdown({
   const [filter, setFilter] = useState("");
   const [active, setActive] = useState(0);
   const box = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
   const searchBox = useRef<HTMLInputElement>(null);
+  // Where the list floats (DJ, 9 November 2026: it was cut off by the lines
+  // table, showing about one product). It's drawn over the page next to the
+  // box, opening upwards when there isn't room below.
+  const [place, setPlace] = useState<{ left: number; top?: number; bottom?: number; maxHeight: number } | null>(null);
 
   // Load the list when the page opens (so a saved line shows its product name).
   useEffect(() => {
@@ -59,10 +65,35 @@ export default function ProductDropdown({
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent) => {
-      if (box.current && !box.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (!box.current?.contains(t) && !panel.current?.contains(t)) setOpen(false);
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  // Keep the floating list next to the box while the page scrolls or resizes.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const measure = () => {
+      const r = box.current?.getBoundingClientRect();
+      if (!r) return;
+      const below = window.innerHeight - r.bottom - 12;
+      const above = r.top - 12;
+      const left = Math.max(8, Math.min(r.left, window.innerWidth - Math.min(352, window.innerWidth * 0.85) - 8));
+      setPlace(
+        below >= 260 || below >= above
+          ? { left, top: r.bottom + 4, maxHeight: Math.min(420, below) }
+          : { left, bottom: window.innerHeight - r.top + 4, maxHeight: Math.min(420, above) },
+      );
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
   }, [open]);
 
   const matches = useMemo(() => {
@@ -100,8 +131,12 @@ export default function ProductDropdown({
         <ChevronDown size={14} className="shrink-0 text-fp-mid" aria-hidden />
       </button>
 
-      {open && (
-        <div className="absolute z-20 mt-1 w-[22rem] max-w-[85vw] rounded-md border border-fp-border bg-white shadow-lg">
+      {open && place && createPortal(
+        <div
+          ref={panel}
+          style={{ position: "fixed", left: place.left, top: place.top, bottom: place.bottom, maxHeight: place.maxHeight }}
+          className="z-50 flex w-[22rem] max-w-[85vw] flex-col rounded-md border border-fp-border bg-white shadow-lg"
+        >
           <div className="flex items-center gap-2 border-b border-fp-border px-2">
             <Search size={14} className="text-fp-mid" aria-hidden />
             <input
@@ -131,7 +166,7 @@ export default function ProductDropdown({
               autoComplete="off"
             />
           </div>
-          <ul role="listbox" className="max-h-72 overflow-y-auto py-1 text-sm">
+          <ul role="listbox" className="min-h-0 flex-1 overflow-y-auto py-1 text-sm">
             {products === null && <li className="px-3 py-2 text-fp-mid">Loading products…</li>}
             {products !== null && matches.length === 0 && (
               <li className="px-3 py-2 text-fp-mid">No products match. You can still type the line yourself.</li>
@@ -155,7 +190,8 @@ export default function ProductDropdown({
               </li>
             ))}
           </ul>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
