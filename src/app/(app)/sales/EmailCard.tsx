@@ -1,12 +1,13 @@
 import { Mail, RotateCw } from "lucide-react";
-import { Badge, Card, Field, inputClass, primaryButton, secondaryButton } from "@/components/ui";
+import { Card, Field, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import { shortDateTime } from "@/lib/customers/display";
 import { documentEmailText } from "@/lib/sales/email-text";
+import EmailStatus from "@/components/EmailStatus";
 import { docTypes, type DocType } from "@/lib/sales/options";
 import { sendDocumentEmail } from "./email-actions";
 
-type LogRow = { id: string; to_addresses: string; subject: string; status: string; error: string | null; sent_at: string };
+type LogRow = { id: string; to_addresses: string; subject: string; status: string; error: string | null; sent_at: string; delivery_status?: string | null; delivery_detail?: string | null; delivery_at?: string | null };
 
 // "Email to customer" box on a document page, with the history of emails sent.
 // Once something has been sent, a one-click "Resend" goes to the same people.
@@ -109,13 +110,12 @@ export default function EmailCard({
           <ul className="grid gap-2 text-sm">
             {log.map((e) => (
               <li key={e.id}>
-                <span className="mr-2">
-                  <Badge tone={e.status === "failed" ? "red" : e.status === "test" ? "amber" : "teal"}>
-                    {e.status === "test" ? "Test" : e.status === "failed" ? "Failed" : "Sent"}
-                  </Badge>
+                <span>
+                  {shortDateTime(e.sent_at)} to {e.to_addresses}
                 </span>
-                {shortDateTime(e.sent_at)} to {e.to_addresses}
-                {e.error && <span className="block text-xs text-fp-error">{e.error}</span>}
+                <span className="block">
+                  <EmailStatus e={e} />
+                </span>
               </li>
             ))}
           </ul>

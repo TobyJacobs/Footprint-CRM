@@ -9,6 +9,7 @@ import { gbp, longDate, shortDateTime } from "@/lib/customers/display";
 import { getPurchaseOrderLines } from "@/lib/sales/data";
 import { poStatusLabel, statusToneFor } from "@/lib/sales/options";
 import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
+import EmailStatus from "@/components/EmailStatus";
 import { createClient } from "@/lib/supabase/server";
 import { deletePurchaseOrder, setPurchaseOrderStatus } from "../actions";
 import { sendPurchaseOrderEmail } from "../email-actions";
@@ -46,7 +47,7 @@ export default async function PurchaseOrderPage(props: PageProps<"/sales/purchas
     getPurchaseOrderLines(poId),
     supabase
       .from("email_log")
-      .select("id, to_addresses, status, error, sent_at")
+      .select("id, to_addresses, subject, status, error, sent_at, delivery_status, delivery_detail, delivery_at")
       .eq("purchase_order_id", poId)
       .order("sent_at", { ascending: false })
       .limit(10),
@@ -190,13 +191,10 @@ ${company}`;
               <ul className="mt-5 grid gap-2 border-t border-fp-border pt-4 text-sm">
                 {(emailLog ?? []).map((e) => (
                   <li key={e.id}>
-                    <span className="mr-2">
-                      <Badge tone={e.status === "failed" ? "red" : e.status === "test" ? "amber" : "teal"}>
-                        {e.status === "test" ? "Test" : e.status === "failed" ? "Failed" : "Sent"}
-                      </Badge>
-                    </span>
                     {shortDateTime(e.sent_at)} to {e.to_addresses}
-                    {e.error && <span className="block text-xs text-fp-error">{e.error}</span>}
+                    <span className="block">
+                      <EmailStatus e={e} />
+                    </span>
                   </li>
                 ))}
               </ul>
