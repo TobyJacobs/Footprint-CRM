@@ -399,7 +399,6 @@ export async function saveGroupTargets(formData: FormData) {
     margin_pct: amount(formData, "margin_pct"),
   };
   if (Object.values(values).some((v) => Number.isNaN(v))) fail(path, "Please enter numbers only");
-  if (values.margin_pct !== null && values.margin_pct > 100) fail(path, "Margin must be 100% or less");
   for (const [metric, value] of Object.entries(values)) {
     const error = await upsertTarget(null, metric, value);
     if (error) fail(path, error.message);

@@ -6,7 +6,7 @@ import { gbp, longDate } from "@/lib/customers/display";
 import { DEPOSIT_PERCENT, depositSplit } from "@/lib/magazine-deposit";
 import { designStageLabel, designStageTone, jobNumber } from "@/lib/design/options";
 import { projectStatusLabel, projectTone } from "@/lib/projects/options";
-import { poStatusLabel, statusToneFor } from "@/lib/sales/options";
+import { marginPercent, poStatusLabel, statusToneFor } from "@/lib/sales/options";
 import type { Stages } from "@/lib/sales/stages";
 
 // The sales order page, in the owner's order (26 October 2026): a stage bar
@@ -110,7 +110,7 @@ export function FinanceSummary({
     { label: "Order value (before VAT)", value: net, note: "", colour: "bg-fp-black" },
     { label: "Cost of the job", value: cost, note: share(cost), colour: "bg-fp-amber" },
     ...(labour !== null ? [{ label: "Labour", value: labour, note: share(labour), colour: "bg-fp-amber/60" }] : []),
-    { label: labour !== null ? "Margin after labour" : "Margin", value: margin, note: share(margin), colour: margin < 0 ? "bg-fp-error" : "bg-fp-teal-deep" },
+    { label: labour !== null ? "Margin after labour" : "Margin", value: margin, note: marginPercent(net, cost + (labour ?? 0)) === null ? "" : `${marginPercent(net, cost + (labour ?? 0))}% on cost`, colour: margin < 0 ? "bg-fp-error" : "bg-fp-teal-deep" },
     {
       label: "Ordered from suppliers (POs, before VAT)",
       value: poSubtotal,
