@@ -154,6 +154,9 @@ export default async function LeadsBoard(props: PageProps<"/leads">) {
                 <Link href="/leads/forms" className={secondaryButton}>
                   Website forms
                 </Link>
+                <Link href="/leads/chat" className={secondaryButton}>
+                  Website chat
+                </Link>
                 <Link href="/leads/settings" className={secondaryButton}>
                   Stages
                 </Link>

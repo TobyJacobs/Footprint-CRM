@@ -34,11 +34,11 @@ const nextConfig: NextConfig = {
   },
   headers() {
     return [
-      // Everything except the flipbooks and forms: never shown inside another site.
-      { source: "/((?!read/|f/).*)", headers: [...securityHeaders, { key: "X-Frame-Options", value: "DENY" }] },
-      // Flipbooks (/read/…) and enquiry forms (/f/…) may be shown inside
-      // Footprint's own websites.
-      ...["/read/:path*", "/f/:path*"].map((source) => ({
+      // Everything except the flipbooks, forms and chat: never shown inside another site.
+      { source: "/((?!read/|f/|c/).*)", headers: [...securityHeaders, { key: "X-Frame-Options", value: "DENY" }] },
+      // Flipbooks (/read/…), enquiry forms (/f/…) and the website chat (/c/…)
+      // may be shown inside Footprint's own websites.
+      ...["/read/:path*", "/f/:path*", "/c/:path*"].map((source) => ({
         source,
         headers: [...securityHeaders, { key: "Content-Security-Policy", value: `frame-ancestors 'self' ${footprintSites.join(" ")}` }],
       })),

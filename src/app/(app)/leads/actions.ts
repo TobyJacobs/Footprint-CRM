@@ -234,3 +234,73 @@ export async function deleteLeadForm(id: string) {
   revalidatePath("/leads/forms");
   redirect("/leads/forms?deleted=1");
 }
+
+// ─── Website chat (see the website_chat migration) ─────────────────────────
+
+async function needMarketingEdit(back: string) {
+  const user = await getCurrentUser();
+  if (!user.can("marketing", "edit")) fail(back, "You can't change the website chat");
+}
+
+export async function saveChatWidget(id: string | null, fd: FormData) {
+  const back = id ? `/leads/chat?box=${id}` : "/leads/chat?add=1";
+  await needMarketingEdit(back);
+  const name = str(fd, "name");
+  const siteName = str(fd, "site_name");
+  const pipeline = uuid(str(fd, "pipeline_id"));
+  if (!name || !siteName || !pipeline) fail(back, "Give the chat box a name, the business name and a pipeline");
+  const privacy = str(fd, "privacy_url");
+  if (privacy && !/^https:\/\/\S{3,300}$/.test(privacy)) fail(back, "The privacy policy link must start with https://");
+  const fields = {
+    name: name.slice(0, 100),
+    site_name: siteName.slice(0, 100),
+    greeting: str(fd, "greeting")?.slice(0, 500) ?? "Hi! How can we help today?",
+    knowledge: (str(fd, "knowledge") ?? "").slice(0, 12000),
+    pipeline_id: pipeline,
+    owner_id: uuid(str(fd, "owner_id")),
+    notify_ids: list(fd, "notify_ids").filter((v) => UUID_RE.test(v)),
+    privacy_url: privacy,
+    bot_enabled: bool(fd, "bot_enabled"),
+    active: id ? bool(fd, "active") : true,
+  };
+  const supabase = await createClient();
+  if (!id) {
+    const { data, error } = await supabase.from("chat_widgets").insert(fields).select("id").single();
+    if (error) fail(back, error.message);
+    revalidatePath("/leads/chat");
+    redirect(`/leads/chat?box=${data.id}&saved=1`);
+  }
+  const { data, error } = await supabase.from("chat_widgets").update(fields).eq("id", id).select("id");
+  if (error) fail(back, error.message);
+  if (!data?.length) fail(back, "You can't change that chat box");
+  revalidatePath("/leads/chat");
+  redirect(`/leads/chat?box=${id}&saved=1`);
+}
+
+// Deleting a chat box deletes its chats too; leads it made stay.
+export async function deleteChatWidget(id: string) {
+  await needMarketingEdit("/leads/chat");
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("chat_widgets").delete().eq("id", id).select("id");
+  if (error) fail("/leads/chat", error.message);
+  if (!data?.length) fail("/leads/chat", "You can't delete that chat box");
+  revalidatePath("/leads/chat");
+  redirect("/leads/chat?deleted=1");
+}
+
+// Mark a chat as dealt with, or reopen it (from Customer support → Website chat).
+export async function setChatDealtWith(conversationId: string, dealtWith: boolean) {
+  const back = `/support/chat?c=${conversationId}`;
+  const user = await getCurrentUser();
+  if (!user.can("support", "edit") && !user.can("marketing", "edit")) fail(back, "You can't change this chat");
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("chat_conversations")
+    .update(dealtWith ? { status: "closed", closed_at: new Date().toISOString(), closed_by: user.id } : { status: "handover", closed_at: null, closed_by: null })
+    .eq("id", conversationId)
+    .select("id");
+  if (error) fail(back, error.message);
+  if (!data?.length) fail(back, "You can't change that chat");
+  revalidatePath("/support", "layout");
+  redirect(back);
+}

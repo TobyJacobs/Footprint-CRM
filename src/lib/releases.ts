@@ -11,6 +11,17 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.52.0",
+    date: "2026-11-09",
+    title: "Website chat",
+    changes: [
+      "A chat bubble for footprintgroup.uk and forgetmenotonline.org, in place of the GoHighLevel chat. A Grok bot answers from what you tell it about the business, and hands anything complex to a person.",
+      "When a chat needs a person, the visitor leaves their name, email and phone. It becomes a lead and the chosen people get the whole chat by email.",
+      "Customer support has a new Website chat tab: read every chat and mark it as dealt with. The count shows chats that need a person.",
+      "Set up each website's chat box in Lead pipelines → Website chat: greeting, what the bot knows, pipeline, who is emailed, and the code for the website. Until an xAI key is added, every chat goes straight to leave-your-details.",
+    ],
+  },
+  {
     version: "0.51.0",
     date: "2026-11-09",
     title: "Word search themes",
