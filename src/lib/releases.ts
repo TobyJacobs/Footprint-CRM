@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.63.0",
+    date: "2026-11-09",
+    title: "Standard margin button",
+    changes: ["Quotes, orders and invoices: Apply standard margin sets every line with a cost to 2.5 × cost (a 60% margin) in one click. Lines without a cost, or with a locked GP, are left alone, and you can still change any price."],
+  },
+  {
     version: "0.62.0",
     date: "2026-11-09",
     title: "Proposals like the quote builder",

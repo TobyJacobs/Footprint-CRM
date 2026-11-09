@@ -11,7 +11,7 @@ import type { AdvertSetup } from "@/lib/magazines";
 import AdvertBuilder, { type AdvertLine } from "./AdvertBuilder";
 import ProductDropdown, { productLineText } from "./ProductDropdown";
 import { BillingSelect, ProposalCatalogue, ProposalPayments } from "./ProposalTools";
-import { lineGp, lineMargin, lineNet, marginPercent, priceForMargin, totals } from "@/lib/sales/options";
+import { STANDARD_MARKUP, lineGp, lineMargin, lineNet, marginPercent, priceForMargin, standardPrice, totals } from "@/lib/sales/options";
 
 type TaxRate = { id: string; name: string; rate: number };
 type Contact = { id: string; first_name: string | null; last_name: string; email: string | null; is_primary: boolean };
@@ -369,6 +369,14 @@ export default function DocumentEditor({
       },
     ]);
 
+  // "Apply standard margin": every line with a cost (and no GP override) is
+  // priced at 2.5 × cost. Prices can still be changed afterwards.
+  const costed = lines.filter((l) => (l.unit_cost ?? 0) > 0 && l.gp_override == null);
+  const applyStandardMargin = () =>
+    setLines((ls) =>
+      ls.map((l) => ((l.unit_cost ?? 0) > 0 && l.gp_override == null ? { ...l, unit_price: standardPrice(l.unit_cost as number), margin_input: undefined } : l)),
+    );
+
   const t = totals(lines);
   const margin = marginPercent(t.subtotal, t.cost);
   const labourCost = Number(labour) > 0 ? Math.round(Number(labour) * 100) / 100 : 0;
@@ -602,6 +610,15 @@ export default function DocumentEditor({
             className="inline-flex items-center gap-1 text-sm font-semibold text-fp-teal-deep hover:underline"
           >
             <Plus size={14} /> Add line
+          </button>
+          <button
+            type="button"
+            onClick={applyStandardMargin}
+            disabled={costed.length === 0}
+            title={costed.length ? `Sets the sell price of ${costed.length} line${costed.length === 1 ? "" : "s"} to ${STANDARD_MARKUP} × cost` : "Add a cost to a line first"}
+            className={`${secondaryButton} justify-self-start px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50`}
+          >
+            Apply standard margin ({STANDARD_MARKUP}× cost)
           </button>
           {initialLabour !== undefined && (
             <label className="grid max-w-xs gap-1 text-sm">
