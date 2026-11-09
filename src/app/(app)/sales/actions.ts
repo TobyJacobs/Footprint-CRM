@@ -190,6 +190,8 @@ export async function saveDocument(docType: DocType, documentId: string | null, 
   if (!user.seesAllSales) fields.owner_id = user.id;
   const lines = parseLines(fd);
   if (!fields.customer_id) fail(back, "Please choose a customer");
+  // Every quote needs a probability and an expected order date (DJ, 9 November 2026).
+  if (docType === "quote" && (!fields.probability || !fields.expected_date)) fail(back, "Please choose the probability and the expected order");
   if (!lines) fail(back, "The lines couldn't be read — please try again");
   if (lines.length === 0) fail(back, "Please add at least one line");
 

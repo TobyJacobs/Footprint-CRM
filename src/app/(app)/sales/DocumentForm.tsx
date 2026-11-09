@@ -123,19 +123,16 @@ export default async function DocumentForm({
             <Select name="business_unit" options={docType === "quote" ? quoteBusinessUnits : businessUnits} defaultValue={(v("business_unit") as string) ?? defaults.business_unit ?? null} />
           </Field>
           {docType === "quote" && (
-            // Forecasting extras, out of the way unless wanted. The reason for
-            // loss is asked when the quote is marked declined.
-            <details className="sm:col-span-2 lg:col-span-4" open={!!(v("probability") || v("expected_date"))}>
-              <summary className="cursor-pointer text-sm font-semibold text-fp-teal-deep">More details (probability, expected order)</summary>
-              <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Field label="Probability">
-                  <Select name="probability" options={probabilities} defaultValue={v("probability") as string} />
-                </Field>
-                <Field label="Expected order">
-                  <Select name="expected_date" options={expectedDates} defaultValue={v("expected_date") as string} />
-                </Field>
-              </div>
-            </details>
+            // Required on every quote (DJ, 9 November 2026), for the sales
+            // forecast. The reason for loss is asked when it's marked declined.
+            <>
+              <Field label="Probability (required)">
+                <Select name="probability" options={probabilities} defaultValue={v("probability") as string} blank="Choose…" required />
+              </Field>
+              <Field label="Expected order (required)">
+                <Select name="expected_date" options={expectedDates} defaultValue={v("expected_date") as string} blank="Choose…" required />
+              </Field>
+            </>
           )}
           {docType === "sales_order" && (
             // The order's stage is shown by the stage bar (no production step to set).
