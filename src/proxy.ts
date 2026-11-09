@@ -11,8 +11,9 @@ import {
 // are the private links sent to customers — they only work with a secret token.
 // "/portal" is the customer portal, which has its own sign-in (lib/portal).
 // "/read/" is the public magazine flipbooks, "/f/" the website enquiry forms,
-// and "/c/" (with /chat-widget.js) the website chat.
-const PUBLIC_PATHS = ["/login", "/auth/", "/q/", "/d/", "/p/", "/api/cron/", "/invite/", "/portal", "/read/", "/f/", "/c/", "/chat-widget.js"];
+// and "/c/" (with /chat-widget.js) the website chat. "/api/email-events" is
+// SendGrid's delivery reports (checked against SendGrid's signature).
+const PUBLIC_PATHS = ["/login", "/auth/", "/q/", "/d/", "/p/", "/api/cron/", "/invite/", "/portal", "/read/", "/f/", "/c/", "/chat-widget.js", "/api/email-events"];
 
 // Runs before every page request: keeps the login session fresh and sends
 // signed-out visitors to the login page. The real permission checks happen

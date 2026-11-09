@@ -65,7 +65,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
       : Promise.resolve({ data: [] }),
     supabase
       .from("email_log")
-      .select("id, to_addresses, subject, status, error, sent_at")
+      .select("id, to_addresses, subject, status, error, sent_at, delivery_status, delivery_detail, delivery_at")
       .eq("sales_document_id", id)
       .order("sent_at", { ascending: false })
       .limit(10),

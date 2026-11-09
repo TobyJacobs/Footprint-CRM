@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.59.0",
+    date: "2026-11-09",
+    title: "Email delivery confirmation",
+    changes: [
+      "Emails sent from quotes, orders, invoices, purchase orders and customers now show what happened after they left: Delivered ✓ (reached the customer's mail server), Delayed, Bounced, Not delivered or Marked as spam, with the reason.",
+      "If an email bounces, whoever sent it gets an email saying so, with a link to fix the address and send it again.",
+      "Needs SendGrid's delivery reports switched on once (Event Webhook). Until then, emails show \"Sent · waiting for the delivery report\".",
+    ],
+  },
+  {
     version: "0.58.0",
     date: "2026-11-09",
     title: "Branded emails",

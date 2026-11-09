@@ -19,6 +19,7 @@ import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import DesignJobsPanel from "@/components/DesignJobsPanel";
 import CustomerActions from "./CustomerActions";
 import CustomerDocsCard, { type CustomerDoc } from "./CustomerDocsCard";
+import EmailStatus from "@/components/EmailStatus";
 import AccountManagers from "./AccountManagers";
 import CustomerGlance from "./CustomerGlance";
 
@@ -72,7 +73,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
     supabase.from("company_settings").select("company_name").single(),
     supabase
       .from("email_log")
-      .select("id, to_addresses, subject, status, sent_at")
+      .select("id, to_addresses, subject, status, error, sent_at, delivery_status, delivery_detail, delivery_at")
       .eq("customer_id", id)
       .is("sales_document_id", null)
       .is("purchase_order_id", null)
@@ -483,6 +484,9 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                   {(sentEmails ?? []).map((e) => (
                     <li key={e.id}>
                       {shortDateTime(e.sent_at)} · to {e.to_addresses} · &ldquo;{e.subject}&rdquo;
+                      <span className="block">
+                        <EmailStatus e={e} />
+                      </span>
                     </li>
                   ))}
                 </ul>
