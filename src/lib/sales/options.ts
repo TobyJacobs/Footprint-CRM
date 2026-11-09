@@ -200,6 +200,10 @@ export function lineCost(l: LineInput) {
   return l.gp_override != null ? round2(lineNet(l) - l.gp_override) : round2(l.quantity * (l.unit_cost ?? 0));
 }
 
+// Standard margin (DJ, 9 November 2026): sell at 2.5 × cost (a 60% margin).
+export const STANDARD_MARKUP = 2.5;
+export const standardPrice = (unitCost: number) => round2(unitCost * STANDARD_MARKUP);
+
 // A line's gross profit (£, before VAT) and margin (% of its net).
 export const lineGp = (l: LineInput) => round2(lineNet(l) - lineCost(l));
 export const lineMargin = (l: LineInput) => marginPercent(lineNet(l), lineCost(l));
