@@ -242,30 +242,27 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
               ) : (
                 <ul className="divide-y divide-fp-border">
                   {(contacts ?? []).map((p) => (
-                    <li key={p.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
-                      <div>
-                        <p className="flex items-center gap-2 font-semibold">
+                    <li key={p.id} className="flex items-center justify-between gap-3 py-2">
+                      {/* One line per contact (DJ, 9 November 2026); wraps on a narrow screen. */}
+                      <p className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                        <span className="inline-flex items-center gap-1.5 font-semibold">
                           {personName(p)}
                           {p.is_primary && <Star size={14} className="fill-fp-amber text-fp-amber" aria-label="Primary contact" />}
-                          {p.financial_status === "ON STOP" && <Badge tone="red">On stop</Badge>}
-                          {p.erased_at ? <Badge>Erased (GDPR)</Badge> : p.email_opt_out && <Badge>No marketing</Badge>}
-                        </p>
-                        {(p.job_title || p.department) && (
-                          <p className="text-xs text-fp-mid">{[p.job_title, p.department].filter(Boolean).join(", ")}</p>
+                        </span>
+                        {(p.job_title || p.department) && <span className="text-fp-mid">{[p.job_title, p.department].filter(Boolean).join(", ")}</span>}
+                        {p.email && (
+                          <a href={`mailto:${p.email}`} className="inline-flex items-center gap-1 hover:text-fp-pink">
+                            <Mail size={13} aria-hidden /> {p.email}
+                          </a>
                         )}
-                        <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                          {p.email && (
-                            <a href={`mailto:${p.email}`} className="inline-flex items-center gap-1 hover:text-fp-pink">
-                              <Mail size={13} aria-hidden /> {p.email}
-                            </a>
-                          )}
-                          {(p.phone || p.mobile) && (
-                            <a href={`tel:${p.mobile ?? p.phone}`} className="inline-flex items-center gap-1 hover:text-fp-pink">
-                              <Phone size={13} aria-hidden /> {p.mobile ?? p.phone}
-                            </a>
-                          )}
-                        </p>
-                      </div>
+                        {(p.phone || p.mobile) && (
+                          <a href={`tel:${p.mobile ?? p.phone}`} className="inline-flex items-center gap-1 hover:text-fp-pink">
+                            <Phone size={13} aria-hidden /> {p.mobile ?? p.phone}
+                          </a>
+                        )}
+                        {p.financial_status === "ON STOP" && <Badge tone="red">On stop</Badge>}
+                        {p.erased_at ? <Badge>Erased (GDPR)</Badge> : p.email_opt_out && <Badge>No marketing</Badge>}
+                      </p>
                       {canEdit && (
                         <Link href={`/customers/${id}/contacts/${p.id}`} className="text-sm font-semibold text-fp-teal-deep hover:underline">
                           Edit
