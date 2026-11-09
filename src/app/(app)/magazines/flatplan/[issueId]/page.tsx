@@ -14,6 +14,7 @@ import { siteUrl } from "@/lib/site-url";
 import { supabaseUrl } from "@/lib/supabase/config";
 import { addEditorial, addPuzzle, deletePuzzle, moveFlatplanItem, placeArticle, placeLibraryPuzzle, placeAdvert, publishFlipbook, removeFlatplanItem, removeFlipbook, removePageFile, resizeEditorial } from "../../actions";
 import MagazineTabs from "../../MagazineTabs";
+import WordSearchWords from "../../WordSearchWords";
 import { PAGE_H, PAGE_W } from "@/lib/magazine-options";
 import { difficulties, puzzleKinds } from "@/lib/puzzles";
 import { DragItem, DropPage, FlatplanDrag } from "./FlatplanDrag";
@@ -385,18 +386,7 @@ export default async function FlatplanPage(props: PageProps<"/magazines/flatplan
                           ))}
                         </select>
                       </div>
-                      <input name="theme" maxLength={80} placeholder="Theme, e.g. Garden birds (optional)" aria-label="Theme" className={inputClass} />
-                      <label className="grid gap-1">
-                        <span className="text-xs text-fp-mid">Word search only: the words to hide, one per line or separated by commas</span>
-                        <textarea name="words" rows={4} placeholder={"Robin\nBlue tit\nSparrow…"} aria-label="Words to hide" className={inputClass} />
-                      </label>
-                      <select name="grid" defaultValue="12" aria-label="Word search grid" className={inputClass}>
-                        {[10, 12, 15].map((n) => (
-                          <option key={n} value={n}>
-                            Word search grid {n} × {n}
-                          </option>
-                        ))}
-                      </select>
+                      <WordSearchWords />
                       <span className="text-xs font-semibold">Puzzle</span>
                       <div className="grid grid-cols-2 gap-2">
                         <select name="size" required defaultValue="Half Page - Landscape" aria-label="Puzzle size" className={inputClass}>

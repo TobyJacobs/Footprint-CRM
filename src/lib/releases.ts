@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.51.0",
+    date: "2026-11-09",
+    title: "Word search themes",
+    changes: [
+      "Making a word search: type a theme and click Suggest words to fill in words for it from 51 ready-made themes (Christmas, Easter, the seasons, garden birds, Hampshire places, the seaside, sports and more). Then delete any you don't want and add your own.",
+      "Each suggestion picks a different mix of words, only ones that fit the grid you've chosen. No outside service and no cost.",
+    ],
+  },
+  {
     version: "0.50.1",
     date: "2026-11-09",
     title: "Fix: tidier GOV.UK articles",
