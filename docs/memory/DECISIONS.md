@@ -372,3 +372,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 6 November 2026 - Deposit rule: same as the website (replaces the entry above)
 **Decision (owner):** use the website calculator's deposit rule, not months booked. If the first advert month is **3 or more months after the current month** (the website's "more than 2 months ahead"), the customer can pay a **25% deposit** on confirmation and the balance **before the first print deadline**, or pay in full. If it starts within the next 2 months, they pay in full on confirmation. How many months are booked doesn't matter. No contracts.
+
+## 9 November 2026 - Magazine filler: puzzles made by FootprintOS, free articles only
+**Decision (owner):** FootprintOS makes its own word searches and sudoku (no crosswords for now; AI clues would need a paid key). Answers go at the back / on another page of the same issue. Articles must cost nothing: GOV.UK text under the Open Government Licence v3.0 (credit line printed; no pictures) or written by the team. Everything lives in Magazines → Content and can be reused across editions. Other free sources (charity press releases, NHS content API) left for later. PRs #95 (0.49.0) and #96 (0.50.0).

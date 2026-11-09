@@ -4,6 +4,11 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 9 November 2026: Puzzles and the magazine content library
+- Filler content: crosswords/puzzles and copyright-free articles came from Mag Manager's library (Bishops Printers only prints). Researched suppliers (saved in OPEN-QUESTIONS).
+- Built word searches and sudoku (0.49.0, #95): 10 puzzle checks, 10 database checks, sample PDFs checked; merged and tested live.
+- Owner asked for a free-articles box (no cost) and a section with drafts of everything: built Magazines → Content (0.50.0, #96): 13 database checks, real GOV.UK pages fetched; merged and tested live. Roadmap ticked.
+
 ## 6 November 2026: No contracts; advert deposits built
 - Owner: magazines have no contracts; customers buy months of space with a deposit option. Chose the website's rule (start 3+ months away → 25% deposit, balance before the first print deadline).
 - Built advert deposits (0.48.0, #94): 14 database checks and 10 rule checks passed; merged, checked live (pages load, version 0.48.0). Roadmap task ticked.
