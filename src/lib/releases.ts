@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.55.0",
+    date: "2026-11-09",
+    title: "Simpler customer addresses and account managers",
+    changes: [
+      "Adding or editing a customer shows just the billing address. Choose \"Use a different address than the billing address\" to add a separate delivery address.",
+      "When it's the same, the billing address is used for deliveries, and the customer's page says \"Same as billing address\".",
+      "Customer at a glance only lists the account managers who are set (for example, no Advertising line if there's no advertising account manager).",
+    ],
+  },
+  {
     version: "0.54.0",
     date: "2026-11-09",
     title: "Account managers per area",
