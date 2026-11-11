@@ -48,7 +48,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
 
   const { data: doc, error: loadError } = await supabase
     .from("sales_documents")
-    .select("*, customers!sales_documents_customer_id_fkey(id, name, credit_status), contacts(first_name, last_name, email), owner:owner_id(full_name, email)")
+    .select("*, customers!sales_documents_customer_id_fkey(id, name, credit_status, email), contacts(first_name, last_name, email), owner:owner_id(full_name, email)")
     .eq("id", id)
     .maybeSingle();
   if (loadError) throw new Error(`Couldn't load document: ${loadError.message}`);
@@ -106,7 +106,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
     : { data: [] as { id: string; full_name: string | null; email: string }[] };
   const overriderName = new Map((overriders ?? []).map((o) => [o.id, o.full_name ?? o.email]));
 
-  const customer = doc.customers as unknown as { id: string; name: string; credit_status: string | null };
+  const customer = doc.customers as unknown as { id: string; name: string; credit_status: string | null; email: string | null };
   const contact = doc.contacts as unknown as { first_name: string | null; last_name: string; email: string | null } | null;
   const owner = doc.owner as unknown as { full_name: string | null; email: string } | null;
   const finalised = ["accepted", "converted", "paid", "void", "invoiced"].includes(doc.status) || isLockedRecord(type, doc.status);
@@ -165,7 +165,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
         number={doc.number}
         total={gbp(Number(doc.total)) ?? ""}
         dueDate={type === "invoice" ? longDate(doc.due_date) : null}
-        contactEmail={contact?.email ?? null}
+        contactEmail={contact?.email?.trim() || customer.email?.trim() || null}
         contactFirstName={contact?.first_name ?? null}
         senderName={user.fullName ?? user.email}
         companyName={settings?.company_name ?? "Footprint Group"}
@@ -432,7 +432,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
           {/* Comms: email the customer. */}
           {sp.noemail && (
             <p role="status" className="mt-6 rounded-md border border-fp-amber bg-fp-amber/10 px-4 py-3 text-sm">
-              Saved as a draft. The contact has no email address, so it hasn&apos;t been sent: enter an address below to send it.
+              Saved as a draft. Neither the contact nor the customer has an email address, so it hasn&apos;t been sent: enter an address below to send it.
             </p>
           )}
           {emailCard}
@@ -688,7 +688,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
           (a sales order has it in its Comms section above). */}
       {!isOrder && sp.noemail && (
         <p role="status" className="mt-6 rounded-md border border-fp-amber bg-fp-amber/10 px-4 py-3 text-sm">
-          Saved as a draft. The contact has no email address, so it hasn&apos;t been sent: enter an address below to send it.
+          Saved as a draft. Neither the contact nor the customer has an email address, so it hasn&apos;t been sent: enter an address below to send it.
         </p>
       )}
 
