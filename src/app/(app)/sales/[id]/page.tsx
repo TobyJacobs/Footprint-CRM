@@ -556,6 +556,12 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                     <td className="py-2 pr-3 text-right text-fp-dark/75">
                       {/* With a GP override the cost is worked out from it, so show the per-unit figure that gives. */}
                       {l.gp_override !== null ? (l.quantity ? gbp(l.line_cost / l.quantity) : "—") : l.unit_cost === null ? "—" : gbp(l.unit_cost)}
+                      {/* Cost from what we bought it for on the POs; the estimate underneath. */}
+                      {l.gp_override === null && l.estimated_unit_cost !== null && (
+                        <span className="block text-[10px] font-semibold uppercase text-fp-teal-deep" title="From what we bought it for on the purchase orders">
+                          actual · est. {gbp(l.estimated_unit_cost)}
+                        </span>
+                      )}
                     </td>
                     <td className="py-2 pr-3 text-right">{gbp(l.unit_price)}</td>
                     <td className="py-2 pr-3 text-right">{l.discount_percent ? `${l.discount_percent}%` : ""}</td>

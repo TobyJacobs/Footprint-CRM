@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.87.0",
+    date: "2026-11-11",
+    title: "Real costs flow into gross profit",
+    changes: ["When you enter what we bought an item for on a purchase order, the matching line on the sales order now uses that as its cost, so the order's gross profit shows the real profit. If it came from more than one supplier, it uses the average actually paid. The original estimate still shows under the cost (\"actual · est. £…\"), and clearing the figures puts the estimate back. Lines with a GP override aren't changed."],
+  },
+  {
     version: "0.86.0",
     date: "2026-11-11",
     title: "Amber for anything in progress",
