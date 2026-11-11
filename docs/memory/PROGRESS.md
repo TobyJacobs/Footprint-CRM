@@ -3,7 +3,7 @@
 _Last updated: 11 November 2026 (end of session)_
 
 ## Right now (11 November 2026, end of session)
-- **Live: FootprintOS 0.85.1.** DJ's improvement list worked through one item at a time today (0.70.0 to 0.85.1, PRs #119–#140), all checked live and ticked. Owner says this batch is all done.
+- **Live: FootprintOS 0.86.0.** Since: online quote boxes as wide as the quote (0.85.2, #141) and amber for every order step started but not finished, incl. open projects and design under way (0.86.0, #142); both checked live. DJ's improvement list worked through one item at a time today (0.70.0 to 0.85.1, PRs #119–#140), all checked live and ticked. Owner says this batch is all done.
 - **Owner to do:** add Darren Jacobs (DJ) to the Directors role (Admin → Users) so he can see his 4 FootprintAI Board actions (I'm not allowed to change permissions). Test the order confirmation with a fresh quote accepted online (now falls back to the customer's email). DJ to switch on SendGrid's Event Webhook (+ SENDGRID_WEBHOOK_KEY). Re-enter the margin target on the new on-cost basis.
 - **Next:** the next DJ list when it comes; magazine questions for Huw; moving Footprint's leads out of GoHighLevel.
 
