@@ -1,6 +1,6 @@
 {
   "name": "footprint-platform",
-  "version": "0.77.2",
+  "version": "0.78.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

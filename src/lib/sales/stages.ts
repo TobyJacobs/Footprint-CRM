@@ -10,17 +10,19 @@ export type StageState = "done" | "current" | "skipped" | "todo" | "stopped";
 // tone: an extra colour for the step (owner, 11 November 2026): "pending" =
 // amber, waiting for the customer. Accepted stays the usual blue, like every
 // other step done.
-export type Stage = { label: string; note: string | null; done: boolean; href?: string | null; tone?: "pending" };
+// skip: the step isn't needed for this record (e.g. "No project needed").
+export type Stage = { label: string; note: string | null; done: boolean; href?: string | null; tone?: "pending"; skip?: boolean };
 export type Stages = { stages: Stage[]; states: StageState[] };
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 // Steps an order didn't need (e.g. no design) are "skipped" once a later step
 // is done; the current stage is the one after the last step done.
+// A step marked "skip" is "skipped" straight away and counts as passed.
 function lightUp(stages: Stage[], stopped: boolean): Stages {
-  const lastDone = stages.reduce((last, s, i) => (s.done ? i : last), 0);
+  const lastDone = stages.reduce((last, s, i) => (s.done || s.skip ? i : last), 0);
   const states = stages.map((s, i): StageState =>
-    s.done ? "done" : i < lastDone ? "skipped" : i === lastDone + 1 ? (stopped ? "stopped" : "current") : "todo",
+    s.done ? "done" : s.skip || i < lastDone ? "skipped" : i === lastDone + 1 ? (stopped ? "stopped" : "current") : "todo",
   );
   return { stages, states };
 }
@@ -31,6 +33,8 @@ const DESIGN_DONE = ["approved", "production", "done"];
 export function orderStages(o: {
   status: string;
   project: { number: string } | null;
+  // "No project needed" ticked on the order (DJ, 11 November 2026).
+  projectNotNeeded?: boolean;
   designJobs: { stage: string }[];
   poCount: number;
   invoices: { number: string }[];
@@ -43,7 +47,7 @@ export function orderStages(o: {
   return lightUp(
     [
       { label: "Order received", note: null, done: true },
-      { label: "Project", note: o.project?.number ?? null, done: !!o.project },
+      { label: "Project", note: o.project?.number ?? null, done: !!o.project, skip: !o.project && !!o.projectNotNeeded },
       {
         label: "Design",
         note: o.designJobs.length === 0 ? null : openJob ? `${plural(o.designJobs.length, "job")} · ${designStageLabel(openJob.stage)}` : `${plural(o.designJobs.length, "job")} approved`,

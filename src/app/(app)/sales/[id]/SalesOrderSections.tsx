@@ -198,13 +198,52 @@ export function PurchaseOrdersSection({ pos, raise }: { pos: OrderPo[]; raise: R
   );
 }
 
-export function ProjectSection({ project, create, canView }: { project: OrderProject | null; create: React.ReactNode; canView: boolean }) {
+export function ProjectSection({
+  project,
+  create,
+  canView,
+  notNeeded = false,
+  setNotNeeded,
+}: {
+  project: OrderProject | null;
+  create: React.ReactNode;
+  canView: boolean;
+  // "No project needed" (DJ, 11 November 2026: most orders don't have one).
+  notNeeded?: boolean;
+  setNotNeeded?: (value: boolean) => Promise<void>;
+}) {
   if (!project) {
     return (
       <Card title="Project">
         <div className="grid gap-3 text-sm">
-          <p className="text-fp-mid">No project yet.</p>
-          {create}
+          {notNeeded ? (
+            <>
+              <p>
+                <strong>No project needed</strong> for this order.
+              </p>
+              {setNotNeeded && (
+                <form action={setNotNeeded.bind(null, false)}>
+                  <button type="submit" className="text-xs font-semibold text-fp-teal-deep hover:underline">
+                    Undo: this order needs a project
+                  </button>
+                </form>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="text-fp-mid">No project yet.</p>
+              <div className="flex flex-wrap items-center gap-3">
+                {create}
+                {setNotNeeded && (
+                  <form action={setNotNeeded.bind(null, true)}>
+                    <button type="submit" className={secondaryButton}>
+                      No project needed
+                    </button>
+                  </form>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </Card>
     );

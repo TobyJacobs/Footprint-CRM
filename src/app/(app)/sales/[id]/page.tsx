@@ -14,7 +14,7 @@ import { getAdvertTiming } from "@/lib/magazines";
 import { getDocumentLines } from "@/lib/sales/data";
 import { docTypes, isDocType, isLockedRecord, lossReasons, marginPercent, marginText, poStatusLabel, quoteKindLabel, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
-import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, markQuoteDeclined, requestAdvertArtwork, setDocumentStatus, setLineGpOverride } from "../actions";
+import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, markQuoteDeclined, requestAdvertArtwork, setDocumentStatus, setLineGpOverride, setProjectNotNeeded } from "../actions";
 import { raisePurchaseOrders } from "../(operations)/purchase-orders/actions";
 import { createProjectForOrder } from "../../projects/actions";
 import EmailCard from "../EmailCard";
@@ -227,6 +227,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
             {...orderStages({
               status: doc.status,
               project: orderProject,
+              projectNotNeeded: !!doc.project_not_needed,
               designJobs: designJobs ?? [],
               poCount: orderPos.length,
               invoices: orderInvoices,
@@ -415,6 +416,8 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
             <ProjectSection
               project={orderProject}
               canView={user.can("projects", "view")}
+              notNeeded={!!doc.project_not_needed}
+              setNotNeeded={canEdit && !["cancelled"].includes(doc.status) ? setProjectNotNeeded.bind(null, id) : undefined}
               create={
                 ["open", "completed", "invoiced"].includes(doc.status) && user.can("projects", "edit") ? (
                   <ActionButton action={createProjectForOrder.bind(null, id, "project")} tone="primary">

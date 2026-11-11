@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.78.0",
+    date: "2026-11-11",
+    title: "No project needed",
+    changes: ["A sales order's Project box has a No project needed button. The order's stage bar then shows Project as not needed and moves on to the next step (also on the Operations dashboard). You can undo it, and still create a project later."],
+  },
+  {
     version: "0.77.2",
     date: "2026-11-11",
     title: "Addresses on automatic orders",

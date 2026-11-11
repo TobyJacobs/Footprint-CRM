@@ -269,6 +269,22 @@ export async function markQuoteDeclined(documentId: string, fd: FormData) {
   await setDocumentStatus(documentId, "declined");
 }
 
+// "No project needed" on a sales order, or undo it (DJ, 11 November 2026).
+export async function setProjectNotNeeded(orderId: string, notNeeded: boolean) {
+  await requirePermission("quotes", "edit");
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("sales_documents")
+    .update({ project_not_needed: notNeeded })
+    .eq("id", orderId)
+    .eq("doc_type", "sales_order")
+    .select("id");
+  if (error) fail(`/sales/${orderId}`, error.message);
+  if (!data?.length) fail(`/sales/${orderId}`, "You can't change that order");
+  revalidatePath("/sales", "layout");
+  redirect(`/sales/${orderId}?saved=1`);
+}
+
 export async function setDocumentStatus(documentId: string, status: string) {
   await requirePermission("quotes", "edit");
   const supabase = await createClient();
