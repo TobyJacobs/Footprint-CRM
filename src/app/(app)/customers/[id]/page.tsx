@@ -120,6 +120,28 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
   };
   const parent = c.parent as { id: string; name: string } | null;
 
+  // Contact due (no timeline activity for over 3 months): show what they
+  // previously ordered, so whoever calls has something to talk about.
+  const due = !c.erased_at && contactDue(activity?.[0]?.occurred_at);
+  let lastOrder: { id: string; number: string; date: string; items: string[]; more: number } | null = null;
+  if (due) {
+    const { data: last } = await supabase
+      .from("sales_documents")
+      .select("id, number, issue_date, sales_document_lines(description, position)")
+      .eq("customer_id", id)
+      .in("doc_type", ["sales_order", "invoice"])
+      .not("status", "in", "(draft,cancelled,void)")
+      .order("issue_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (last) {
+      const lines = ((last.sales_document_lines ?? []) as { description: string; position: number }[]).sort((a, b) => a.position - b.position);
+      const names = [...new Set(lines.map((l) => l.description.split("\n")[0].trim()).filter(Boolean))];
+      lastOrder = { id: last.id, number: last.number, date: last.issue_date, items: names.slice(0, 3), more: Math.max(0, names.length - 3) };
+    }
+  }
+
   return (
     <>
       <PageHeader title={c.name} />
@@ -187,11 +209,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
           <CustomerGlance
             g={glance}
             customerName={c.name}
-            contactDue={
-              !c.erased_at && contactDue(activity?.[0]?.occurred_at)
-                ? { lastAt: activity?.[0]?.occurred_at ?? null, logHref: `/customers/${id}?log=call#timeline` }
-                : undefined
-            }
+            contactDue={due ? { lastAt: activity?.[0]?.occurred_at ?? null, logHref: `/customers/${id}?log=call#timeline`, lastOrder } : undefined}
             managers={<AccountManagers customerId={id} ownerId={c.owner_id} byArea={byArea} staff={staff ?? []} canEdit={canEdit && !c.erased_at} />}
           />
         </div>

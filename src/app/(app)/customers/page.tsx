@@ -6,6 +6,7 @@ import { Badge, Notice, inputClass, primaryButton, secondaryButton } from "@/com
 import { requirePermission } from "@/lib/auth";
 import { services } from "@/lib/customers/options";
 import { createClient } from "@/lib/supabase/server";
+import { addMonthsToDate, contactDue, ukToday } from "@/lib/dates";
 
 export const metadata: Metadata = { title: "Customers" };
 
@@ -18,12 +19,14 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
   const status = typeof sp.status === "string" ? sp.status : "";
   const service = typeof sp.service === "string" ? sp.service : "";
   const dupOnly = sp.dup === "1";
+  // Contact due: nothing on the timeline for over 3 months (DJ, 11 November 2026).
+  const dueOnly = sp.due === "1";
   const page = Math.max(1, Number(sp.page) || 1);
 
   const supabase = await createClient();
   let query = supabase
     .from("customers_with_flags")
-    .select("id, name, status, services, phone, email, billing_city, has_duplicate, contacts(first_name, last_name, is_primary)", {
+    .select("id, name, status, services, phone, email, billing_city, has_duplicate, last_activity_on, erased_at, contacts(first_name, last_name, is_primary)", {
       count: "exact",
     })
     .order("name")
@@ -51,6 +54,7 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
   if (status) query = query.eq("status", status);
   if (service) query = query.contains("services", [service]);
   if (dupOnly) query = query.eq("has_duplicate", true);
+  if (dueOnly) query = query.is("erased_at", null).or(`last_activity_on.is.null,last_activity_on.lt.${addMonthsToDate(ukToday(), -3)}`);
 
   const { data: customers, count, error } = await query;
   const total = count ?? 0;
@@ -62,6 +66,7 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
     if (status) params.set("status", status);
     if (service) params.set("service", service);
     if (dupOnly) params.set("dup", "1");
+    if (dueOnly) params.set("due", "1");
     if (p > 1) params.set("page", String(p));
     const s = params.toString();
     return `/customers${s ? `?${s}` : ""}`;
@@ -97,10 +102,14 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
               <input type="checkbox" name="dup" value="1" defaultChecked={dupOnly} className="accent-fp-pink" />
               Possible duplicates only
             </label>
+            <label className="flex items-center gap-2 py-2 text-sm">
+              <input type="checkbox" name="due" value="1" defaultChecked={dueOnly} className="accent-fp-pink" />
+              Contact due only
+            </label>
             <button type="submit" className={secondaryButton}>
               Search
             </button>
-            {(q || status || service || dupOnly) && (
+            {(q || status || service || dupOnly || dueOnly) && (
               <Link href="/customers" className="py-2 text-sm font-semibold text-fp-teal-deep hover:underline">
                 Clear
               </Link>
@@ -137,6 +146,14 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
                       {c.has_duplicate && (
                         <span className="ml-2 rounded-full bg-fp-amber/20 px-2 py-0.5 text-xs font-semibold">Possible duplicate</span>
                       )}
+                      {!c.erased_at && contactDue(c.last_activity_on) && (
+                        <span
+                          className="ml-2 rounded-full bg-fp-amber/20 px-2 py-0.5 text-xs font-semibold"
+                          title={c.last_activity_on ? "Nothing logged for over 3 months" : "Nothing logged yet"}
+                        >
+                          Contact due
+                        </span>
+                      )}
                       <div className="text-xs text-fp-mid">
                         {[c.billing_city, c.phone].filter(Boolean).join(" · ")}
                       </div>
@@ -158,7 +175,7 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
               {(customers ?? []).length === 0 && (
                 <tr>
                   <td colSpan={3} className="px-4 py-10 text-center text-fp-mid">
-                    {q || status || service || dupOnly ? "No customers match those filters." : "No customers yet."}
+                    {q || status || service || dupOnly || dueOnly ? "No customers match those filters." : "No customers yet."}
                   </td>
                 </tr>
               )}
