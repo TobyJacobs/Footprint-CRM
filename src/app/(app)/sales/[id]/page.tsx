@@ -12,7 +12,7 @@ import { ukToday } from "@/lib/dates";
 import { balanceDueDate, depositAvailable } from "@/lib/magazine-deposit";
 import { getAdvertTiming } from "@/lib/magazines";
 import { getDocumentLines } from "@/lib/sales/data";
-import { docTypes, isDocType, isLockedRecord, lossReasons, marginPercent, marginText, poStatusLabel, quoteKindLabel, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
+import { docTypes, gpOverrideReasons, isDocType, isLockedRecord, lossReasons, marginPercent, marginText, poStatusLabel, quoteKindLabel, splitGpOverrideReason, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, markQuoteDeclined, requestAdvertArtwork, setDocumentStatus, setLineGpOverride, setProjectNotNeeded } from "../actions";
 import { raisePurchaseOrders } from "../(operations)/purchase-orders/actions";
@@ -482,9 +482,23 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                               <span className="font-semibold">Gross profit for this line (£, excluding VAT)</span>
                               <input name="gp" type="number" step="0.01" required defaultValue={l.gp_override ?? ""} className={inputClass} />
                             </label>
+                            {/* Reason from a list (owner, 11 November 2026); Other needs a note. */}
                             <label className="grid gap-1">
                               <span className="font-semibold">Reason</span>
-                              <input name="reason" required defaultValue={l.gp_override_reason ?? ""} className={inputClass} placeholder="e.g. supplier cost was wrong" />
+                              <select name="reason" required defaultValue={splitGpOverrideReason(l.gp_override_reason).reason} className={inputClass}>
+                                <option value="" disabled>
+                                  Choose a reason…
+                                </option>
+                                {gpOverrideReasons.map((r) => (
+                                  <option key={r} value={r}>
+                                    {r === "Other" ? "Other (please explain)" : r}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="grid gap-1">
+                              <span className="font-semibold">Note (needed for Other)</span>
+                              <input name="reason_note" maxLength={500} defaultValue={splitGpOverrideReason(l.gp_override_reason).note} className={inputClass} />
                             </label>
                             <div>
                               <button type="submit" className={primaryButton}>Save override</button>

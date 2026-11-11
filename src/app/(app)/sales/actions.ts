@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { addDaysTo, customerDueDate, ukToday } from "@/lib/dates";
 import { bool, int, num, str } from "@/lib/forms";
-import { defaultStatus, docTypes, isDocType, isLockedRecord, isQuoteKind, isWarehouse, lossReasons, quoteKindLabel, statuses, type DocType } from "@/lib/sales/options";
+import { defaultStatus, docTypes, gpOverrideReasonText, isDocType, isLockedRecord, isQuoteKind, isWarehouse, lossReasons, quoteKindLabel, statuses, type DocType } from "@/lib/sales/options";
 import { gbp } from "@/lib/customers/display";
 import { documentEmailText } from "@/lib/sales/email-text";
 import { balanceDueDate, depositAvailable, DEPOSIT_PERCENT } from "@/lib/magazine-deposit";
@@ -635,9 +635,11 @@ export async function setLineGpOverride(documentId: string, lineId: string, fd: 
   await requirePermission("quotes", "edit");
   const back = `/sales/${documentId}`;
   const gp = num(fd, "gp");
-  const reason = str(fd, "reason");
+  const choice = str(fd, "reason");
   if (gp === null) fail(back, "Please enter the gross profit in pounds");
-  if (!reason) fail(back, "Please say why you're overriding it");
+  if (!choice) fail(back, "Please choose why you're overriding it");
+  const reason = gpOverrideReasonText(choice, str(fd, "reason_note")?.slice(0, 500) ?? null);
+  if (!reason) fail(back, choice === "Other" ? "Please explain the reason in the note" : "Please choose a reason from the list");
   const supabase = await createClient();
   const { error } = await supabase
     .from("sales_document_lines")
