@@ -49,7 +49,7 @@ export default async function OperationsDashboard() {
   const ids = (openOrders ?? []).map((o) => o.id);
   const [{ data: projects }, { data: jobs }, { data: pos }, { data: invoices }] = ids.length
     ? await Promise.all([
-        supabase.from("projects").select("number, sales_document_id").in("sales_document_id", ids),
+        supabase.from("projects").select("number, status, sales_document_id").in("sales_document_id", ids),
         supabase.from("design_jobs").select("stage, sales_order_id").in("sales_order_id", ids),
         supabase.from("purchase_orders").select("sales_document_id, status").in("sales_document_id", ids),
         supabase.from("sales_documents").select("number, status, subtotal, source_document_id").eq("doc_type", "invoice").neq("status", "void").in("source_document_id", ids),
