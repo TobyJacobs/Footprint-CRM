@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
   } else if (report === "direct-debits") {
     const rows = await getDirectDebits();
     name = `direct-debits-${ukToday()}`;
-    csv = toCsv(["Customer", "Direct Debit – Print & Digital", "Direct Debit – Forget Me Not", "Account owner"], rows.map((r) => [r.name, r.general, r.fmn, r.owner]));
+    csv = toCsv(["Customer", "Direct Debit", "Account owner"], rows.map((r) => [r.name, r.general, r.owner]));
   } else {
     return new NextResponse("Unknown report", { status: 400 });
   }

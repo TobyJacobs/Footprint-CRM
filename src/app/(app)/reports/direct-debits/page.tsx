@@ -27,7 +27,7 @@ export default async function DirectDebitReport() {
         <CsvLink href="/reports/csv?report=direct-debits" />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Tile label="Paying by Direct Debit" value={String(rows.length)} note={`${rows.filter((r) => r.fmn === "Active").length} for Forget Me Not`} />
+        <Tile label="Paying by Direct Debit" value={String(rows.length)} note={`${rows.filter((r) => r.general === "FMN Active").length} for Forget Me Not`} />
         {bookings.length > 0 && <Tile label="Their adverts booked" value={money(total)} note="This month and the next two · before VAT" tone="teal" />}
       </div>
       <Card title="Customers with an active Direct Debit">
@@ -39,8 +39,7 @@ export default async function DirectDebitReport() {
               <thead className="border-b border-fp-border">
                 <tr>
                   <th className={th}>Customer</th>
-                  <th className={th}>Print &amp; Digital</th>
-                  <th className={th}>Forget Me Not</th>
+                  <th className={th}>Direct Debit</th>
                   <th className={th}>Account owner</th>
                   {bookings.length > 0 && <th className={`${th} text-right`}>Booked next 3 months</th>}
                 </tr>
@@ -54,7 +53,6 @@ export default async function DirectDebitReport() {
                       </Link>
                     </td>
                     <td className={td}>{r.general ?? "—"}</td>
-                    <td className={td}>{r.fmn ?? "—"}</td>
                     <td className={td}>{r.owner ?? "—"}</td>
                     {bookings.length > 0 && <td className={num}>{bookedFor(r.id) ? money(bookedFor(r.id)) : "—"}</td>}
                   </tr>

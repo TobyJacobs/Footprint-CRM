@@ -500,8 +500,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                     <Badge tone={/ON STOP|Up Front|before we order/i.test(c.credit_status) ? "red" : "grey"}>{c.credit_status}</Badge>
                   )}
                 </Detail>
-                <Detail label="Direct Debit – Print & Digital">{c.direct_debit_status}</Detail>
-                <Detail label="Direct Debit – Forget Me Not">{c.direct_debit_status_fmn}</Detail>
+                <Detail label="Direct Debit">{c.direct_debit_status}</Detail>
                 <Detail label="Payment terms">
                   {(c.invoice_due_days !== null || c.invoice_due_terms) && [c.invoice_due_days, c.invoice_due_terms].filter((x) => x !== null).join(" ")}
                 </Detail>

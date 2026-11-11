@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.70.1",
+    date: "2026-11-11",
+    title: "One Direct Debit field",
+    changes: ["Customers have one Direct Debit field (its \"FMN Active\" option covers Forget Me Not). The separate Direct Debit – Forget Me Not field is gone from the customer page, the form and the Direct Debits report (it was empty)."],
+  },
+  {
     version: "0.70.0",
     date: "2026-11-11",
     title: "Copy billing address",

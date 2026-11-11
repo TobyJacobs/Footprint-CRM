@@ -62,8 +62,6 @@ export const directDebitStatuses = [
   "See notes for more info",
 ];
 
-export const directDebitStatusesFmn = ["Not Signed Up", "Active"];
-
 export const invoiceDueTerms = [
   "day(s) after bill date",
   "day(s) after bill month",
