@@ -19,11 +19,24 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 // Steps an order didn't need (e.g. no design) are "skipped" once a later step
 // is done; the current stage is the one after the last step done.
-// A step marked "skip" is "skipped" straight away and counts as passed.
+// A step marked "skip" is "skipped" straight away and counts as passed. A step
+// that's under way but not finished (tone "pending") is never "not needed":
+// it shows as in progress (amber) wherever it is, even if an earlier step isn't
+// finished (owner, 11 November 2026).
 function lightUp(stages: Stage[], stopped: boolean): Stages {
   const lastDone = stages.reduce((last, s, i) => (s.done || s.skip ? i : last), 0);
   const states = stages.map((s, i): StageState =>
-    s.done ? "done" : s.skip || i < lastDone ? "skipped" : i === lastDone + 1 ? (stopped ? "stopped" : "current") : "todo",
+    s.done
+      ? "done"
+      : s.tone === "pending"
+        ? "current"
+        : s.skip || i < lastDone
+          ? "skipped"
+          : i === lastDone + 1
+            ? stopped
+              ? "stopped"
+              : "current"
+            : "todo",
   );
   return { stages, states };
 }
@@ -33,7 +46,7 @@ const DESIGN_DONE = ["approved", "production", "done"];
 
 export function orderStages(o: {
   status: string;
-  project: { number: string } | null;
+  project: { number: string; status?: string } | null;
   // "No project needed" ticked on the order (DJ, 11 November 2026).
   projectNotNeeded?: boolean;
   designJobs: { stage: string }[];
@@ -59,11 +72,20 @@ export function orderStages(o: {
   return lightUp(
     [
       { label: "Order received", note: null, done: true },
-      { label: "Project", note: o.project?.number ?? null, done: !!o.project, skip: !o.project && !!o.projectNotNeeded },
+      // Amber while the project is still open (active or on hold); blue once completed.
+      {
+        label: "Project",
+        note: o.project ? `${o.project.number}${o.project.status === "on_hold" ? " · on hold" : ""}` : null,
+        done: !!o.project,
+        skip: !o.project && !!o.projectNotNeeded,
+        tone: o.project && ["active", "on_hold"].includes(o.project.status ?? "") ? "pending" : undefined,
+      },
       {
         label: "Design",
         note: o.designJobs.length === 0 ? null : openJob ? `${plural(o.designJobs.length, "job")} · ${designStageLabel(openJob.stage)}` : `${plural(o.designJobs.length, "job")} approved`,
         done: designDone,
+        // Amber while design jobs are under way.
+        tone: openJob ? "pending" : undefined,
       },
       orderedPos.length === 0
         ? { label: "Suppliers ordered", note: draftPos ? `${plural(draftPos, "draft PO")}` : null, done: false }
