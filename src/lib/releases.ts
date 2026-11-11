@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.75.0",
+    date: "2026-11-11",
+    title: "Contact due flag",
+    changes: ["Customer at a glance shows a Contact due flag when nothing has been logged on the customer's timeline for over 3 months (or ever), with a Log a call link."],
+  },
+  {
     version: "0.74.0",
     date: "2026-11-11",
     title: "Board actions for Directors only",

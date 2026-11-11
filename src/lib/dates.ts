@@ -32,6 +32,21 @@ export function addMonthsTo(month: string, months: number) {
   return new Date(Date.UTC(y, m - 1 + months, 1)).toISOString().slice(0, 7);
 }
 
+// A plain date moved by whole months, keeping the day where it can:
+// addMonthsToDate("2026-11-30", -3) = "2026-08-30"; "2026-05-31" − 3 = "2026-02-28".
+export function addMonthsToDate(date: string, months: number) {
+  const month = addMonthsTo(date.slice(0, 7), months);
+  const lastDay = Number(addDaysTo(`${addMonthsTo(month, 1)}-01`, -1).slice(8, 10));
+  return `${month}-${String(Math.min(Number(date.slice(8, 10)), lastDay)).padStart(2, "0")}`;
+}
+
+// Is a customer due a contact? (DJ, 11 November 2026: flag it on Customer at
+// a glance when the last activity was over 3 months ago, or there's none.)
+export function contactDue(lastActivityAt: string | null | undefined, today: string = ukToday()) {
+  if (!lastActivityAt) return true;
+  return ukToday(new Date(lastActivityAt)) < addMonthsToDate(today, -3);
+}
+
 // The UK date a number of days from today.
 export const ukDaysFromToday = (days: number) => addDaysTo(ukToday(), days);
 

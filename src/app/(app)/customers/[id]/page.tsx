@@ -23,6 +23,7 @@ import CustomerDocsCard, { type CustomerDoc } from "./CustomerDocsCard";
 import EmailStatus from "@/components/EmailStatus";
 import AccountManagers from "./AccountManagers";
 import CustomerGlance from "./CustomerGlance";
+import { contactDue } from "@/lib/dates";
 
 export async function generateMetadata(props: PageProps<"/customers/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -186,6 +187,11 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
           <CustomerGlance
             g={glance}
             customerName={c.name}
+            contactDue={
+              !c.erased_at && contactDue(activity?.[0]?.occurred_at)
+                ? { lastAt: activity?.[0]?.occurred_at ?? null, logHref: `/customers/${id}?log=call#timeline` }
+                : undefined
+            }
             managers={<AccountManagers customerId={id} ownerId={c.owner_id} byArea={byArea} staff={staff ?? []} canEdit={canEdit && !c.erased_at} />}
           />
         </div>
