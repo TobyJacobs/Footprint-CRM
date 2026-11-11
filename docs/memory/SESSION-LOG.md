@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 11 November 2026 (later)
+- DJ item 18: Copy billing address button live (0.70.0), ticked. Item 19: one Direct Debit field, PR #120 (0.70.1) opened.
+
 ## 9 November 2026 (evening): DJ's improvements, part 1
 - Went through DJ's list one item at a time: built and checked live items 1–6 (#101–#106, 0.53.0–0.58.0). Owner then asked for email delivery confirmation ("some emails don't send"): email_log showed "sent" only means SendGrid accepted it; built SendGrid Event Webhook handling with signature checks and bounce alerts (#107, 0.59.0, 13 checks). Couldn't test saving an account manager on a real customer (permission declined, rightly); covered by database tests.
 - Then items 7 (Copy email, #108), 8 (timeline, #109) and 9 (proposals like the quote builder, #110: read quotes.footprintgroup.uk read-only; 18 schedule checks, 7 database checks, sample PDF; 22 products loaded; checked live without saving). All ticked.
