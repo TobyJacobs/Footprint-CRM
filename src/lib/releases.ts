@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.76.0",
+    date: "2026-11-11",
+    title: "Contact due: past orders and customer list",
+    changes: [
+      "The Contact due flag on Customer at a glance now says what the customer previously ordered (their latest order or invoice, with a link), so whoever calls has something to talk about.",
+      "The Customers list shows a Contact due badge next to those customers, and a Contact due only tick box to list just them.",
+    ],
+  },
+  {
     version: "0.75.0",
     date: "2026-11-11",
     title: "Contact due flag",

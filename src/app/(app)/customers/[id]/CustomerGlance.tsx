@@ -17,7 +17,8 @@ export default function CustomerGlance({
   customerName: string;
   managers: React.ReactNode;
   // Set when nothing's been logged for over 3 months: when the last activity was (null = never).
-  contactDue?: { lastAt: string | null; logHref: string };
+  // lastOrder: what they previously ordered, to talk about when calling.
+  contactDue?: { lastAt: string | null; logHref: string; lastOrder: { id: string; number: string; date: string; items: string[]; more: number } | null };
 }) {
   const due = contactDue && (
     <p className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-fp-amber/60 bg-fp-amber/15 px-3 py-2 text-sm">
@@ -28,6 +29,21 @@ export default function CustomerGlance({
       <Link href={contactDue.logHref} className="font-semibold text-fp-pink hover:underline">
         Log a call
       </Link>
+      {/* Orders only for people who can see sales (the figures below). */}
+      {g && <span className="basis-full text-fp-dark/75">
+        {contactDue.lastOrder ? (
+          <>
+            Previously ordered: <strong className="text-fp-dark">{contactDue.lastOrder.items.join(", ") || "see order"}</strong>
+            {contactDue.lastOrder.more > 0 && ` and ${contactDue.lastOrder.more} more`} (
+            <Link href={`/sales/${contactDue.lastOrder.id}`} className="font-semibold text-fp-teal-deep hover:underline">
+              {contactDue.lastOrder.number}
+            </Link>
+            , {longDate(contactDue.lastOrder.date)})
+          </>
+        ) : (
+          "No orders yet."
+        )}
+      </span>}
     </p>
   );
   if (!g)
