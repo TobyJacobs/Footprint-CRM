@@ -122,11 +122,18 @@ export function FinanceSummary({
   total,
   invoiced,
   invoicedNet,
+  costChange = 0,
+  poPaid = null,
 }: {
   net: number;
   cost: number;
   labour: number | null;
   poSubtotal: number;
+  // How much the cost has moved from the estimate now that real purchase
+  // costs are in (+ = cost more), and what's actually been paid on POs
+  // (DJ, 11 November 2026).
+  costChange?: number;
+  poPaid?: { paid: number; difference: number } | null;
   total: number;
   invoiced: number;
   // Before VAT, for "still to invoice".
@@ -135,17 +142,29 @@ export function FinanceSummary({
   const margin = net - cost - (labour ?? 0);
   const scale = Math.max(net, cost + (labour ?? 0), poSubtotal, 1);
   const share = (v: number) => (net ? `${Math.round((v / net) * 100)}%` : "");
+  const moved = (d: number, more: string, less: string) => (Math.abs(d) < 0.005 ? "" : `${gbp(Math.abs(d))} ${d > 0 ? more : less}`);
+  const costNote = [share(cost), moved(costChange, "more than estimated", "less than estimated")].filter(Boolean).join(" · ");
+  const marginMove = moved(-costChange, "up on the estimate", "down on the estimate");
   const bars: { label: string; value: number; note: string; colour: string }[] = [
     { label: "Order value (before VAT)", value: net, note: "", colour: "bg-fp-black" },
-    { label: "Cost of the job", value: cost, note: share(cost), colour: "bg-fp-amber" },
+    { label: "Cost of the job", value: cost, note: costNote, colour: "bg-fp-amber" },
     ...(labour !== null ? [{ label: "Labour", value: labour, note: share(labour), colour: "bg-fp-amber/60" }] : []),
-    { label: labour !== null ? "Margin after labour" : "Margin", value: margin, note: marginPercent(net, cost + (labour ?? 0)) === null ? "" : `${marginPercent(net, cost + (labour ?? 0))}% on cost`, colour: margin < 0 ? "bg-fp-error" : "bg-fp-teal-deep" },
-    {
-      label: "Ordered from suppliers (POs, before VAT)",
-      value: poSubtotal,
-      note: cost ? `${Math.round((poSubtotal / cost) * 100)}% of the cost` : "",
-      colour: "bg-fp-pink",
-    },
+    { label: labour !== null ? "Margin after labour" : "Margin", value: margin, note: [marginPercent(net, cost + (labour ?? 0)) === null ? "" : `${marginPercent(net, cost + (labour ?? 0))}% on cost`, marginMove].filter(Boolean).join(" · "), colour: margin < 0 ? "bg-fp-error" : "bg-fp-teal-deep" },
+    poPaid
+      ? {
+          label: "Paid to suppliers (POs, before VAT)",
+          value: poPaid.paid,
+          note: [cost ? `${Math.round((poPaid.paid / cost) * 100)}% of the cost` : "", moved(poPaid.difference, "more than it should have cost", "less than it should have cost")]
+            .filter(Boolean)
+            .join(" · "),
+          colour: "bg-fp-pink",
+        }
+      : {
+          label: "Ordered from suppliers (POs, before VAT)",
+          value: poSubtotal,
+          note: cost ? `${Math.round((poSubtotal / cost) * 100)}% of the cost` : "",
+          colour: "bg-fp-pink",
+        },
   ];
   return (
     <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">

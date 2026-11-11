@@ -124,6 +124,13 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
 
   // Sales orders get their own layout (stage bar, finance, POs, design, project, comms).
   const isOrder = type === "sales_order";
+  // How far the order's cost has moved from the estimate now that real
+  // purchase costs are in (lines with a GP override aren't changed).
+  const costChange =
+    Math.round(
+      lines.reduce((sum, l) => (l.gp_override === null && l.estimated_unit_cost !== null ? sum + l.quantity * ((l.unit_cost ?? 0) - l.estimated_unit_cost) : sum), 0) * 100,
+    ) / 100;
+
   // Purchasing summary (DJ, 11 November 2026): the order's items against its POs' lines.
   let purchasing: ReturnType<typeof purchasingSummary> | null = null;
   if (type === "sales_order") {
@@ -415,6 +422,8 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 cost={Number(doc.cost_total)}
                 labour={doc.labour_cost === null ? null : Number(doc.labour_cost)}
                 poSubtotal={orderPos.reduce((sum, p) => sum + (p.status === "cancelled" ? 0 : p.subtotal), 0)}
+                costChange={costChange}
+                poPaid={purchasing && purchasing.boughtFor !== null ? { paid: Math.round((purchasing.shouldCost + (purchasing.difference ?? 0)) * 100) / 100, difference: purchasing.difference ?? 0 } : null}
                 total={Number(doc.total)}
                 invoiced={orderInvoices.reduce((sum, i) => sum + Number(i.total), 0)}
                 invoicedNet={invoicedNet}
