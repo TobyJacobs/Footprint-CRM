@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.74.0",
+    date: "2026-11-11",
+    title: "Board actions for Directors only",
+    changes: [
+      "FootprintAI: Board only actions can now be seen only by people with the Directors role. Before, every admin could see them too. Only Directors can make an action Board only.",
+      "Customer timeline: entries made automatically (such as sales orders from accepted quotes) now say \"Automatic\" instead of \"system\", including in Last activity.",
+    ],
+  },
+  {
     version: "0.73.0",
     date: "2026-11-11",
     title: "Last activity on customers",

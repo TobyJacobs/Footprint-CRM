@@ -10,7 +10,7 @@ import { TransitionTabs } from "../parts";
 export const metadata: Metadata = { title: "Transition invite list" };
 
 // Who, besides admins and Directors, can see the transition (never the
-// board-only actions). Directors and admins manage it.
+// board-only actions, which are for Directors only). Directors and admins manage it.
 export default async function TransitionPeople(props: PageProps<"/transition/people">) {
   const user = await getCurrentUser();
   if (user.transitionAccess !== "full") return <NoAccess title="Transition invite list" />;
@@ -58,7 +58,7 @@ export default async function TransitionPeople(props: PageProps<"/transition/peo
             </button>
           </form>
           <p className="mt-3 text-xs text-fp-mid">
-            Admins and Directors always see everything, including board-only actions. Anyone who owns an action can see and update their own actions. People
+            Admins and Directors see every action. Board-only actions are for the Directors role only (not admins). Anyone who owns an action can see and update their own actions. People
             on this list need to have signed in to FootprintOS once.
           </p>
         </Card>

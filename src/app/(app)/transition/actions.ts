@@ -46,7 +46,7 @@ export async function setActionStatus(id: string, fd: FormData) {
 // The side panel and the Add action form. Owners only send status and notes;
 // everyone else can change everything they're allowed to.
 export async function saveAction(id: string | null, fd: FormData) {
-  const user = await need();
+  await need();
   const back = safeBack(str(fd, "back"));
   const supabase = await createClient();
 
@@ -68,8 +68,10 @@ export async function saveAction(id: string | null, fd: FormData) {
       stream,
       owner_id: owner && UUID_RE.test(owner) ? owner : null,
       due_date: dueDate,
-      // Only directors and admins make an action board-only.
-      ...(user.transitionAccess === "full" ? { visibility: str(fd, "visibility") === "board" ? "board" : "all" } : {}),
+      // Only Directors make an action board-only (the database checks too).
+      ...(fd.has("visibility") && (await supabase.rpc("_transition_director")).data === true
+        ? { visibility: str(fd, "visibility") === "board" ? "board" : "all" }
+        : {}),
     });
   }
 
