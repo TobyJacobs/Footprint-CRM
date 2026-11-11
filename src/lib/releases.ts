@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.85.2",
+    date: "2026-11-11",
+    title: "Tidier online quotes",
+    changes: ["On a quote the customer views online, the Happy to go ahead box and the messages above it are now exactly as wide as the quote, so everything lines up."],
+  },
+  {
     version: "0.85.1",
     date: "2026-11-11",
     title: "Friendlier thank-you on accepted quotes",
