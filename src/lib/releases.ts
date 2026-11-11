@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.84.0",
+    date: "2026-11-11",
+    title: "Colours on the order progress bar",
+    changes: [
+      "Suppliers ordered turns amber once items are ordered from suppliers (waiting for goods, with how many purchase orders are received) and green once all the goods are in.",
+      "Invoiced turns amber when the order is part invoiced or not everything has been paid, and green saying Paid once every invoice is paid.",
+    ],
+  },
+  {
     version: "0.83.0",
     date: "2026-11-11",
     title: "Purchasing summary",

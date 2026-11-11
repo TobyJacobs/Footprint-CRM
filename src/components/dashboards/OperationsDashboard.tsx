@@ -51,8 +51,8 @@ export default async function OperationsDashboard() {
     ? await Promise.all([
         supabase.from("projects").select("number, sales_document_id").in("sales_document_id", ids),
         supabase.from("design_jobs").select("stage, sales_order_id").in("sales_order_id", ids),
-        supabase.from("purchase_orders").select("sales_document_id").in("sales_document_id", ids),
-        supabase.from("sales_documents").select("number, subtotal, source_document_id").eq("doc_type", "invoice").neq("status", "void").in("source_document_id", ids),
+        supabase.from("purchase_orders").select("sales_document_id, status").in("sales_document_id", ids),
+        supabase.from("sales_documents").select("number, status, subtotal, source_document_id").eq("doc_type", "invoice").neq("status", "void").in("source_document_id", ids),
       ])
     : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
   const orders = (openOrders ?? []).map((o) => {
@@ -63,7 +63,7 @@ export default async function OperationsDashboard() {
         project: (projects ?? []).find((p) => p.sales_document_id === o.id) ?? null,
         projectNotNeeded: !!o.project_not_needed,
         designJobs: (jobs ?? []).filter((j) => j.sales_order_id === o.id),
-        poCount: (pos ?? []).filter((p) => p.sales_document_id === o.id).length,
+        pos: (pos ?? []).filter((p) => p.sales_document_id === o.id),
         invoices: mine,
         invoicedNet: mine.reduce((sum, i) => sum + Number(i.subtotal), 0),
         orderNet: Number(o.subtotal),
