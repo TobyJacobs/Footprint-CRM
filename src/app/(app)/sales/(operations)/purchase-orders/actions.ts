@@ -20,6 +20,7 @@ type PoLine = {
   quantity: number;
   unit_cost: number;
   actual_unit_cost?: number | null;
+  bought_quantity?: number | null;
   tax_rate_id: string | null;
   tax_rate: number;
 };
@@ -34,6 +35,7 @@ function parseLines(fd: FormData): PoLine[] | null {
       quantity: Number(l.quantity) || 0,
       unit_cost: Number(l.unit_cost) || 0,
       actual_unit_cost: l.actual_unit_cost === null || l.actual_unit_cost === undefined || l.actual_unit_cost === "" || !(Number(l.actual_unit_cost) >= 0) ? null : Number(l.actual_unit_cost),
+      bought_quantity: l.bought_quantity === null || l.bought_quantity === undefined || l.bought_quantity === "" || !(Number(l.bought_quantity) >= 0) ? null : Number(l.bought_quantity),
       tax_rate_id: typeof l.tax_rate_id === "string" && l.tax_rate_id ? l.tax_rate_id : null,
       tax_rate: Math.max(0, Number(l.tax_rate) || 0),
     }));
@@ -149,23 +151,88 @@ export async function deletePurchaseOrder(poId: string) {
   redirect("/sales/purchase-orders?deleted=1");
 }
 
-// What each line actually cost us (DJ, 11 November 2026). Blank = not known yet.
+// What each line actually cost us and how many we bought (DJ, 11 November
+// 2026). Blank cost = not known yet; blank quantity = as ordered.
 export async function savePoActualCosts(poId: string, fd: FormData) {
   await requirePermission("quotes", "edit");
   const back = `/sales/purchase-orders/${poId}`;
   const supabase = await createClient();
-  const { data: lines } = await supabase.from("purchase_order_lines").select("id").eq("purchase_order_id", poId);
+  const { data: lines } = await supabase.from("purchase_order_lines").select("id, quantity").eq("purchase_order_id", poId);
+  const amount = (raw: FormDataEntryValue | null) => {
+    const text = String(raw ?? "").trim().replace(/^£/, "");
+    return text === "" ? null : Number(text);
+  };
   for (const l of lines ?? []) {
-    const raw = fd.get(`actual:${l.id}`);
-    if (raw === null) continue;
-    const text = String(raw).trim().replace(/^£/, "");
-    const value = text === "" ? null : Number(text);
-    if (value !== null && !(Number.isFinite(value) && value >= 0)) fail(back, "Please enter costs as amounts in pounds, e.g. 12.50");
-    const { error } = await supabase.from("purchase_order_lines").update({ actual_unit_cost: value }).eq("id", l.id).eq("purchase_order_id", poId);
+    const patch: Record<string, number | null> = {};
+    if (fd.has(`actual:${l.id}`)) {
+      const value = amount(fd.get(`actual:${l.id}`));
+      if (value !== null && !(Number.isFinite(value) && value >= 0)) fail(back, "Please enter costs as amounts in pounds, e.g. 12.50");
+      patch.actual_unit_cost = value;
+    }
+    if (fd.has(`bought:${l.id}`)) {
+      const qty = amount(fd.get(`bought:${l.id}`));
+      if (qty !== null && !(Number.isFinite(qty) && qty >= 0)) fail(back, "Please enter the quantity bought as a number");
+      // The same as ordered counts as "as ordered".
+      patch.bought_quantity = qty === null || qty === Number(l.quantity) ? null : qty;
+    }
+    if (!Object.keys(patch).length) continue;
+    const { error } = await supabase.from("purchase_order_lines").update(patch).eq("id", l.id).eq("purchase_order_id", poId);
     if (error) fail(back, error.message);
   }
   revalidatePath("/sales", "layout");
   redirect(`${back}?saved=1#costs`);
+}
+
+// Order what a supplier couldn't supply from another supplier (DJ, 11 November
+// 2026): a new draft PO with each short line's missing quantity.
+export async function raiseShortfallPo(poId: string, fd: FormData) {
+  await requirePermission("quotes", "edit");
+  const back = `/sales/purchase-orders/${poId}`;
+  const supplierId = str(fd, "supplier_id");
+  if (!supplierId || !/^[0-9a-f-]{36}$/i.test(supplierId)) fail(back, "Please choose a supplier for the shortfall");
+  const supabase = await createClient();
+  const [{ data: po }, { data: lines }] = await Promise.all([
+    supabase.from("purchase_orders").select("id, number, sales_document_id, customer_id, owner_id, expected_date, deliver_to").eq("id", poId).single(),
+    supabase.from("purchase_order_lines").select("product_id, description, quantity, bought_quantity, unit_cost, tax_rate_id, tax_rate").eq("purchase_order_id", poId).order("position"),
+  ]);
+  if (!po) fail(back, "Purchase order not found");
+  const short: PoLine[] = (lines ?? [])
+    .filter((l) => l.bought_quantity !== null && Number(l.bought_quantity) < Number(l.quantity))
+    .map((l) => ({
+      product_id: l.product_id,
+      description: l.description,
+      quantity: Math.round((Number(l.quantity) - Number(l.bought_quantity)) * 1000) / 1000,
+      unit_cost: Number(l.unit_cost),
+      tax_rate_id: l.tax_rate_id,
+      tax_rate: Number(l.tax_rate),
+    }));
+  if (!short.length) fail(back, "Nothing is short on this purchase order");
+  let number: string;
+  try {
+    number = await nextPoNumber();
+  } catch (e) {
+    fail(back, e instanceof Error ? e.message : "Couldn't get a PO number");
+  }
+  const { data: created, error } = await supabase
+    .from("purchase_orders")
+    .insert({
+      number,
+      status: "draft",
+      supplier_id: supplierId,
+      sales_document_id: po.sales_document_id,
+      customer_id: po.customer_id,
+      owner_id: po.owner_id,
+      expected_date: po.expected_date,
+      deliver_to: po.deliver_to,
+      internal_notes: `Shortfall from ${po.number}`,
+    })
+    .select("id")
+    .single();
+  if (error) fail(back, error.message);
+  const lineError = await replaceLines(created.id, short);
+  if (lineError) fail(back, lineError);
+  revalidatePath("/sales", "layout");
+  redirect(`/sales/purchase-orders/${created.id}?saved=1`);
 }
 
 // "Ordered manually": placed by phone, website, in person… instead of email

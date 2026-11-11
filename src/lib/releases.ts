@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.82.0",
+    date: "2026-11-11",
+    title: "Quantity bought on purchase orders",
+    changes: [
+      "Purchase order lines have a Qty bought box next to the quantity ordered, for when a supplier can't supply them all (e.g. only 5 of 10 in stock). The line shows how many are short, and the bought-for total and difference use the quantity actually bought.",
+      "When anything is short, Order the shortfall lets you pick another supplier and makes a new draft purchase order for just the missing quantities, linked to the same sales order.",
+    ],
+  },
+  {
     version: "0.81.0",
     date: "2026-11-11",
     title: "Should cost vs bought for on purchase orders",
