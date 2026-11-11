@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Minus, X } from "lucide-react";
+import { Check, Clock, Minus, X } from "lucide-react";
 import DesignJobsPanel from "@/components/DesignJobsPanel";
 import { Badge, Card, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { gbp, longDate } from "@/lib/customers/display";
@@ -24,12 +24,19 @@ export function StageBar({ stages, states, cancelled, label = "Order stage" }: S
       <ol aria-label={label} className={`grid gap-2 sm:grid-cols-3 ${stages.length > 4 ? "lg:grid-cols-6" : "lg:grid-cols-4"}`}>
         {stages.map((s, i) => {
           const state = states[i];
+          // Pending acceptance (amber) and Accepted (green) on quotes.
+          const pending = s.tone === "pending" && state === "current";
+          const accepted = s.tone === "accepted" && state === "done";
           const body = (
             <>
               <span className="flex items-center gap-2 font-bold">
                 <span
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${
-                    state === "done"
+                    accepted
+                      ? "bg-green-600 text-white"
+                      : pending
+                        ? "bg-fp-amber text-fp-dark"
+                        : state === "done"
                       ? "bg-fp-teal-deep text-white"
                       : state === "current"
                         ? "bg-fp-pink text-white"
@@ -38,7 +45,9 @@ export function StageBar({ stages, states, cancelled, label = "Order stage" }: S
                           : "border border-fp-border"
                   }`}
                 >
-                  {state === "done" ? (
+                  {pending ? (
+                    <Clock size={12} aria-hidden />
+                  ) : state === "done" ? (
                     <Check size={12} aria-hidden />
                   ) : state === "skipped" ? (
                     <Minus size={12} aria-hidden />
@@ -51,7 +60,9 @@ export function StageBar({ stages, states, cancelled, label = "Order stage" }: S
                 {s.label}
               </span>
               <span className="mt-1 block text-xs">
-                {state === "current" ? (
+                {pending ? (
+                  <strong className="text-fp-dark">{s.note}</strong>
+                ) : state === "current" ? (
                   <>
                     <strong className="text-fp-pink">Now</strong>
                     {s.note ? ` · ${s.note}` : ""}
@@ -72,7 +83,11 @@ export function StageBar({ stages, states, cancelled, label = "Order stage" }: S
               key={s.label}
               aria-current={state === "current" ? "step" : undefined}
               className={`rounded-md border-2 text-sm ${
-                state === "done"
+                accepted
+                  ? "border-green-600/40 bg-green-50 text-green-800"
+                  : pending
+                    ? "border-fp-amber bg-fp-amber/15 shadow-sm"
+                    : state === "done"
                   ? "border-fp-teal-deep/30 bg-fp-teal/10"
                   : state === "current"
                     ? "border-fp-pink bg-fp-pink/5 shadow-sm"
