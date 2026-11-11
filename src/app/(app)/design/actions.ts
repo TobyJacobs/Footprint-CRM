@@ -58,15 +58,26 @@ export async function saveJob(jobId: string | null, fd: FormData) {
   if (user.can("design", "edit")) fields.stage = stage;
 
   if (!jobId) {
-    // Every new job is started from a project (the owner's rule, 20 October
-    // 2026). Its customer and sales order come from the project, set once.
+    // A new job is started from a project or a sales order, neither needing
+    // the other (DJ, 11 November 2026; before, it had to be a project). Its
+    // customer (and the other link, if there is one) is set once from it.
     const projectId = uuid(str(fd, "project_id"));
-    if (!projectId) fail("/design/new", "Design jobs are started from a project. Please choose one.");
-    const { data: project } = await supabase.from("projects").select("id, customer_id, sales_document_id").eq("id", projectId).maybeSingle();
-    if (!project) fail("/design/new", "That project couldn't be found");
-    fields.project_id = project.id;
-    fields.customer_id = project.customer_id;
-    fields.sales_order_id = project.sales_document_id;
+    const orderId = uuid(str(fd, "sales_order_id"));
+    if (projectId) {
+      const { data: project } = await supabase.from("projects").select("id, customer_id, sales_document_id").eq("id", projectId).maybeSingle();
+      if (!project) fail("/design/new", "That project couldn't be found");
+      fields.project_id = project.id;
+      fields.customer_id = project.customer_id;
+      fields.sales_order_id = project.sales_document_id;
+    } else if (orderId) {
+      const { data: order } = await supabase.from("sales_documents").select("id, customer_id").eq("id", orderId).eq("doc_type", "sales_order").maybeSingle();
+      if (!order) fail("/design/new", "That sales order couldn't be found");
+      fields.sales_order_id = order.id;
+      fields.customer_id = order.customer_id;
+      fields.project_id = null;
+    } else {
+      fail("/design/new", "Please choose the project or sales order this job is for");
+    }
 
     const { data, error } = await supabase.from("design_jobs").insert(fields).select("id").single();
     if (error) fail(back, error.message);
