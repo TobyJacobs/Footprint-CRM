@@ -19,6 +19,7 @@ type PoLine = {
   description: string;
   quantity: number;
   unit_cost: number;
+  actual_unit_cost?: number | null;
   tax_rate_id: string | null;
   tax_rate: number;
 };
@@ -32,6 +33,7 @@ function parseLines(fd: FormData): PoLine[] | null {
       description: String(l.description ?? "").slice(0, 5000),
       quantity: Number(l.quantity) || 0,
       unit_cost: Number(l.unit_cost) || 0,
+      actual_unit_cost: l.actual_unit_cost === null || l.actual_unit_cost === undefined || l.actual_unit_cost === "" || !(Number(l.actual_unit_cost) >= 0) ? null : Number(l.actual_unit_cost),
       tax_rate_id: typeof l.tax_rate_id === "string" && l.tax_rate_id ? l.tax_rate_id : null,
       tax_rate: Math.max(0, Number(l.tax_rate) || 0),
     }));
@@ -145,6 +147,25 @@ export async function deletePurchaseOrder(poId: string) {
   if (error) fail(`/sales/purchase-orders/${poId}`, error.message);
   revalidatePath("/sales", "layout");
   redirect("/sales/purchase-orders?deleted=1");
+}
+
+// What each line actually cost us (DJ, 11 November 2026). Blank = not known yet.
+export async function savePoActualCosts(poId: string, fd: FormData) {
+  await requirePermission("quotes", "edit");
+  const back = `/sales/purchase-orders/${poId}`;
+  const supabase = await createClient();
+  const { data: lines } = await supabase.from("purchase_order_lines").select("id").eq("purchase_order_id", poId);
+  for (const l of lines ?? []) {
+    const raw = fd.get(`actual:${l.id}`);
+    if (raw === null) continue;
+    const text = String(raw).trim().replace(/^£/, "");
+    const value = text === "" ? null : Number(text);
+    if (value !== null && !(Number.isFinite(value) && value >= 0)) fail(back, "Please enter costs as amounts in pounds, e.g. 12.50");
+    const { error } = await supabase.from("purchase_order_lines").update({ actual_unit_cost: value }).eq("id", l.id).eq("purchase_order_id", poId);
+    if (error) fail(back, error.message);
+  }
+  revalidatePath("/sales", "layout");
+  redirect(`${back}?saved=1#costs`);
 }
 
 // "Ordered manually": placed by phone, website, in person… instead of email

@@ -11,7 +11,7 @@ import { poOrderMethods, poOrderedViaLabel, poStatusLabel, statusToneFor } from 
 import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import EmailStatus from "@/components/EmailStatus";
 import { createClient } from "@/lib/supabase/server";
-import { deletePurchaseOrder, markPoOrderedManually, setPurchaseOrderStatus } from "../actions";
+import { deletePurchaseOrder, markPoOrderedManually, savePoActualCosts, setPurchaseOrderStatus } from "../actions";
 import { sendPurchaseOrderEmail } from "../email-actions";
 
 export async function generateMetadata(props: PageProps<"/sales/purchase-orders/[poId]">): Promise<Metadata> {
@@ -59,6 +59,12 @@ export default async function PurchaseOrderPage(props: PageProps<"/sales/purchas
   const owner = po.owner as unknown as { full_name: string | null; email: string } | null;
   const orderer = po.orderer as unknown as { full_name: string | null; email: string } | null;
   const orderedVia = poOrderedViaLabel(po.ordered_via);
+  // Actual costs (what we bought it for) against what it should cost.
+  const canEnterCosts = canEdit && po.status !== "cancelled";
+  const withActual = lines.filter((l) => l.actual_line_net !== null);
+  const actualCount = withActual.length;
+  const actualNet = Math.round(withActual.reduce((sum, l) => sum + (l.actual_line_net ?? 0), 0) * 100) / 100;
+  const actualDiff = Math.round(withActual.reduce((sum, l) => sum + (l.actual_line_net ?? 0) - l.line_net, 0) * 100) / 100;
   const finished = ["received", "closed", "cancelled"].includes(po.status);
   const company = settings?.company_name ?? "Footprint Group";
   const emailed = typeof sp.emailed === "string" ? sp.emailed : null;
@@ -237,36 +243,83 @@ ${company}`;
       )}
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
+        {/* What each line should cost vs what we bought it for (DJ, 11 November 2026). */}
         <Card title="Lines">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] text-left text-sm">
-              <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
-                <tr>
-                  <th className="py-2 pr-3 font-semibold">Description</th>
-                  <th className="py-2 pr-3 text-right font-semibold">Qty</th>
-                  <th className="py-2 pr-3 text-right font-semibold">Cost</th>
-                  <th className="py-2 pr-3 text-right font-semibold">VAT</th>
-                  <th className="py-2 text-right font-semibold">Net</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lines.map((l) => (
-                  <tr key={l.key} className="border-b border-fp-border align-top last:border-0">
-                    <td className="whitespace-pre-line py-2 pr-3">{l.description}</td>
-                    <td className="py-2 pr-3 text-right">{l.quantity}</td>
-                    <td className="py-2 pr-3 text-right">{gbp(l.unit_cost)}</td>
-                    <td className="py-2 pr-3 text-right">{l.tax_rate}%</td>
-                    <td className="py-2 text-right font-semibold">{gbp(l.line_net)}</td>
+          <div id="costs" className="-mt-2" />
+          <form action={savePoActualCosts.bind(null, poId)}>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-left text-sm">
+                <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
+                  <tr>
+                    <th className="py-2 pr-3 font-semibold">Description</th>
+                    <th className="py-2 pr-3 text-right font-semibold">Qty</th>
+                    <th className="py-2 pr-3 text-right font-semibold">Should cost (each)</th>
+                    <th className="py-2 pr-3 text-right font-semibold">Bought for (each)</th>
+                    <th className="py-2 pr-3 text-right font-semibold">VAT</th>
+                    <th className="py-2 pr-3 text-right font-semibold">Net</th>
+                    <th className="py-2 text-right font-semibold">Difference</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <dl className="ml-auto mt-4 grid max-w-xs grid-cols-2 gap-x-6 gap-y-1 text-sm">
-            <dt className="text-fp-dark/75">Subtotal</dt>
+                </thead>
+                <tbody>
+                  {lines.map((l) => {
+                    const diff = l.actual_line_net === null ? null : Math.round((l.actual_line_net - l.line_net) * 100) / 100;
+                    return (
+                      <tr key={l.key} className="border-b border-fp-border align-top last:border-0">
+                        <td className="whitespace-pre-line py-2 pr-3">{l.description}</td>
+                        <td className="py-2 pr-3 text-right">{l.quantity}</td>
+                        <td className="py-2 pr-3 text-right">{gbp(l.unit_cost)}</td>
+                        <td className="py-2 pr-3 text-right">
+                          {canEnterCosts ? (
+                            <input
+                              name={`actual:${l.key}`}
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              defaultValue={l.actual_unit_cost ?? ""}
+                              aria-label={`What we bought ${l.description.split("\n")[0]} for, each`}
+                              className={`${inputClass} w-28 text-right`}
+                            />
+                          ) : l.actual_unit_cost === null ? (
+                            <span className="text-fp-mid">—</span>
+                          ) : (
+                            gbp(l.actual_unit_cost)
+                          )}
+                        </td>
+                        <td className="py-2 pr-3 text-right">{l.tax_rate}%</td>
+                        <td className="py-2 pr-3 text-right font-semibold">{gbp(l.line_net)}</td>
+                        <td className={`py-2 text-right font-semibold ${diff === null || diff === 0 ? "" : diff > 0 ? "text-fp-error" : "text-fp-teal-deep"}`}>
+                          {diff === null ? <span className="font-normal text-fp-mid">—</span> : diff === 0 ? "None" : `${diff > 0 ? "+" : "−"}${gbp(Math.abs(diff))}`}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {canEnterCosts && lines.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button type="submit" className={secondaryButton}>
+                  Save what we paid
+                </button>
+                <span className="text-xs text-fp-mid">Enter the price each, before VAT, from the supplier&apos;s bill. Leave blank if not known yet.</span>
+              </div>
+            )}
+          </form>
+          <dl className="ml-auto mt-4 grid max-w-sm grid-cols-2 gap-x-6 gap-y-1 text-sm">
+            <dt className="text-fp-dark/75">Should cost (before VAT)</dt>
             <dd className="text-right">{gbp(Number(po.subtotal))}</dd>
-            <dt className="text-fp-dark/75">VAT</dt>
-            <dd className="text-right">{gbp(Number(po.vat_total))}</dd>
+            {actualCount > 0 && (
+              <>
+                <dt className="text-fp-dark/75">Bought for (before VAT){actualCount < lines.length ? ` · ${actualCount} of ${lines.length} lines` : ""}</dt>
+                <dd className="text-right">{gbp(actualNet)}</dd>
+                <dt className="font-semibold">Difference</dt>
+                <dd className={`text-right font-semibold ${actualDiff > 0 ? "text-fp-error" : actualDiff < 0 ? "text-fp-teal-deep" : ""}`}>
+                  {actualDiff === 0 ? "None" : `${actualDiff > 0 ? "+" : "−"}${gbp(Math.abs(actualDiff))} ${actualDiff > 0 ? "over" : "under"}`}
+                </dd>
+              </>
+            )}
+            <dt className="mt-2 text-fp-dark/75">VAT</dt>
+            <dd className="mt-2 text-right">{gbp(Number(po.vat_total))}</dd>
             <dt className="font-bold">Total</dt>
             <dd className="text-right font-bold">{gbp(Number(po.total))}</dd>
           </dl>

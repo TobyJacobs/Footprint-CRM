@@ -12,6 +12,8 @@ export type PoEditorLine = {
   description: string;
   quantity: number;
   unit_cost: number;
+  // Kept as it is when the PO is edited (entered on the PO page).
+  actual_unit_cost?: number | null;
   tax_rate_id: string | null;
   tax_rate: number;
 };
@@ -61,6 +63,7 @@ export default function PoLinesEditor({ initialLines, taxRates }: { initialLines
               description: l.description,
               quantity: l.quantity,
               unit_cost: l.unit_cost,
+              actual_unit_cost: l.actual_unit_cost ?? null,
               tax_rate_id: l.tax_rate_id,
               tax_rate: l.tax_rate,
             })),
@@ -72,7 +75,7 @@ export default function PoLinesEditor({ initialLines, taxRates }: { initialLines
             <tr>
               <th className="py-2 pr-2 font-semibold">Item</th>
               <th className="w-20 py-2 pr-2 font-semibold">Qty</th>
-              <th className="w-28 py-2 pr-2 font-semibold">Our cost £</th>
+              <th className="w-28 py-2 pr-2 font-semibold">Should cost £ (each)</th>
               <th className="w-36 py-2 pr-2 font-semibold">VAT</th>
               <th className="w-28 py-2 pr-2 text-right font-semibold">Net</th>
               <th className="w-8" />
