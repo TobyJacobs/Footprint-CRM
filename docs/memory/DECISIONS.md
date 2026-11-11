@@ -391,3 +391,5 @@ This refines the "Supabase, London region" part of the technical foundations dec
 - **11 November 2026: Credit status wording.** Options are ON STOP, Upfront payment, Net 7/14/30/60, See notes. Customers on "No Credit Available" became "Upfront payment"; "Direct Debit Service Available" was cleared, because Direct Debit has its own field (owner's choice).
 
 - **11 November 2026: Board-only FootprintAI actions are for the Directors role only.** Not admins (every user is an admin), not the invite list, not the action's owner unless they're a Director. Enforced in the database.
+
+- **11 November 2026: Design jobs can start from a sales order OR a project** (DJ). Replaces the 20 October 2026 rule that design jobs are always started from a project. An order without a project links the job straight to the order.
