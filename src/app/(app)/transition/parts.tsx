@@ -233,7 +233,7 @@ export function ActionFields({ data, a, defaultDue }: { data: TransitionData; a?
           </select>
         </label>
       </div>
-      {data.access === "full" && (
+      {data.isDirector && (
         <label className="grid gap-1">
           <span className="font-semibold">Who can see it</span>
           <select name="visibility" defaultValue={a?.visibility ?? "all"} className={inputClass}>

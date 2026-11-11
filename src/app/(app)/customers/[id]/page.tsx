@@ -9,7 +9,7 @@ import { Badge, Card, Notice, Select, inputClass, primaryButton, secondaryButton
 import { requirePermission } from "@/lib/auth";
 import { address, gbp, longDate, personName, shortDateTime, statusTone, toLocalInput } from "@/lib/customers/display";
 import { loadGlance } from "@/lib/customers/glance";
-import { activityKinds, isCreditWarning } from "@/lib/customers/options";
+import { activityKinds, activityLabel, isCreditWarning } from "@/lib/customers/options";
 import { projectStatusLabel, projectTone } from "@/lib/projects/options";
 import { quoteKinds } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
@@ -215,7 +215,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                 <Detail label="Last activity">
                   {activity?.[0] ? (
                     <a href="#timeline" className="hover:text-fp-pink">
-                      {activityKinds.find((k) => k.value === activity[0].kind)?.label ?? activity[0].kind} · {shortDateTime(activity[0].occurred_at)}
+                      {activityLabel(activity[0].kind)} · {shortDateTime(activity[0].occurred_at)}
                       {staffName(activity[0].created_by) && ` · ${staffName(activity[0].created_by)}`}
                     </a>
                   ) : (
@@ -484,7 +484,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                   {(activity ?? []).map((a) => (
                     <li key={a.id} className="border-l-2 border-fp-pink/40 pl-3">
                       <p className="text-xs text-fp-mid">
-                        {activityKinds.find((k) => k.value === a.kind)?.label ?? a.kind} · {shortDateTime(a.occurred_at)}
+                        {activityLabel(a.kind)} · {shortDateTime(a.occurred_at)}
                         {staffName(a.created_by) && ` · ${staffName(a.created_by)}`}
                         {contactName(a.contact_id) && ` · with ${contactName(a.contact_id)}`}
                       </p>

@@ -174,3 +174,8 @@ export const activityKinds = [
   { value: "email", label: "Email" },
   { value: "meeting", label: "Meeting" },
 ] as const;
+
+// How a timeline entry's kind is shown. "system" entries are written
+// automatically (orders from accepted quotes, recurring invoices…).
+export const activityLabel = (kind: string) =>
+  kind === "system" ? "Automatic" : (activityKinds.find((k) => k.value === kind)?.label ?? kind);

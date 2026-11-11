@@ -78,6 +78,8 @@ export type TransitionData = {
   // While an admin previews another role, board-only actions are hidden here
   // too (the database still sees the admin).
   hidesBoard: boolean;
+  // Only the Directors role sees board-only actions (owner, 11 November 2026).
+  isDirector: boolean;
   streams: Stream[];
   phases: Phase[];
   weeks: Week[];
@@ -90,7 +92,7 @@ export type TransitionData = {
 export async function loadTransition(access: TransitionAccess, previewRole: { name: string } | null): Promise<TransitionData> {
   await connection();
   const supabase = await createClient();
-  const [streams, phases, weeks, gates, actions, people, me] = await Promise.all([
+  const [streams, phases, weeks, gates, actions, people, me, director] = await Promise.all([
     supabase.from("transition_streams").select("*").order("sort"),
     supabase.from("transition_phases").select("*").order("number"),
     supabase.from("transition_weeks").select("*").order("number"),
@@ -98,11 +100,13 @@ export async function loadTransition(access: TransitionAccess, previewRole: { na
     supabase.from("transition_actions").select("*").order("due_date").order("sort"),
     supabase.rpc("transition_people"),
     supabase.rpc("_my_directory_id"),
+    supabase.rpc("_transition_director"),
   ]);
   const hidesBoard = !!previewRole && previewRole.name !== "Directors";
   return {
     access: hidesBoard && access === "full" ? "member" : access,
     hidesBoard,
+    isDirector: director.data === true && !hidesBoard,
     streams: (streams.data ?? []) as Stream[],
     phases: (phases.data ?? []) as Phase[],
     weeks: (weeks.data ?? []) as Week[],
