@@ -2,8 +2,9 @@
 --
 -- Plain-English summary:
 -- * The order confirmation goes to the quote's contact. If that contact has no
---   email address saved, it now goes to the address the quote itself was
---   emailed to (the most recent one), instead of not being sent at all.
+--   email address saved, it now goes to the customer's own email address, or
+--   else the address the quote itself was emailed to (the most recent one),
+--   instead of not being sent at all.
 -- * Everything else about the confirmation is unchanged.
 
 create or replace function public.order_confirmation_details(p_key text, p_token uuid)
@@ -33,9 +34,11 @@ begin
     'title', o.title, 'customer_reference', o.customer_reference, 'customer_id', o.customer_id,
     'customer_name', (select c.name from public.customers c where c.id = o.customer_id),
     'contact_first_name', (select p.first_name from public.contacts p where p.id = o.contact_id),
-    -- The contact's email, or else the first address the quote was emailed to.
+    -- The contact's email, else the customer's, else the first address the
+    -- quote was emailed to.
     'contact_email', coalesce(
       nullif(trim((select p.email from public.contacts p where p.id = o.contact_id and p.erased_at is null)), ''),
+      nullif(trim((select c.email from public.customers c where c.id = o.customer_id and c.erased_at is null)), ''),
       (select x from public.email_log e
          cross join lateral regexp_split_to_table(trim(e.to_addresses), '[,;[:space:]]+') x
         where e.sales_document_id = q.id and e.status in ('sent', 'test') and x like '%_@_%'

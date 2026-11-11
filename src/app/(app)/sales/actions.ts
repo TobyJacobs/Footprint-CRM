@@ -227,16 +227,18 @@ export async function saveDocument(docType: DocType, documentId: string | null, 
   revalidatePath("/sales", "layout");
 
   // "Send quote" (new) or "Save and resend" (editing, DJ 9 November 2026):
-  // email it straight away to the contact, with its PDF.
+  // email it straight away to the contact (or, if they have no email, the
+  // customer's own address), with its PDF.
   const resend = !!documentId && str(fd, "intent") === "resend";
   if (docType === "quote" && ((!documentId && str(fd, "intent") === "send") || resend)) {
     const [{ data: doc }, { data: settings }] = await Promise.all([
-      supabase.from("sales_documents").select("number, total, quote_kind, contacts(first_name, email)").eq("id", id!).single(),
+      supabase.from("sales_documents").select("number, total, quote_kind, contacts(first_name, email), customers!sales_documents_customer_id_fkey(email)").eq("id", id!).single(),
       supabase.from("company_settings").select("company_name").single(),
     ]);
     const contact = doc?.contacts as unknown as { first_name: string | null; email: string | null } | null;
-    const email = contact?.email?.trim() ?? "";
-    // No (valid) contact email: it stays a draft and the email box opens.
+    const customerEmail = (doc?.customers as unknown as { email: string | null } | null)?.email?.trim() ?? "";
+    const email = contact?.email?.trim() || customerEmail;
+    // No (valid) email for the contact or customer: it stays a draft and the email box opens.
     if (!doc || !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(email)) redirect(`/sales/${id}?saved=1&noemail=1#email`);
     const { subject, message } = documentEmailText({
       type: "quote",
