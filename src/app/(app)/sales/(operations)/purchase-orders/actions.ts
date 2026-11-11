@@ -235,6 +235,22 @@ export async function raiseShortfallPo(poId: string, fd: FormData) {
   redirect(`/sales/purchase-orders/${created.id}?saved=1`);
 }
 
+// The courier's tracking link and an optional note (DJ, 11 November 2026).
+// Only ordinary web links; "dpd.co.uk/…" gets https:// added.
+export async function savePoTracking(poId: string, fd: FormData) {
+  await requirePermission("quotes", "edit");
+  const back = `/sales/purchase-orders/${poId}`;
+  let url = str(fd, "tracking_url")?.trim() ?? null;
+  if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
+  if (url && (!/^https?:\/\/[^\s]+$/i.test(url) || url.length > 1000)) fail(back, "Please paste the tracking link as a web address, e.g. https://track.dpd.co.uk/…");
+  const note = str(fd, "tracking_note")?.slice(0, 200) ?? null;
+  const supabase = await createClient();
+  const { error } = await supabase.from("purchase_orders").update({ tracking_url: url, tracking_note: note }).eq("id", poId);
+  if (error) fail(back, error.message);
+  revalidatePath("/sales", "layout");
+  redirect(`${back}?saved=1#tracking`);
+}
+
 // "Ordered manually": placed by phone, website, in person… instead of email
 // (DJ, 11 November 2026). Marks it sent and records how, who and when.
 export async function markPoOrderedManually(poId: string, fd: FormData) {

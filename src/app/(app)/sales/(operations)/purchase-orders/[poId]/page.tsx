@@ -11,7 +11,10 @@ import { poOrderMethods, poOrderedViaLabel, poStatusLabel, statusToneFor } from 
 import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import EmailStatus from "@/components/EmailStatus";
 import { createClient } from "@/lib/supabase/server";
-import { deletePurchaseOrder, markPoOrderedManually, raiseShortfallPo, savePoActualCosts, setPurchaseOrderStatus } from "../actions";
+import { deletePurchaseOrder, markPoOrderedManually, raiseShortfallPo, savePoActualCosts, savePoTracking, setPurchaseOrderStatus } from "../actions";
+import { poStages } from "@/lib/sales/stages";
+import { StageBar } from "../../../[id]/SalesOrderSections";
+import { ExternalLink } from "lucide-react";
 import { sendPurchaseOrderEmail } from "../email-actions";
 
 export async function generateMetadata(props: PageProps<"/sales/purchase-orders/[poId]">): Promise<Metadata> {
@@ -132,6 +135,43 @@ ${company}`;
       </div>
 
       <Notice searchParams={sp} />
+
+      {/* Progress (DJ, 11 November 2026). */}
+      <div className="mb-6">
+        <StageBar
+          label="Purchase order progress"
+          {...poStages({ status: po.status, orderedVia, tracking: !!po.tracking_url, shortLines: shortLines.length })}
+        />
+      </div>
+
+      {/* Delivery tracking (DJ, 11 November 2026). */}
+      <div id="tracking" className="mb-6">
+        <Card title="Tracking">
+          {po.tracking_url ? (
+            <p className="mb-3 flex flex-wrap items-center gap-3 text-sm">
+              <a href={po.tracking_url} target="_blank" rel="noopener noreferrer" className={`${primaryButton} inline-flex items-center gap-2`}>
+                <ExternalLink size={14} aria-hidden /> Track delivery
+              </a>
+              {po.tracking_note && <span className="text-fp-dark/75">{po.tracking_note}</span>}
+            </p>
+          ) : (
+            <p className="mb-3 text-sm text-fp-mid">No tracking link yet.</p>
+          )}
+          {canEdit && po.status !== "cancelled" && (
+            <form action={savePoTracking.bind(null, poId)} className="grid gap-3 sm:grid-cols-[2fr_1fr_auto] sm:items-end">
+              <Field label="Tracking link">
+                <input name="tracking_url" type="text" inputMode="url" maxLength={1000} defaultValue={po.tracking_url ?? ""} className={inputClass} placeholder="https://track.dpd.co.uk/…" />
+              </Field>
+              <Field label="Courier or tracking number (optional)">
+                <input name="tracking_note" maxLength={200} defaultValue={po.tracking_note ?? ""} className={inputClass} placeholder="e.g. DPD 1550 1234 5678" />
+              </Field>
+              <button type="submit" className={secondaryButton}>
+                Save tracking
+              </button>
+            </form>
+          )}
+        </Card>
+      </div>
 
       {/* How it was ordered (DJ, 11 November 2026). */}
       {orderedVia && po.status !== "draft" && (

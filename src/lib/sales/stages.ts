@@ -138,5 +138,32 @@ export function quoteStages(q: { status: string; orderNumber: string | null; ord
   );
 }
 
+// Purchase orders (DJ, 11 November 2026): Raised → Ordered (amber while the
+// goods are awaited) → Goods received → Bill checked (green once closed).
+// A cancelled PO stops where it got to.
+export function poStages(po: { status: string; orderedVia?: string | null; tracking?: boolean; shortLines?: number }): Stages {
+  const ordered = ["sent", "received", "closed"].includes(po.status);
+  const received = ["received", "closed"].includes(po.status);
+  return lightUp(
+    [
+      { label: "Raised", note: null, done: true },
+      {
+        label: "Ordered",
+        note: po.status === "sent" ? `Waiting for goods${po.tracking ? " · tracking added" : ""}` : (po.orderedVia ?? null),
+        done: ordered,
+        tone: po.status === "sent" ? "pending" : undefined,
+      },
+      {
+        label: "Goods received",
+        note: received && po.shortLines ? `${po.shortLines} line${po.shortLines === 1 ? "" : "s"} short` : null,
+        done: received,
+        tone: received && po.shortLines ? "pending" : undefined,
+      },
+      { label: "Bill checked", note: po.status === "closed" ? "Closed" : null, done: po.status === "closed", tone: po.status === "closed" ? "complete" : undefined },
+    ],
+    po.status === "cancelled",
+  );
+}
+
 // The stage an order is at now, for lists (e.g. "Design").
 export const currentStage = (s: Stages) => s.stages[s.states.findIndex((x) => x === "current" || x === "stopped")]?.label ?? "Invoiced";

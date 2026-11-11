@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.87.0",
+    date: "2026-11-11",
+    title: "Purchase order progress and tracking",
+    changes: [
+      "Purchase orders have progress boxes like sales orders: Raised, Ordered (amber while you wait for the goods), Goods received (amber if anything was short) and Bill checked (green once closed).",
+      "A Tracking box on each purchase order: paste the courier's tracking link (and the courier or tracking number if you like), and a Track delivery button opens it.",
+    ],
+  },
+  {
     version: "0.86.0",
     date: "2026-11-11",
     title: "Amber for anything in progress",
