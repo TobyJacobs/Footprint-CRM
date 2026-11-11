@@ -12,13 +12,14 @@ import { ukToday } from "@/lib/dates";
 import { balanceDueDate, depositAvailable } from "@/lib/magazine-deposit";
 import { getAdvertTiming } from "@/lib/magazines";
 import { getDocumentLines } from "@/lib/sales/data";
+import { purchasingSummary } from "@/lib/sales/purchasing";
 import { docTypes, gpOverrideReasons, isDocType, isLockedRecord, lossReasons, marginPercent, marginText, poStatusLabel, quoteKindLabel, splitGpOverrideReason, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, markQuoteDeclined, requestAdvertArtwork, setDocumentStatus, setLineGpOverride, setProjectNotNeeded } from "../actions";
 import { createProjectForOrder } from "../../projects/actions";
 import EmailCard from "../EmailCard";
 import { orderStages, quoteStages } from "@/lib/sales/stages";
-import { AdvertArtworkSection, AdvertPaymentNote, AdvertPaymentSection, DesignSection, FinanceSummary, PartInvoiceForm, ProjectSection, PurchaseOrdersSection, StageBar, type AdvertArtwork, type OrderPo, type OrderProject } from "./SalesOrderSections";
+import { AdvertArtworkSection, AdvertPaymentNote, AdvertPaymentSection, DesignSection, FinanceSummary, PartInvoiceForm, ProjectSection, PurchaseOrdersSection, PurchasingSummary, StageBar, type AdvertArtwork, type OrderPo, type OrderProject } from "./SalesOrderSections";
 import { isCreditWarning } from "@/lib/customers/options";
 
 export async function generateMetadata(props: PageProps<"/sales/[id]">): Promise<Metadata> {
@@ -123,6 +124,34 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
 
   // Sales orders get their own layout (stage bar, finance, POs, design, project, comms).
   const isOrder = type === "sales_order";
+  // Purchasing summary (DJ, 11 November 2026): the order's items against its POs' lines.
+  let purchasing: ReturnType<typeof purchasingSummary> | null = null;
+  if (type === "sales_order") {
+    const productIds = [...new Set(lines.map((l) => l.product_id).filter((v): v is string => !!v))];
+    const [{ data: poLines }, { data: products }] = await Promise.all([
+      (pos ?? []).length
+        ? supabase
+            .from("purchase_order_lines")
+            .select("product_id, description, quantity, bought_quantity, unit_cost, line_net, actual_line_net, purchase_orders!inner(status)")
+            .in("purchase_order_id", (pos ?? []).map((p) => p.id))
+        : Promise.resolve({ data: [] }),
+      productIds.length ? supabase.from("products").select("id, supplier_id").in("id", productIds) : Promise.resolve({ data: [] }),
+    ]);
+    const withSupplier = new Set((products ?? []).filter((p) => p.supplier_id).map((p) => p.id as string));
+    purchasing = purchasingSummary(
+      lines.map((l) => ({ product_id: l.product_id, description: l.description, quantity: l.quantity, boughtIn: !!l.product_id && withSupplier.has(l.product_id) })),
+      (poLines ?? []).map((l) => ({
+        product_id: l.product_id,
+        description: l.description,
+        quantity: Number(l.quantity),
+        bought_quantity: l.bought_quantity === null ? null : Number(l.bought_quantity),
+        unit_cost: Number(l.unit_cost),
+        line_net: Number(l.line_net),
+        actual_line_net: l.actual_line_net === null ? null : Number(l.actual_line_net),
+        status: (l.purchase_orders as unknown as { status: string }).status,
+      })),
+    );
+  }
   const orderPos: OrderPo[] = (pos ?? []).map((p) => ({
     id: p.id,
     number: p.number,
@@ -398,6 +427,14 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 items={advertArtwork}
                 canRequest={canEdit && doc.status !== "cancelled"}
                 request={(sizeId) => requestAdvertArtwork.bind(null, id, sizeId)}
+              />
+            </div>
+          )}
+          {purchasing && (
+            <div className="mt-6">
+              <PurchasingSummary
+                summary={purchasing}
+                raiseHref={canEdit && ["open", "completed", "invoiced"].includes(doc.status) ? `/sales/purchase-orders/raise?order=${id}` : null}
               />
             </div>
           )}
