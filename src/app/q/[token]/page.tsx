@@ -39,7 +39,9 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-fp-offwhite">
       <div className="bg-fp-gradient h-1" />
-      <main className="mx-auto max-w-4xl px-4 py-8">{children}</main>
+      {/* As wide as the quote itself (A4, 210mm), so the boxes around it
+          ("Happy to go ahead?", banners) line up with it (DJ, 11 November 2026). */}
+      <main className="mx-auto max-w-[calc(210mm+2rem)] px-4 py-8">{children}</main>
     </div>
   );
 }
