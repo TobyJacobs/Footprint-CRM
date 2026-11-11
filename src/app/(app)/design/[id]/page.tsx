@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { siteUrl } from "@/lib/site-url";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { FileText } from "lucide-react";
+import { Download, FileText } from "lucide-react";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import { Badge, Card, Notice, dangerButton, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { getCurrentUser, requirePermission } from "@/lib/auth";
@@ -172,6 +172,11 @@ export default async function DesignJobPage(props: PageProps<"/design/[id]">) {
                   {/* Signed links expire, so a plain img (not next/image) is right here. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={latest.url} alt={`Proof v${latest.version}`} className="max-h-96 rounded-md border border-fp-border object-contain" />
+                </a>
+              )}
+              {latest?.downloadUrl && (
+                <a href={latest.downloadUrl} className={`${secondaryButton} mb-4 inline-flex items-center gap-2`}>
+                  <Download size={14} aria-hidden /> Download proof v{latest.version}
                 </a>
               )}
               {proofs.length > 0 ? (
@@ -356,6 +361,12 @@ function FileList({ files, jobId, canDelete, nameOf }: { files: JobFile[]; jobId
               </p>
             </div>
           </div>
+          <div className="flex items-center gap-3">
+            {f.downloadUrl && (
+              <a href={f.downloadUrl} className="inline-flex items-center gap-1 text-xs font-semibold text-fp-teal-deep hover:underline">
+                <Download size={14} aria-hidden /> Download
+              </a>
+            )}
           {canDelete && (
             <form action={deleteFile.bind(null, jobId, f.id)}>
               <ConfirmSubmit message={`Delete ${f.name}?`} className="text-xs font-semibold text-fp-error hover:underline">
@@ -363,6 +374,7 @@ function FileList({ files, jobId, canDelete, nameOf }: { files: JobFile[]; jobId
               </ConfirmSubmit>
             </form>
           )}
+          </div>
         </li>
       ))}
     </ul>

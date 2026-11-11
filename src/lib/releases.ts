@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.90.0",
+    date: "2026-11-11",
+    title: "Download proofs",
+    changes: ["On a design job, every proof and brief file has a Download button that saves it under its own name, and there's a Download proof button under the latest proof."],
+  },
+  {
     version: "0.89.0",
     date: "2026-11-11",
     title: "Finance summary shows real costs",
