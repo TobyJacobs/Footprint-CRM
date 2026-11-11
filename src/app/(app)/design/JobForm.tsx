@@ -37,12 +37,12 @@ export default function JobForm({
       <Field label="Title" hint="e.g. “Van livery for Smith & Sons” or “Forget Me Not advert, half page”">
         <TextInput name="title" required defaultValue={values.title} />
       </Field>
-      {values.project_id ? (
-        // A new job takes its customer from its project.
+      {values.project_id || values.sales_order_id ? (
+        // A new job takes its customer from its project or sales order.
         <div className="grid gap-1 text-sm">
           <span className="font-semibold">Customer</span>
           <span>{values.customer?.name ?? "Footprint (internal)"}</span>
-          <span className="text-xs text-fp-mid">From the project.</span>
+          <span className="text-xs text-fp-mid">From the {values.project_id ? "project" : "sales order"}.</span>
         </div>
       ) : (
         <Field label="Customer" hint="Leave empty for Footprint's own work.">

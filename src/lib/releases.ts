@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.85.0",
+    date: "2026-11-11",
+    title: "Design jobs from an order or a project",
+    changes: [
+      "Create design job on a sales order now goes straight to the form, even if the order has no project. The job is linked to the order and its customer. You no longer have to create a project first.",
+      "Jobs can still be raised from a project, with or without a sales order. New design job on the Design board lets you choose a project or a sales order.",
+    ],
+  },
+  {
     version: "0.84.0",
     date: "2026-11-11",
     title: "Colours on the order progress bar",
