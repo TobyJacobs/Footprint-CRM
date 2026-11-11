@@ -389,3 +389,5 @@ This refines the "Supabase, London region" part of the technical foundations dec
 **Decision (owner, for DJ):** "100% should equal 2 × cost". Every margin % in FootprintOS is profit as a % of the cost: quote/order lines and totals, lists, products, sales overview, dashboards, reports, projects and time dashboard, all through `marginPercent` in lib/sales/options.ts. The line margin box sets the price from it (up to 100,000%). No cost → blank (not 100%). Targets may be over 100%; the existing 45% example target was set on the old (sell) basis and should be re-entered (~82% on cost). PR #113 (0.64.0).
 
 - **11 November 2026: Credit status wording.** Options are ON STOP, Upfront payment, Net 7/14/30/60, See notes. Customers on "No Credit Available" became "Upfront payment"; "Direct Debit Service Available" was cleared, because Direct Debit has its own field (owner's choice).
+
+- **11 November 2026: Board-only FootprintAI actions are for the Directors role only.** Not admins (every user is an admin), not the invite list, not the action's owner unless they're a Director. Enforced in the database.
