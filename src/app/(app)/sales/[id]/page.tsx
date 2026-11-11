@@ -15,7 +15,6 @@ import { getDocumentLines } from "@/lib/sales/data";
 import { docTypes, gpOverrideReasons, isDocType, isLockedRecord, lossReasons, marginPercent, marginText, poStatusLabel, quoteKindLabel, splitGpOverrideReason, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, markQuoteDeclined, requestAdvertArtwork, setDocumentStatus, setLineGpOverride, setProjectNotNeeded } from "../actions";
-import { raisePurchaseOrders } from "../(operations)/purchase-orders/actions";
 import { createProjectForOrder } from "../../projects/actions";
 import EmailCard from "../EmailCard";
 import { orderStages, quoteStages } from "@/lib/sales/stages";
@@ -408,7 +407,9 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
               pos={orderPos}
               raise={
                 canEdit && ["open", "completed", "invoiced"].includes(doc.status) ? (
-                  <ActionButton action={raisePurchaseOrders.bind(null, id)}>Raise POs</ActionButton>
+                  <Link href={`/sales/purchase-orders/raise?order=${id}`} className={secondaryButton}>
+                    Raise POs
+                  </Link>
                 ) : undefined
               }
             />

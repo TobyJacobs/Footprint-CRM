@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { bool, str } from "@/lib/forms";
-import { poStatuses } from "@/lib/sales/options";
+import { poOrderMethods, poStatuses } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 
 // Purchase orders and suppliers. Every action checks the "quotes"
@@ -147,11 +147,32 @@ export async function deletePurchaseOrder(poId: string) {
   redirect("/sales/purchase-orders?deleted=1");
 }
 
-// From a sales order: one draft PO per supplier, using each product's
-// supplier and our cost. Lines without a supplier are skipped.
-export async function raisePurchaseOrders(salesOrderId: string) {
+// "Ordered manually": placed by phone, website, in person… instead of email
+// (DJ, 11 November 2026). Marks it sent and records how, who and when.
+export async function markPoOrderedManually(poId: string, fd: FormData) {
+  const user = await requirePermission("quotes", "edit");
+  const back = `/sales/purchase-orders/${poId}`;
+  const via = str(fd, "ordered_via");
+  if (!via || !poOrderMethods.some((m) => m.value === via)) fail(back, "Please choose how it was ordered");
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("purchase_orders")
+    .update({ status: "sent", sent_at: new Date().toISOString(), ordered_via: via, ordered_note: str(fd, "ordered_note")?.slice(0, 500) ?? null, ordered_by: user.id })
+    .eq("id", poId)
+    .in("status", ["draft", "sent"])
+    .select("id");
+  if (error) fail(back, error.message);
+  if (!data?.length) fail(back, "This purchase order is finished");
+  revalidatePath("/sales", "layout");
+  redirect(`${back}?saved=1`);
+}
+
+// From a sales order: one draft PO per supplier. The supplier for each line is
+// picked on the Raise purchase orders page (DJ, 11 November 2026), starting
+// from the product's supplier; lines marked "Not needed" are left out.
+export async function raisePurchaseOrders(salesOrderId: string, fd: FormData) {
   await requirePermission("quotes", "edit");
-  const back = `/sales/${salesOrderId}`;
+  const back = `/sales/purchase-orders/raise?order=${salesOrderId}`;
   const supabase = await createClient();
 
   const { data: so } = await supabase
@@ -163,14 +184,14 @@ export async function raisePurchaseOrders(salesOrderId: string) {
 
   const { data: lines } = await supabase
     .from("sales_document_lines")
-    .select("product_id, description, quantity, unit_cost, tax_rate_id, tax_rate, position, products(supplier_id)")
+    .select("id, product_id, description, quantity, unit_cost, tax_rate_id, tax_rate, position")
     .eq("document_id", salesOrderId)
     .order("position");
 
   const bySupplier = new Map<string, PoLine[]>();
   for (const l of lines ?? []) {
-    const supplierId = (l.products as unknown as { supplier_id: string | null } | null)?.supplier_id;
-    if (!supplierId) continue;
+    const supplierId = str(fd, `supplier:${l.id}`);
+    if (!supplierId || !/^[0-9a-f-]{36}$/i.test(supplierId)) continue;
     const list = bySupplier.get(supplierId) ?? [];
     list.push({
       product_id: l.product_id,
@@ -183,7 +204,7 @@ export async function raisePurchaseOrders(salesOrderId: string) {
     bySupplier.set(supplierId, list);
   }
   if (bySupplier.size === 0) {
-    fail(back, "None of this order's lines have a product with a supplier — raise a purchase order by hand instead");
+    fail(back, "Please pick a supplier for at least one line");
   }
 
   const customerName = (so.customers as unknown as { name: string } | null)?.name ?? "";
