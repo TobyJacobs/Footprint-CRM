@@ -246,3 +246,25 @@ export function marginText(net: number, cost: number, formatMoney: (n: number) =
 export function marginPercent(net: number, cost: number) {
   return cost > 0 ? Math.round(((net - cost) / cost) * 1000) / 10 : null;
 }
+
+// Why a line's gross profit was overridden (owner, 11 November 2026): a
+// dropdown, with "Other" needing a note. Saved as the reason, plus ": note"
+// when a note is given.
+export const gpOverrideReasons = ["Supplier cost was wrong", "Discount agreed", "Goodwill / complaint", "Bundle or package deal", "Other"] as const;
+
+export function gpOverrideReasonText(reason: string | null, note: string | null): string | null {
+  if (!reason || !(gpOverrideReasons as readonly string[]).includes(reason)) return null;
+  if (reason === "Other") return note ? `Other: ${note}` : null;
+  return note ? `${reason}: ${note}` : reason;
+}
+
+// Splits a saved reason back into the dropdown choice and note (older free
+// text counts as Other).
+export function splitGpOverrideReason(saved: string | null): { reason: string; note: string } {
+  if (!saved) return { reason: "", note: "" };
+  for (const r of gpOverrideReasons) {
+    if (saved === r) return { reason: r, note: "" };
+    if (saved.startsWith(`${r}: `)) return { reason: r, note: saved.slice(r.length + 2) };
+  }
+  return { reason: "Other", note: saved };
+}

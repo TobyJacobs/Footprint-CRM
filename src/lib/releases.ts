@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.79.0",
+    date: "2026-11-11",
+    title: "GP override reasons",
+    changes: ["When you override the gross profit on a line, the reason is now picked from a list: Supplier cost was wrong, Discount agreed, Goodwill / complaint, Bundle or package deal, or Other (with a note to explain). You can add a note to any reason."],
+  },
+  {
     version: "0.78.0",
     date: "2026-11-11",
     title: "No project needed",
