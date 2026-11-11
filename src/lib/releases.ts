@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.77.1",
+    date: "2026-11-11",
+    title: "Accepted stays blue",
+    changes: ["A quote's Accepted step is blue again, like every other finished step. Pending acceptance stays amber while you wait for the customer."],
+  },
+  {
     version: "0.77.0",
     date: "2026-11-11",
     title: "Pending acceptance on quotes",
