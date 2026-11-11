@@ -94,6 +94,9 @@ export async function getPurchaseOrderLines(poId: string) {
     description: l.description as string,
     quantity: Number(l.quantity),
     unit_cost: Number(l.unit_cost),
+    // What we actually bought it for (DJ, 11 November 2026); null until entered.
+    actual_unit_cost: l.actual_unit_cost === null ? null : Number(l.actual_unit_cost),
+    actual_line_net: l.actual_line_net === null ? null : Number(l.actual_line_net),
     tax_rate_id: l.tax_rate_id as string | null,
     tax_rate: Number(l.tax_rate),
     line_net: Number(l.line_net),

@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.81.0",
+    date: "2026-11-11",
+    title: "Should cost vs bought for on purchase orders",
+    changes: ["Each purchase order line shows what it should cost and, once you enter it from the supplier's bill, what we bought it for, with the difference per line and in total (red when it cost more, blue when it cost less). Enter the figures in the Bought for column and click Save what we paid."],
+  },
+  {
     version: "0.80.0",
     date: "2026-11-11",
     title: "Supplier per line on purchase orders",
