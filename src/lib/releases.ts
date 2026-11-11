@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.89.0",
+    date: "2026-11-11",
+    title: "Finance summary shows real costs",
+    changes: ["A sales order's Finance summary now says how the cost and margin have moved once you enter what you actually paid on purchase orders (e.g. \"£40 less than estimated\", \"£40 up on the estimate\"), and shows what's actually been paid to suppliers against what it should have cost."],
+  },
+  {
     version: "0.88.1",
     date: "2026-11-11",
     title: "In production",
