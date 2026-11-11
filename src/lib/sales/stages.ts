@@ -97,7 +97,8 @@ export function orderStages(o: {
               done: true,
               tone: "pending",
             },
-      { label: "Completed", note: null, done: ["completed", "invoiced"].includes(o.status) },
+      // Called "In production" (DJ, 11 November 2026); ticked once the order is marked completed.
+      { label: "In production", note: null, done: ["completed", "invoiced"].includes(o.status) },
       {
         label: allPaid ? "Paid" : "Invoiced",
         note: partInvoiced
