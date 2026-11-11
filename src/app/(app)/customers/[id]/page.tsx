@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Mail, Pencil, Phone, Plus, Star } from "lucide-react";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
+import CopyButton from "@/components/CopyButton";
 import PageHeader from "@/components/PageHeader";
 import { Badge, Card, Notice, Select, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
@@ -214,7 +215,16 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                 </Detail>
                 <Detail label="Industry">{c.industry}</Detail>
                 <Detail label="Billing address">
-                  {address([c.billing_street, c.billing_city, c.billing_county, c.billing_postcode, c.billing_country])}
+                  {address([c.billing_street, c.billing_city, c.billing_county, c.billing_postcode, c.billing_country]) && (
+                    <span className="grid justify-items-start gap-1.5">
+                      {address([c.billing_street, c.billing_city, c.billing_county, c.billing_postcode, c.billing_country])}
+                      {/* Copies it as lines, ready to paste (DJ, 11 November 2026). */}
+                      <CopyButton
+                        text={[c.name, c.billing_street, c.billing_city, c.billing_county, c.billing_postcode, c.billing_country].filter(Boolean).join("\n")}
+                        label="Copy billing address"
+                      />
+                    </span>
+                  )}
                 </Detail>
                 <Detail label="Delivery address">
                   {(["street", "city", "county", "postcode", "country"] as const).every((f) => (c[`shipping_${f}`] ?? "") === (c[`billing_${f}`] ?? ""))
