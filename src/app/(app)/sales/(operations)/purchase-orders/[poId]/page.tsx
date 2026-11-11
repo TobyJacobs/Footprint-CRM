@@ -6,12 +6,12 @@ import ConfirmSubmit from "@/components/ConfirmSubmit";
 import { Badge, Card, Field, Notice, dangerButton, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { gbp, longDate, shortDateTime } from "@/lib/customers/display";
-import { getPurchaseOrderLines } from "@/lib/sales/data";
+import { getPurchaseOrderLines, getSuppliers } from "@/lib/sales/data";
 import { poOrderMethods, poOrderedViaLabel, poStatusLabel, statusToneFor } from "@/lib/sales/options";
 import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import EmailStatus from "@/components/EmailStatus";
 import { createClient } from "@/lib/supabase/server";
-import { deletePurchaseOrder, markPoOrderedManually, savePoActualCosts, setPurchaseOrderStatus } from "../actions";
+import { deletePurchaseOrder, markPoOrderedManually, raiseShortfallPo, savePoActualCosts, setPurchaseOrderStatus } from "../actions";
 import { sendPurchaseOrderEmail } from "../email-actions";
 
 export async function generateMetadata(props: PageProps<"/sales/purchase-orders/[poId]">): Promise<Metadata> {
@@ -43,7 +43,7 @@ export default async function PurchaseOrderPage(props: PageProps<"/sales/purchas
     .eq("id", poId)
     .maybeSingle();
   if (!po) notFound();
-  const [lines, { data: emailLog }, { data: settings }] = await Promise.all([
+  const [lines, { data: emailLog }, { data: settings }, suppliers] = await Promise.all([
     getPurchaseOrderLines(poId),
     supabase
       .from("email_log")
@@ -52,6 +52,7 @@ export default async function PurchaseOrderPage(props: PageProps<"/sales/purchas
       .order("sent_at", { ascending: false })
       .limit(10),
     supabase.from("company_settings").select("company_name").single(),
+    getSuppliers(),
   ]);
   const supplier = po.suppliers as unknown as { id: string; name: string; email: string | null; phone: string | null; contact_name: string | null };
   const so = po.sales_documents as unknown as { id: string; number: string } | null;
@@ -64,7 +65,11 @@ export default async function PurchaseOrderPage(props: PageProps<"/sales/purchas
   const withActual = lines.filter((l) => l.actual_line_net !== null);
   const actualCount = withActual.length;
   const actualNet = Math.round(withActual.reduce((sum, l) => sum + (l.actual_line_net ?? 0), 0) * 100) / 100;
-  const actualDiff = Math.round(withActual.reduce((sum, l) => sum + (l.actual_line_net ?? 0) - l.line_net, 0) * 100) / 100;
+  // Compared on the quantity actually bought, so a short delivery isn't a "saving".
+  const shouldFor = (l: (typeof lines)[number]) => Math.round((l.bought_quantity ?? l.quantity) * l.unit_cost * 100) / 100;
+  const actualDiff = Math.round(withActual.reduce((sum, l) => sum + (l.actual_line_net ?? 0) - shouldFor(l), 0) * 100) / 100;
+  // Lines where the supplier couldn't supply everything (DJ, 11 November 2026).
+  const shortLines = lines.filter((l) => l.bought_quantity !== null && l.bought_quantity < l.quantity);
   const finished = ["received", "closed", "cancelled"].includes(po.status);
   const company = settings?.company_name ?? "Footprint Group";
   const emailed = typeof sp.emailed === "string" ? sp.emailed : null;
@@ -252,7 +257,8 @@ ${company}`;
                 <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
                   <tr>
                     <th className="py-2 pr-3 font-semibold">Description</th>
-                    <th className="py-2 pr-3 text-right font-semibold">Qty</th>
+                    <th className="py-2 pr-3 text-right font-semibold">Qty ordered</th>
+                    <th className="py-2 pr-3 text-right font-semibold">Qty bought</th>
                     <th className="py-2 pr-3 text-right font-semibold">Should cost (each)</th>
                     <th className="py-2 pr-3 text-right font-semibold">Bought for (each)</th>
                     <th className="py-2 pr-3 text-right font-semibold">VAT</th>
@@ -262,11 +268,28 @@ ${company}`;
                 </thead>
                 <tbody>
                   {lines.map((l) => {
-                    const diff = l.actual_line_net === null ? null : Math.round((l.actual_line_net - l.line_net) * 100) / 100;
+                    const diff = l.actual_line_net === null ? null : Math.round((l.actual_line_net - shouldFor(l)) * 100) / 100;
+                    const short = l.bought_quantity !== null && l.bought_quantity < l.quantity ? Math.round((l.quantity - l.bought_quantity) * 1000) / 1000 : 0;
                     return (
                       <tr key={l.key} className="border-b border-fp-border align-top last:border-0">
                         <td className="whitespace-pre-line py-2 pr-3">{l.description}</td>
                         <td className="py-2 pr-3 text-right">{l.quantity}</td>
+                        <td className="py-2 pr-3 text-right">
+                          {canEnterCosts ? (
+                            <input
+                              name={`bought:${l.key}`}
+                              type="number"
+                              step="any"
+                              min="0"
+                              defaultValue={l.bought_quantity ?? l.quantity}
+                              aria-label={`How many ${l.description.split("\n")[0]} we bought`}
+                              className={`${inputClass} w-20 text-right`}
+                            />
+                          ) : (
+                            (l.bought_quantity ?? l.quantity)
+                          )}
+                          {short > 0 && <span className="mt-1 block text-xs font-semibold text-fp-orange">{short} short</span>}
+                        </td>
                         <td className="py-2 pr-3 text-right">{gbp(l.unit_cost)}</td>
                         <td className="py-2 pr-3 text-right">
                           {canEnterCosts ? (
@@ -299,9 +322,11 @@ ${company}`;
             {canEnterCosts && lines.length > 0 && (
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <button type="submit" className={secondaryButton}>
-                  Save what we paid
+                  Save what we bought
                 </button>
-                <span className="text-xs text-fp-mid">Enter the price each, before VAT, from the supplier&apos;s bill. Leave blank if not known yet.</span>
+                <span className="text-xs text-fp-mid">
+                  Change Qty bought if the supplier couldn&apos;t supply them all. Enter the price each, before VAT, from their bill (blank if not known yet).
+                </span>
               </div>
             )}
           </form>
@@ -323,6 +348,35 @@ ${company}`;
             <dt className="font-bold">Total</dt>
             <dd className="text-right font-bold">{gbp(Number(po.total))}</dd>
           </dl>
+        {/* Order what's short from another supplier (DJ, 11 November 2026). */}
+        {canEnterCosts && shortLines.length > 0 && (
+          <section className="mt-5 rounded-md border border-fp-orange/40 bg-fp-orange/5 p-4">
+            <h3 className="mb-2 font-bold">Order the shortfall</h3>
+              <p className="mb-3 text-sm">
+                {shortLines.map((l) => `${Math.round((l.quantity - (l.bought_quantity ?? 0)) * 1000) / 1000} × ${l.description.split("\n")[0]}`).join(", ")} still to get.
+                Pick another supplier to raise a new draft purchase order for just these.
+              </p>
+              <form action={raiseShortfallPo.bind(null, poId)} className="flex flex-wrap items-end gap-3">
+                <Field label="Supplier">
+                  <select name="supplier_id" required defaultValue="" className={inputClass}>
+                    <option value="" disabled>
+                      Choose a supplier…
+                    </option>
+                    {suppliers
+                      .filter((s) => s.id !== supplier.id)
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                  </select>
+                </Field>
+                <button type="submit" className={primaryButton}>
+                  Order the shortfall
+                </button>
+              </form>
+          </section>
+        )}
         </Card>
         <div className="grid content-start gap-6">
           <Card title="Details">

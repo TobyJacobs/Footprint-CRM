@@ -14,6 +14,7 @@ export type PoEditorLine = {
   unit_cost: number;
   // Kept as it is when the PO is edited (entered on the PO page).
   actual_unit_cost?: number | null;
+  bought_quantity?: number | null;
   tax_rate_id: string | null;
   tax_rate: number;
 };
@@ -64,6 +65,7 @@ export default function PoLinesEditor({ initialLines, taxRates }: { initialLines
               quantity: l.quantity,
               unit_cost: l.unit_cost,
               actual_unit_cost: l.actual_unit_cost ?? null,
+              bought_quantity: l.bought_quantity ?? null,
               tax_rate_id: l.tax_rate_id,
               tax_rate: l.tax_rate,
             })),
