@@ -42,17 +42,23 @@ export const services = [
   "YLK",
 ];
 
+// Credit status wording (DJ, 11 November 2026): "Net 7" etc. instead of
+// "7 Day Terms Available to Client", "Upfront payment" instead of the two
+// pay-first options, and no Direct Debit option (it has its own field).
 export const creditStatuses = [
   "ON STOP contact OPS/Finance Team",
-  "No Credit Available - Must Pay Up Front - Before Goods Ordered",
-  "Payment Required before we order goods",
-  "Direct Debit Service Available to Client",
-  "7 Day Terms Available to Client",
-  "14 Day Terms Available to Client",
-  "30 Day Terms Available to Client",
-  "60 Day Terms Available to Client",
+  "Upfront payment",
+  "Net 7",
+  "Net 14",
+  "Net 30",
+  "Net 60",
   "See notes for more info",
 ];
+
+// Credit statuses that warn staff before they quote or order: on stop, or
+// pay first (including the old Zoho wording).
+export const isCreditWarning = (status: string | null | undefined): status is string =>
+  !!status && /ON STOP|Up ?front|before we order/i.test(status);
 
 export const directDebitStatuses = [
   "Not Signed Up",

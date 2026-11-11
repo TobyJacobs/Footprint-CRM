@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.71.0",
+    date: "2026-11-11",
+    title: "Simpler credit status",
+    changes: [
+      "Credit status uses shorter wording: Net 7, Net 14, Net 30 and Net 60 instead of \"… Day Terms Available to Client\", and \"Upfront payment\" instead of \"Payment Required before we order goods\".",
+      "The Direct Debit and No Credit Available options are gone. Customers who were \"No Credit Available\" are now \"Upfront payment\" (they still get the pay-first warning on quotes and orders); \"Direct Debit\" was cleared, as Direct Debit has its own field.",
+    ],
+  },
+  {
     version: "0.70.1",
     date: "2026-11-11",
     title: "One Direct Debit field",

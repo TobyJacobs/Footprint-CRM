@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { Card, Checkbox, Field, Select, TextArea, TextInput, primaryButton, secondaryButton } from "@/components/ui";
 import { businessUnits, frequencies, recurringStatuses } from "@/lib/sales/options";
 import DocumentEditor, { type EditorLine } from "../../DocumentEditor";
+import { isCreditWarning } from "@/lib/customers/options";
 
 export default async function RecurringForm({
   recurring,
@@ -87,7 +88,7 @@ export default async function RecurringForm({
           initialLines={lines}
           taxRates={taxRates}
           canAddCustomer={(await getCurrentUser()).can("customers", "edit")}
-          creditWarning={customer?.credit_status && /ON STOP|Up Front|before we order/i.test(customer.credit_status) ? customer.credit_status : null}
+          creditWarning={isCreditWarning(customer?.credit_status) ? customer.credit_status : null}
         />
       </Card>
 
