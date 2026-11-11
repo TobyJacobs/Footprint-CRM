@@ -7,11 +7,11 @@ import { Badge, Card, Field, Notice, dangerButton, inputClass, primaryButton, se
 import { requirePermission } from "@/lib/auth";
 import { gbp, longDate, shortDateTime } from "@/lib/customers/display";
 import { getPurchaseOrderLines } from "@/lib/sales/data";
-import { poStatusLabel, statusToneFor } from "@/lib/sales/options";
+import { poOrderMethods, poOrderedViaLabel, poStatusLabel, statusToneFor } from "@/lib/sales/options";
 import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import EmailStatus from "@/components/EmailStatus";
 import { createClient } from "@/lib/supabase/server";
-import { deletePurchaseOrder, setPurchaseOrderStatus } from "../actions";
+import { deletePurchaseOrder, markPoOrderedManually, setPurchaseOrderStatus } from "../actions";
 import { sendPurchaseOrderEmail } from "../email-actions";
 
 export async function generateMetadata(props: PageProps<"/sales/purchase-orders/[poId]">): Promise<Metadata> {
@@ -39,7 +39,7 @@ export default async function PurchaseOrderPage(props: PageProps<"/sales/purchas
   const supabase = await createClient();
   const { data: po } = await supabase
     .from("purchase_orders")
-    .select("*, suppliers(*), sales_documents(id, number), customers(id, name), owner:owner_id(full_name, email)")
+    .select("*, suppliers(*), sales_documents(id, number), customers(id, name), owner:owner_id(full_name, email), orderer:ordered_by(full_name, email)")
     .eq("id", poId)
     .maybeSingle();
   if (!po) notFound();
@@ -57,6 +57,8 @@ export default async function PurchaseOrderPage(props: PageProps<"/sales/purchas
   const so = po.sales_documents as unknown as { id: string; number: string } | null;
   const customer = po.customers as unknown as { id: string; name: string } | null;
   const owner = po.owner as unknown as { full_name: string | null; email: string } | null;
+  const orderer = po.orderer as unknown as { full_name: string | null; email: string } | null;
+  const orderedVia = poOrderedViaLabel(po.ordered_via);
   const finished = ["received", "closed", "cancelled"].includes(po.status);
   const company = settings?.company_name ?? "Footprint Group";
   const emailed = typeof sp.emailed === "string" ? sp.emailed : null;
@@ -120,14 +122,19 @@ ${company}`;
 
       <Notice searchParams={sp} />
 
+      {/* How it was ordered (DJ, 11 November 2026). */}
+      {orderedVia && po.status !== "draft" && (
+        <p className="mb-6 rounded-md border border-fp-border bg-white px-4 py-3 text-sm">
+          <strong>Ordered {orderedVia.charAt(0).toLowerCase() + orderedVia.slice(1)}</strong>
+          {orderer ? ` by ${orderer.full_name ?? orderer.email}` : ""}
+          {po.sent_at ? ` on ${shortDateTime(po.sent_at)}` : ""}
+          {po.ordered_note ? `: ${po.ordered_note}` : "."}
+        </p>
+      )}
+
       {canEdit && (
         <Card title="Next steps">
           <div className="flex flex-wrap items-center gap-3">
-            {po.status === "draft" && (
-              <StatusButton poId={poId} status="sent">
-                Mark as sent (ordered by phone)
-              </StatusButton>
-            )}
             {po.status === "sent" && (
               <StatusButton poId={poId} status="received" primary>
                 Mark goods received
@@ -187,6 +194,32 @@ ${company}`;
                 </div>
               </form>
             )}
+            {/* Or placed another way: phone, website, in person (DJ, 11 November 2026). */}
+            <form action={markPoOrderedManually.bind(null, poId)} className="mt-5 grid gap-3 border-t border-fp-border pt-4">
+              <p className="text-sm font-semibold">Or ordered manually</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="How">
+                  <select name="ordered_via" required defaultValue={po.ordered_via && po.ordered_via !== "email" ? po.ordered_via : ""} className={inputClass}>
+                    <option value="" disabled>
+                      Choose…
+                    </option>
+                    {poOrderMethods.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Note (optional)">
+                  <input name="ordered_note" maxLength={500} defaultValue={po.ordered_via !== "email" ? (po.ordered_note ?? "") : ""} className={inputClass} placeholder="e.g. spoke to Sam, order ref 4471" />
+                </Field>
+              </div>
+              <div>
+                <button type="submit" className={secondaryButton}>
+                  Mark as ordered (no email)
+                </button>
+              </div>
+            </form>
             {(emailLog ?? []).length > 0 && (
               <ul className="mt-5 grid gap-2 border-t border-fp-border pt-4 text-sm">
                 {(emailLog ?? []).map((e) => (

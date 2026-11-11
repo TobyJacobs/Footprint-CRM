@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.80.0",
+    date: "2026-11-11",
+    title: "Supplier per line on purchase orders",
+    changes: [
+      "Raise POs on a sales order now opens a list of the order's lines where you pick the supplier for each one (it starts with the product's usual supplier, or Not needed). You get one purchase order per supplier with just their lines.",
+      "A purchase order can be emailed to the supplier as before, or marked as ordered manually: by phone, on their website, in person or another way, with a note. The purchase order shows how it was ordered, by whom and when.",
+    ],
+  },
+  {
     version: "0.79.1",
     date: "2026-11-11",
     title: "Order confirmation fix",

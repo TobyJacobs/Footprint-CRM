@@ -97,7 +97,7 @@ export async function sendPurchaseOrderEmail(poId: string, fd: FormData) {
   if (!result.ok) fail(back, `The email wasn't sent: ${result.error}`);
 
   if (po.status === "draft") {
-    await supabase.from("purchase_orders").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", poId);
+    await supabase.from("purchase_orders").update({ status: "sent", sent_at: new Date().toISOString(), ordered_via: "email" }).eq("id", poId);
   }
 
   revalidatePath("/sales", "layout");

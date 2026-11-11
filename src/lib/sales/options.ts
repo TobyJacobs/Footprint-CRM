@@ -101,6 +101,16 @@ export const poStatuses = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
+// How a purchase order was placed (DJ, 11 November 2026).
+export const poOrderMethods = [
+  { value: "phone", label: "By phone" },
+  { value: "website", label: "On the supplier's website" },
+  { value: "in_person", label: "In person" },
+  { value: "other", label: "Another way" },
+] as const;
+export const poOrderedViaLabel = (v: string | null) =>
+  v === "email" ? "By email" : (poOrderMethods.find((m) => m.value === v)?.label ?? null);
+
 export function poStatusLabel(status: string) {
   return poStatuses.find((s) => s.value === status)?.label ?? status;
 }
