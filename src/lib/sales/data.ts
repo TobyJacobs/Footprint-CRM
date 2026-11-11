@@ -40,6 +40,9 @@ export async function getDocumentLines(documentId: string) {
     quantity: Number(l.quantity),
     unit_price: Number(l.unit_price),
     unit_cost: l.unit_cost === null ? null : Number(l.unit_cost),
+    // The original estimate, kept once a purchase order's "bought for" figure
+    // has replaced the cost (owner, 11 November 2026).
+    estimated_unit_cost: l.estimated_unit_cost === null || l.estimated_unit_cost === undefined ? null : Number(l.estimated_unit_cost),
     discount_percent: Number(l.discount_percent),
     tax_rate_id: l.tax_rate_id as string | null,
     tax_rate: Number(l.tax_rate),
