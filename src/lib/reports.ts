@@ -287,16 +287,16 @@ export async function getVatCash(from: string, to: string): Promise<VatRow[]> {
 
 // ─── Direct Debits ──────────────────────────────────────────────────────────
 
-export type DirectDebitRow = { id: string; name: string; general: string | null; fmn: string | null; owner: string | null };
+export type DirectDebitRow = { id: string; name: string; general: string | null; owner: string | null };
 
-// Customers with an active Direct Debit (either field on the customer record).
+// Customers with an active Direct Debit ("Active" or "FMN Active").
 export async function getDirectDebits(): Promise<DirectDebitRow[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("customers")
-    .select("id, name, direct_debit_status, direct_debit_status_fmn, owner_id")
+    .select("id, name, direct_debit_status, owner_id")
     .is("erased_at", null)
-    .or("direct_debit_status.in.(Active,FMN Active),direct_debit_status_fmn.eq.Active")
+    .in("direct_debit_status", ["Active", "FMN Active"])
     .order("name");
   const ownerIds = [...new Set((data ?? []).map((c) => c.owner_id).filter(Boolean))] as string[];
   const { data: people } = ownerIds.length ? await supabase.from("profiles").select("id, full_name, email").in("id", ownerIds) : { data: [] };
@@ -304,7 +304,7 @@ export async function getDirectDebits(): Promise<DirectDebitRow[]> {
     const p = (people ?? []).find((x) => x.id === id);
     return p ? (p.full_name ?? p.email) : null;
   };
-  return (data ?? []).map((c) => ({ id: c.id, name: c.name, general: c.direct_debit_status, fmn: c.direct_debit_status_fmn, owner: nameOf(c.owner_id) }));
+  return (data ?? []).map((c) => ({ id: c.id, name: c.name, general: c.direct_debit_status, owner: nameOf(c.owner_id) }));
 }
 
 // ─── CSV ────────────────────────────────────────────────────────────────────

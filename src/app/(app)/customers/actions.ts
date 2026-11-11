@@ -100,7 +100,8 @@ function customerFields(fd: FormData) {
     ...(fd.has("brochures_sent") ? { brochures_sent: list(fd, "brochures_sent") } : {}),
     credit_status: str(fd, "credit_status"),
     direct_debit_status: str(fd, "direct_debit_status"),
-    direct_debit_status_fmn: str(fd, "direct_debit_status_fmn"),
+    // The separate Forget Me Not Direct Debit field is no longer on the form.
+    ...(fd.has("direct_debit_status_fmn") ? { direct_debit_status_fmn: str(fd, "direct_debit_status_fmn") } : {}),
     sales_discount_percent: num(fd, "sales_discount_percent"),
     invoice_due_days: int(fd, "invoice_due_days"),
     invoice_due_terms: str(fd, "invoice_due_terms"),

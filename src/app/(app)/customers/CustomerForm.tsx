@@ -6,7 +6,7 @@ import AddressFields from "./AddressFields";
 import { NewCustomerDuplicateWatcher } from "./DuplicateCheck";
 import {
   accountTypes, creditStatuses, directDebitStatuses,
-  directDebitStatusesFmn, invoiceDueTerms, ownershipTypes, services,
+  invoiceDueTerms, ownershipTypes, services,
 } from "@/lib/customers/options";
 
 export type CustomerRecord = Record<string, unknown> & { id?: string };
@@ -108,11 +108,10 @@ export default function CustomerForm({
           <Field label="Credit status" wide>
             <Select name="credit_status" options={creditStatuses} defaultValue={v("credit_status") as string} />
           </Field>
-          <Field label="Direct Debit – Print & Digital">
+          {/* One Direct Debit field (DJ, 11 November 2026: the separate Forget Me
+              Not one went; "FMN Active" covers it). */}
+          <Field label="Direct Debit">
             <Select name="direct_debit_status" options={directDebitStatuses} defaultValue={v("direct_debit_status") as string} />
-          </Field>
-          <Field label="Direct Debit – Forget Me Not">
-            <Select name="direct_debit_status_fmn" options={directDebitStatusesFmn} defaultValue={v("direct_debit_status_fmn") as string} />
           </Field>
           <Field label="Invoices due (days)">
             <TextInput name="invoice_due_days" type="number" defaultValue={v("invoice_due_days")} />
