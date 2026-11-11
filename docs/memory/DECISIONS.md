@@ -393,3 +393,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 - **11 November 2026: Board-only FootprintAI actions are for the Directors role only.** Not admins (every user is an admin), not the invite list, not the action's owner unless they're a Director. Enforced in the database.
 
 - **11 November 2026: Design jobs can start from a sales order OR a project** (DJ). Replaces the 20 October 2026 rule that design jobs are always started from a project. An order without a project links the job straight to the order.
+
+## 11 November 2026 - Automatic follow-ups for new leads: taken off the roadmap for now
+**Decision (owner):** remove the Wave 8 task "Automatic follow-ups for new leads" from the roadmap for now. Its wording, to re-add later: "Automatic emails (and texts, if wanted) that follow up new leads on a set schedule, stopping when they reply. Replaces Footprint's own GoHighLevel sequences." Note for when it comes back: to avoid the form abuse risk (anyone typing someone else's email), start a sequence only once a salesperson marks the lead genuine, or automatically only for chat leads; include an unsubscribe link. Until then, Footprint's own follow-up sequences stay in GoHighLevel.
