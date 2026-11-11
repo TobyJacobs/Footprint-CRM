@@ -1,18 +1,48 @@
 import { MoneyBars } from "@/components/charts/DashboardCharts";
 import { Tile, money } from "@/components/dashboards/parts";
+import Link from "next/link";
 import { Card } from "@/components/ui";
 import { longDate } from "@/lib/customers/display";
 import type { Glance } from "@/lib/customers/glance";
 
 // "Customer at a glance": the account managers, then (for people who can see
 // sales) spend, money owed, quotes and spend by service.
-export default function CustomerGlance({ g, customerName, managers }: { g: Glance | null; customerName: string; managers: React.ReactNode }) {
-  if (!g) return <Card title="Customer at a glance">{managers}</Card>;
+export default function CustomerGlance({
+  g,
+  customerName,
+  managers,
+  contactDue,
+}: {
+  g: Glance | null;
+  customerName: string;
+  managers: React.ReactNode;
+  // Set when nothing's been logged for over 3 months: when the last activity was (null = never).
+  contactDue?: { lastAt: string | null; logHref: string };
+}) {
+  const due = contactDue && (
+    <p className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-fp-amber/60 bg-fp-amber/15 px-3 py-2 text-sm">
+      <span className="font-bold">Contact due</span>
+      <span className="text-fp-dark/75">
+        {contactDue.lastAt ? `Last activity ${longDate(contactDue.lastAt)}, over 3 months ago.` : "No activity recorded yet."}
+      </span>
+      <Link href={contactDue.logHref} className="font-semibold text-fp-pink hover:underline">
+        Log a call
+      </Link>
+    </p>
+  );
+  if (!g)
+    return (
+      <Card title="Customer at a glance">
+        {due}
+        {managers}
+      </Card>
+    );
   const change = g.lastYear > 0 ? Math.round(((g.thisYear - g.lastYear) / g.lastYear) * 100) : null;
   // The invoice list searches by customer name; "issued" = not paid yet.
   const invoicesLink = `/sales/invoices?status=issued&q=${encodeURIComponent(customerName)}`;
   return (
     <Card title="Customer at a glance">
+      {due}
       {managers}
       {g.invoices === 0 && g.quotesWon + g.quotesLost + g.quotesOpen === 0 ? (
         <p className="text-sm text-fp-mid">No invoices or quotes yet, so there&apos;s nothing to show.</p>
