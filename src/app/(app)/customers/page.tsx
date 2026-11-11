@@ -148,7 +148,7 @@ export default async function CustomersPage(props: PageProps<"/customers">) {
                       )}
                       {!c.erased_at && contactDue(c.last_activity_on) && (
                         <span
-                          className="ml-2 rounded-full bg-fp-amber/20 px-2 py-0.5 text-xs font-semibold"
+                          className="ml-2 whitespace-nowrap rounded-full bg-fp-amber/20 px-2 py-0.5 text-xs font-semibold"
                           title={c.last_activity_on ? "Nothing logged for over 3 months" : "Nothing logged yet"}
                         >
                           Contact due

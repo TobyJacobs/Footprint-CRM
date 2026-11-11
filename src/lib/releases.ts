@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.76.1",
+    date: "2026-11-11",
+    title: "Contact due fix",
+    changes: ["Fixed: the Contact due flag now shows what the customer previously ordered (it wrongly said \"No orders yet\"). The Contact due badge on the Customers list no longer splits over two lines."],
+  },
+  {
     version: "0.76.0",
     date: "2026-11-11",
     title: "Contact due: past orders and customer list",
