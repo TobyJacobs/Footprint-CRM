@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.72.0",
+    date: "2026-11-11",
+    title: "Credit status fills in invoice terms",
+    changes: ["On a customer's form, picking a credit status fills in when their invoices are due: Net 7, 14, 30 or 60 sets that many days after the bill date, and Upfront payment sets 0 (due on the bill date). You can still change it."],
+  },
+  {
     version: "0.71.0",
     date: "2026-11-11",
     title: "Simpler credit status",

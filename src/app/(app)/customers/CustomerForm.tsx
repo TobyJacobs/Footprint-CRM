@@ -3,6 +3,7 @@ import {
   Card, CheckboxGroup, Field, Select, TextArea, TextInput, primaryButton, secondaryButton,
 } from "@/components/ui";
 import AddressFields from "./AddressFields";
+import CreditTermsAutofill from "./CreditTermsAutofill";
 import { NewCustomerDuplicateWatcher } from "./DuplicateCheck";
 import {
   accountTypes, creditStatuses, directDebitStatuses,
@@ -105,9 +106,11 @@ export default function CustomerForm({
 
       <Card title="Accounts & credit">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Credit status" wide>
-            <Select name="credit_status" options={creditStatuses} defaultValue={v("credit_status") as string} />
-          </Field>
+          <CreditTermsAutofill>
+            <Field label="Credit status" wide hint="Net 7–60 and Upfront payment fill in when invoices are due (you can still change it).">
+              <Select name="credit_status" options={creditStatuses} defaultValue={v("credit_status") as string} />
+            </Field>
+          </CreditTermsAutofill>
           {/* One Direct Debit field (DJ, 11 November 2026: the separate Forget Me
               Not one went; "FMN Active" covers it). */}
           <Field label="Direct Debit">
