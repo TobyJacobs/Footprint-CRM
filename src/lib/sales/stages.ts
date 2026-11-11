@@ -8,10 +8,11 @@ import { designStageLabel } from "@/lib/design/options";
 export type StageState = "done" | "current" | "skipped" | "todo" | "stopped";
 // href: the step opens that record (e.g. the sales order made from a quote).
 // tone: an extra colour for the step (owner, 11 November 2026): "pending" =
-// amber, waiting for the customer. Accepted stays the usual blue, like every
-// other step done.
+// amber, under way but not finished (waiting for the customer, goods not in
+// yet, not all paid); "complete" = green, fully finished (goods received, all
+// paid). Other finished steps stay the usual blue.
 // skip: the step isn't needed for this record (e.g. "No project needed").
-export type Stage = { label: string; note: string | null; done: boolean; href?: string | null; tone?: "pending"; skip?: boolean };
+export type Stage = { label: string; note: string | null; done: boolean; href?: string | null; tone?: "pending" | "complete"; skip?: boolean };
 export type Stages = { stages: Stage[]; states: StageState[] };
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -36,14 +37,25 @@ export function orderStages(o: {
   // "No project needed" ticked on the order (DJ, 11 November 2026).
   projectNotNeeded?: boolean;
   designJobs: { stage: string }[];
-  poCount: number;
-  invoices: { number: string }[];
+  // The order's purchase orders (status) and invoices (status: paid or not).
+  pos: { status: string }[];
+  invoices: { number: string; status?: string }[];
   invoicedNet: number;
   orderNet: number;
 }): Stages {
   const designDone = o.designJobs.length > 0 && o.designJobs.every((j) => DESIGN_DONE.includes(j.stage));
   const openJob = o.designJobs.find((j) => !DESIGN_DONE.includes(j.stage));
   const partInvoiced = o.status !== "invoiced" && o.invoices.length > 0;
+  // Suppliers (owner, 11 November 2026): amber once ordered, green once every
+  // purchase order's goods are in. Drafts don't count as ordered.
+  const livePos = o.pos.filter((p) => p.status !== "cancelled");
+  const orderedPos = livePos.filter((p) => ["sent", "received", "closed"].includes(p.status));
+  const receivedPos = livePos.filter((p) => ["received", "closed"].includes(p.status));
+  const allReceived = orderedPos.length > 0 && receivedPos.length === livePos.length;
+  const draftPos = livePos.length - orderedPos.length;
+  // Invoices: amber while part invoiced or not all paid; green when all paid.
+  const paidCount = o.invoices.filter((i) => i.status === "paid").length;
+  const allPaid = o.status === "invoiced" && o.invoices.length > 0 && paidCount === o.invoices.length;
   return lightUp(
     [
       { label: "Order received", note: null, done: true },
@@ -53,12 +65,26 @@ export function orderStages(o: {
         note: o.designJobs.length === 0 ? null : openJob ? `${plural(o.designJobs.length, "job")} · ${designStageLabel(openJob.stage)}` : `${plural(o.designJobs.length, "job")} approved`,
         done: designDone,
       },
-      { label: "Suppliers ordered", note: o.poCount ? plural(o.poCount, "PO") : null, done: o.poCount > 0 },
+      orderedPos.length === 0
+        ? { label: "Suppliers ordered", note: draftPos ? `${plural(draftPos, "draft PO")}` : null, done: false }
+        : allReceived
+          ? { label: "Suppliers ordered", note: "Goods received", done: true, tone: "complete" }
+          : {
+              label: "Suppliers ordered",
+              note: `Waiting for goods · ${receivedPos.length} of ${livePos.length} received`,
+              done: true,
+              tone: "pending",
+            },
       { label: "Completed", note: null, done: ["completed", "invoiced"].includes(o.status) },
       {
-        label: "Invoiced",
-        note: partInvoiced ? `Part invoiced: ${gbp(o.invoicedNet)} of ${gbp(o.orderNet)}` : o.invoices.map((i) => i.number).join(", ") || null,
+        label: allPaid ? "Paid" : "Invoiced",
+        note: partInvoiced
+          ? `Part invoiced: ${gbp(o.invoicedNet)} of ${gbp(o.orderNet)}${paidCount ? ` · ${paidCount} of ${o.invoices.length} paid` : ""}`
+          : o.status === "invoiced" && !allPaid
+            ? `${paidCount} of ${plural(o.invoices.length, "invoice")} paid`
+            : o.invoices.map((i) => i.number).join(", ") || null,
         done: o.status === "invoiced",
+        tone: partInvoiced || (o.status === "invoiced" && !allPaid) ? "pending" : allPaid ? "complete" : undefined,
       },
     ],
     o.status === "cancelled",

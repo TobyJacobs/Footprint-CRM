@@ -257,7 +257,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
               project: orderProject,
               projectNotNeeded: !!doc.project_not_needed,
               designJobs: designJobs ?? [],
-              poCount: orderPos.length,
+              pos: orderPos,
               invoices: orderInvoices,
               invoicedNet,
               orderNet: Number(doc.subtotal),
