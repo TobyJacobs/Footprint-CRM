@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.77.2",
+    date: "2026-11-11",
+    title: "Addresses on automatic orders",
+    changes: ["Fixed: when a customer accepts a quote online, the sales order made for them now has the customer's billing and delivery addresses filled in (before, they were left blank). Orders made with Convert to sales order already did this."],
+  },
+  {
     version: "0.77.1",
     date: "2026-11-11",
     title: "Accepted stays blue",
