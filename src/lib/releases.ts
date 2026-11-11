@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.69.0",
+    date: "2026-11-11",
+    title: "Order confirmation email",
+    changes: [
+      "When a customer accepts a quote online, they're now emailed an order confirmation straight away: their sales order number, what they've ordered and the totals, with a link to view the order. Replies go to the salesperson, and it shows in the order's email history.",
+      "Orders made automatically from an accepted quote now keep its line types (one-off, monthly, included) and a proposal's payment plan and deposit.",
+    ],
+  },
+  {
     version: "0.68.0",
     date: "2026-11-09",
     title: "Open the sales order from a quote",
