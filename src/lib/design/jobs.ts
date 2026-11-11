@@ -91,6 +91,8 @@ export type JobFile = {
   uploadedBy: string | null;
   createdAt: string;
   url: string | null;
+  // A link that saves the file under its own name (DJ, 11 November 2026).
+  downloadUrl: string | null;
   isImage: boolean;
 };
 
@@ -106,6 +108,16 @@ export async function loadJobFiles(supabase: SupabaseClient, jobId: string): Pro
     ? await supabase.storage.from(DESIGN_BUCKET).createSignedUrls(rows.map((r) => r.path as string), 3600)
     : { data: [] };
   const urlFor = new Map((signed ?? []).map((s) => [s.path, s.signedUrl]));
+  // Download links, one per file so each saves under its original name.
+  const downloads = await Promise.all(
+    rows.map((r) =>
+      supabase.storage
+        .from(DESIGN_BUCKET)
+        .createSignedUrl(r.path as string, 3600, { download: String(r.file_name ?? "") || true })
+        .then(({ data: d }) => [r.path as string, d?.signedUrl ?? null] as const),
+    ),
+  );
+  const downloadFor = new Map(downloads);
   return rows.map((r) => ({
     id: r.id as string,
     kind: r.kind === "brief" ? "brief" : "proof",
@@ -117,6 +129,7 @@ export async function loadJobFiles(supabase: SupabaseClient, jobId: string): Pro
     uploadedBy: r.uploaded_by as string | null,
     createdAt: r.created_at as string,
     url: urlFor.get(r.path as string) ?? null,
+    downloadUrl: downloadFor.get(r.path as string) ?? null,
     isImage: String(r.content_type ?? "").startsWith("image/"),
   }));
 }
