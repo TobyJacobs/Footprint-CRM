@@ -210,6 +210,18 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
                 </Detail>
                 <Detail label="Type">{c.account_type}</Detail>
                 <Detail label="Main account manager">{staffName(c.owner_id)}</Detail>
+                {/* Last activity: the newest timeline entry, in place of the old
+                    "Last contacted" date (DJ, 11 November 2026). */}
+                <Detail label="Last activity">
+                  {activity?.[0] ? (
+                    <a href="#timeline" className="hover:text-fp-pink">
+                      {activityKinds.find((k) => k.value === activity[0].kind)?.label ?? activity[0].kind} · {shortDateTime(activity[0].occurred_at)}
+                      {staffName(activity[0].created_by) && ` · ${staffName(activity[0].created_by)}`}
+                    </a>
+                  ) : (
+                    <span className="text-fp-mid">None yet</span>
+                  )}
+                </Detail>
                 <Detail label="Parent company">
                   {parent && <Link href={`/customers/${parent.id}`} className="hover:text-fp-pink">{parent.name}</Link>}
                 </Detail>

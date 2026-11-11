@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.73.0",
+    date: "2026-11-11",
+    title: "Last activity on customers",
+    changes: ["A customer's Details now show Last activity: the newest entry on their timeline (call, email, meeting or note), when it was and who logged it. Click it to jump to the timeline. It replaces the old \"Last contacted\" date, which had to be typed in by hand."],
+  },
+  {
     version: "0.72.0",
     date: "2026-11-11",
     title: "Credit status fills in invoice terms",
