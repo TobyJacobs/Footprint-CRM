@@ -88,7 +88,7 @@ export default async function PublicQuotePage(props: PageProps<"/q/[token]">) {
             <p className="font-bold">Thank you — this quote has been accepted.</p>
             <p className="text-sm text-fp-dark/80">
               {quote.response_name ? `Accepted by ${quote.response_name}` : "Accepted"}
-              {quote.responded_at ? ` on ${longDate(quote.responded_at)}` : ""}. {company} will be in touch to get things moving.
+              {quote.responded_at ? ` on ${longDate(quote.responded_at)}` : ""}. We&apos;ll be in touch to get things moving.
             </p>
           </div>
         </div>
