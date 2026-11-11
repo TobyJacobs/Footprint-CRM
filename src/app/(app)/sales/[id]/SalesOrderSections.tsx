@@ -24,17 +24,14 @@ export function StageBar({ stages, states, cancelled, label = "Order stage" }: S
       <ol aria-label={label} className={`grid gap-2 sm:grid-cols-3 ${stages.length > 4 ? "lg:grid-cols-6" : "lg:grid-cols-4"}`}>
         {stages.map((s, i) => {
           const state = states[i];
-          // Pending acceptance (amber) and Accepted (green) on quotes.
+          // Pending acceptance (amber) on quotes.
           const pending = s.tone === "pending" && state === "current";
-          const accepted = s.tone === "accepted" && state === "done";
           const body = (
             <>
               <span className="flex items-center gap-2 font-bold">
                 <span
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${
-                    accepted
-                      ? "bg-green-600 text-white"
-                      : pending
+                    pending
                         ? "bg-fp-amber text-fp-dark"
                         : state === "done"
                       ? "bg-fp-teal-deep text-white"
@@ -83,9 +80,7 @@ export function StageBar({ stages, states, cancelled, label = "Order stage" }: S
               key={s.label}
               aria-current={state === "current" ? "step" : undefined}
               className={`rounded-md border-2 text-sm ${
-                accepted
-                  ? "border-green-600/40 bg-green-50 text-green-800"
-                  : pending
+                pending
                     ? "border-fp-amber bg-fp-amber/15 shadow-sm"
                     : state === "done"
                   ? "border-fp-teal-deep/30 bg-fp-teal/10"
