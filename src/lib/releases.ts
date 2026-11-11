@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.79.1",
+    date: "2026-11-11",
+    title: "Order confirmation fix",
+    changes: ["Fixed: when a customer accepts a quote online and the quote's contact has no email address saved, the order confirmation now goes to the address the quote was emailed to (before, it wasn't sent at all)."],
+  },
+  {
     version: "0.79.0",
     date: "2026-11-11",
     title: "GP override reasons",
