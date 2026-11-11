@@ -20,6 +20,7 @@ import { createProjectForOrder } from "../../projects/actions";
 import EmailCard from "../EmailCard";
 import { orderStages, quoteStages } from "@/lib/sales/stages";
 import { AdvertArtworkSection, AdvertPaymentNote, AdvertPaymentSection, DesignSection, FinanceSummary, PartInvoiceForm, ProjectSection, PurchaseOrdersSection, StageBar, type AdvertArtwork, type OrderPo, type OrderProject } from "./SalesOrderSections";
+import { isCreditWarning } from "@/lib/customers/options";
 
 export async function generateMetadata(props: PageProps<"/sales/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -213,7 +214,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
 
       <Notice searchParams={sp} />
 
-      {customer.credit_status && /ON STOP|Up Front|before we order/i.test(customer.credit_status) && (
+      {isCreditWarning(customer.credit_status) && (
         <p className="mb-6 rounded-md border border-fp-error/30 bg-fp-error/5 px-4 py-3 text-sm text-fp-error">
           Credit warning for this customer: {customer.credit_status}
         </p>

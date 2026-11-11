@@ -9,7 +9,7 @@ import { Badge, Card, Notice, Select, inputClass, primaryButton, secondaryButton
 import { requirePermission } from "@/lib/auth";
 import { address, gbp, longDate, personName, shortDateTime, statusTone, toLocalInput } from "@/lib/customers/display";
 import { loadGlance } from "@/lib/customers/glance";
-import { activityKinds } from "@/lib/customers/options";
+import { activityKinds, isCreditWarning } from "@/lib/customers/options";
 import { projectStatusLabel, projectTone } from "@/lib/projects/options";
 import { quoteKinds } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
@@ -497,7 +497,7 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
               <dl className="grid gap-4">
                 <Detail label="Credit status">
                   {c.credit_status && (
-                    <Badge tone={/ON STOP|Up Front|before we order/i.test(c.credit_status) ? "red" : "grey"}>{c.credit_status}</Badge>
+                    <Badge tone={isCreditWarning(c.credit_status) ? "red" : "grey"}>{c.credit_status}</Badge>
                   )}
                 </Detail>
                 <Detail label="Direct Debit">{c.direct_debit_status}</Detail>

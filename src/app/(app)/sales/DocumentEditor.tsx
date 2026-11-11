@@ -12,6 +12,7 @@ import AdvertBuilder, { type AdvertLine } from "./AdvertBuilder";
 import ProductDropdown, { productLineText } from "./ProductDropdown";
 import { BillingSelect, ProposalCatalogue, ProposalPayments } from "./ProposalTools";
 import { STANDARD_MARKUP, lineGp, lineMarginOnCost, lineNet, marginPercent, priceForMarginOnCost, standardPrice, totals } from "@/lib/sales/options";
+import { isCreditWarning } from "@/lib/customers/options";
 
 type TaxRate = { id: string; name: string; rate: number };
 type Contact = { id: string; first_name: string | null; last_name: string; email: string | null; is_primary: boolean };
@@ -250,7 +251,7 @@ function CustomerPicker({
                 {c.has_duplicate && (
                   <span className="ml-2 rounded-full bg-fp-amber/20 px-2 py-0.5 text-xs font-semibold">Possible duplicate</span>
                 )}
-                {c.credit_status && /ON STOP|Up Front|before we order/i.test(c.credit_status) && (
+                {isCreditWarning(c.credit_status) && (
                   <span className="ml-2 text-xs font-semibold text-fp-error">{c.credit_status}</span>
                 )}
               </button>
@@ -328,7 +329,7 @@ export default function DocumentEditor({
   const pickCustomer = async (c: CustomerHit) => {
     setCustomer({ id: c.id, name: c.name });
     announce(c.id);
-    setCredit(c.credit_status && /ON STOP|Up Front|before we order/i.test(c.credit_status) ? c.credit_status : null);
+    setCredit(isCreditWarning(c.credit_status) ? c.credit_status : null);
     const res = await fetch(`/api/search/contacts?customer=${c.id}`);
     const list: Contact[] = res.ok ? await res.json() : [];
     setContacts(list);

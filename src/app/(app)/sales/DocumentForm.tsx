@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import AddressFields from "./AddressFields";
 import TermsField from "./TermsField";
 import DocumentEditor, { type EditorLine } from "./DocumentEditor";
+import { isCreditWarning } from "@/lib/customers/options";
 
 type Doc = Record<string, unknown>;
 
@@ -62,7 +63,7 @@ export default async function DocumentForm({
     ? await (await createClient()).from("terms_presets").select("id, name, body, applies_to").eq("active", true).contains("applies_to", [target]).order("position").order("name")
     : { data: [] as TermsPreset[] };
   const creditWarning =
-    customer?.credit_status && /ON STOP|Up Front|before we order/i.test(customer.credit_status) ? customer.credit_status : null;
+    isCreditWarning(customer?.credit_status) ? customer.credit_status : null;
 
   return (
     <form id="document-form" action={action} className="grid max-w-6xl gap-6">
