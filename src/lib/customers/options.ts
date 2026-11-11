@@ -55,6 +55,18 @@ export const creditStatuses = [
   "See notes for more info",
 ];
 
+// The invoice due terms a credit status implies (DJ, 11 November 2026): the
+// customer form fills them in when the credit status is picked. Net N → N
+// days after the bill date; Upfront payment → due on the bill date. Other
+// statuses (on stop, see notes) leave the terms as they are.
+export function dueTermsForCreditStatus(status: string | null | undefined): { days: number; terms: string } | null {
+  if (!status) return null;
+  const net = /^Net (\d+)$/.exec(status);
+  if (net) return { days: Number(net[1]), terms: "day(s) after bill date" };
+  if (status === "Upfront payment") return { days: 0, terms: "day(s) after bill date" };
+  return null;
+}
+
 // Credit statuses that warn staff before they quote or order: on stop, or
 // pay first (including the old Zoho wording).
 export const isCreditWarning = (status: string | null | undefined): status is string =>
