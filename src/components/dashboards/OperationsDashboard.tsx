@@ -17,7 +17,7 @@ export default async function OperationsDashboard() {
     await Promise.all([
       supabase
         .from("sales_documents")
-        .select("id, number, title, status, subtotal, deadline_date, total, customers!sales_documents_customer_id_fkey(name)")
+        .select("id, number, title, status, subtotal, deadline_date, total, project_not_needed, customers!sales_documents_customer_id_fkey(name)")
         .eq("doc_type", "sales_order")
         .eq("status", "open")
         .order("deadline_date", { ascending: true, nullsFirst: false })
@@ -61,6 +61,7 @@ export default async function OperationsDashboard() {
       orderStages({
         status: o.status,
         project: (projects ?? []).find((p) => p.sales_document_id === o.id) ?? null,
+        projectNotNeeded: !!o.project_not_needed,
         designJobs: (jobs ?? []).filter((j) => j.sales_order_id === o.id),
         poCount: (pos ?? []).filter((p) => p.sales_document_id === o.id).length,
         invoices: mine,
