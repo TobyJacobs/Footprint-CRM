@@ -5,7 +5,7 @@ One short entry per session. Newest at the top.
 ---
 
 ## 11 November 2026 (later)
-- DJ item 18: Copy billing address button live (0.70.0), ticked. Item 19: one Direct Debit field live (0.70.1, #120), ticked. Item 20: simpler credit status live (0.71.0, #121), ticked. Item 21: credit status fills invoice due terms live (0.72.0, #122), ticked. Item 22: Last activity on the customer page live (0.73.0, #123), ticked. Owner asked for FootprintAI Board actions to be Directors only: PR #124 (0.74.0).
+- DJ item 18: Copy billing address button live (0.70.0), ticked. Item 19: one Direct Debit field live (0.70.1, #120), ticked. Item 20: simpler credit status live (0.71.0, #121), ticked. Item 21: credit status fills invoice due terms live (0.72.0, #122), ticked. Item 22: Last activity on the customer page live (0.73.0, #123), ticked. FootprintAI Board actions Directors-only live (0.74.0, #124), ticked; automatic timeline entries say Automatic. DJ still to be added to the Directors role by the owner.
 
 ## 9 November 2026 (evening): DJ's improvements, part 1
 - Went through DJ's list one item at a time: built and checked live items 1–6 (#101–#106, 0.53.0–0.58.0). Owner then asked for email delivery confirmation ("some emails don't send"): email_log showed "sent" only means SendGrid accepted it; built SendGrid Event Webhook handling with signature checks and bounce alerts (#107, 0.59.0, 13 checks). Couldn't test saving an account manager on a real customer (permission declined, rightly); covered by database tests.
