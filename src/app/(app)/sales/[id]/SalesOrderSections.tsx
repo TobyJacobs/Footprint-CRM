@@ -8,6 +8,7 @@ import { designStageLabel, designStageTone, jobNumber } from "@/lib/design/optio
 import { projectStatusLabel, projectTone } from "@/lib/projects/options";
 import { marginPercent, poStatusLabel, statusToneFor } from "@/lib/sales/options";
 import type { Stages } from "@/lib/sales/stages";
+import type { purchasingSummary } from "@/lib/sales/purchasing";
 
 // The sales order page, in the owner's order (26 October 2026): a stage bar
 // that lights up by itself, then Stage, Finance summary, Purchase orders,
@@ -193,6 +194,76 @@ export function PurchaseOrdersSection({ pos, raise }: { pos: OrderPo[]; raise: R
             </li>
           ))}
         </ul>
+      )}
+    </Card>
+  );
+}
+
+// Purchasing summary (DJ, 11 November 2026): per item, what's needed, ordered,
+// on draft POs and still to order, with what it should cost vs what we paid.
+export function PurchasingSummary({ summary, raiseHref }: { summary: ReturnType<typeof purchasingSummary>; raiseHref: string | null }) {
+  const bought = summary.rows.filter((r) => r.boughtIn);
+  const other = summary.rows.filter((r) => !r.boughtIn);
+  return (
+    <Card
+      title="Purchasing summary"
+      action={
+        summary.stillToOrder > 0 ? <Badge tone="amber">{summary.stillToOrder} still to order</Badge> : bought.length > 0 ? <Badge tone="teal">All ordered</Badge> : undefined
+      }
+    >
+      {bought.length === 0 ? (
+        <p className="text-sm text-fp-mid">Nothing on this order is bought in from a supplier yet.{raiseHref ? " Use Raise POs to pick suppliers." : ""}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-left text-sm">
+            <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
+              <tr>
+                <th className="py-2 pr-3 font-semibold">Item</th>
+                <th className="py-2 pr-3 text-right font-semibold">Needed</th>
+                <th className="py-2 pr-3 text-right font-semibold">Ordered</th>
+                <th className="py-2 pr-3 text-right font-semibold">On draft POs</th>
+                <th className="py-2 text-right font-semibold">Still to order</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bought.map((r, i) => (
+                <tr key={i} className="border-b border-fp-border last:border-0">
+                  <td className="py-2 pr-3">{r.item}</td>
+                  <td className="py-2 pr-3 text-right">{r.needed}</td>
+                  <td className="py-2 pr-3 text-right">{r.ordered || <span className="text-fp-mid">0</span>}</td>
+                  <td className="py-2 pr-3 text-right">{r.draft || <span className="text-fp-mid">0</span>}</td>
+                  <td className={`py-2 text-right font-semibold ${r.toOrder > 0 ? "text-fp-orange" : "text-fp-teal-deep"}`}>{r.toOrder > 0 ? r.toOrder : "Done"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {other.length > 0 && (
+        <p className="mt-3 text-xs text-fp-mid">Not bought in: {other.map((r) => r.item).join(", ")}.</p>
+      )}
+      {summary.totalLines > 0 && (
+        <dl className="mt-4 grid max-w-md grid-cols-2 gap-x-6 gap-y-1 border-t border-fp-border pt-3 text-sm">
+          <dt className="text-fp-dark/75">Should cost (on POs)</dt>
+          <dd className="text-right">{gbp(summary.shouldCost)}</dd>
+          {summary.boughtFor !== null && (
+            <>
+              <dt className="text-fp-dark/75">
+                Bought for{summary.pricedLines < summary.totalLines ? ` · ${summary.pricedLines} of ${summary.totalLines} lines` : ""}
+              </dt>
+              <dd className="text-right">{gbp(summary.boughtFor)}</dd>
+              <dt className="font-semibold">Difference</dt>
+              <dd className={`text-right font-semibold ${(summary.difference ?? 0) > 0 ? "text-fp-error" : (summary.difference ?? 0) < 0 ? "text-fp-teal-deep" : ""}`}>
+                {!summary.difference ? "None" : `${summary.difference > 0 ? "+" : "−"}${gbp(Math.abs(summary.difference))} ${summary.difference > 0 ? "over" : "under"}`}
+              </dd>
+            </>
+          )}
+        </dl>
+      )}
+      {raiseHref && summary.stillToOrder > 0 && (
+        <Link href={raiseHref} className={`${secondaryButton} mt-4 inline-flex`}>
+          Raise POs for what&apos;s left
+        </Link>
       )}
     </Card>
   );

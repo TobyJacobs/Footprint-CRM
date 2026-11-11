@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.83.0",
+    date: "2026-11-11",
+    title: "Purchasing summary",
+    changes: ["Sales orders have a Purchasing summary block: for each item, how many are needed, ordered from suppliers, on draft purchase orders, and still to order, plus what it should cost against what we bought it for. A badge says how many items are still to order, with a button to raise POs for what's left."],
+  },
+  {
     version: "0.82.0",
     date: "2026-11-11",
     title: "Quantity bought on purchase orders",
