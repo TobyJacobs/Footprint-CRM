@@ -59,7 +59,7 @@ export function orderStages(o: {
   const designDone = o.designJobs.length > 0 && o.designJobs.every((j) => DESIGN_DONE.includes(j.stage));
   const openJob = o.designJobs.find((j) => !DESIGN_DONE.includes(j.stage));
   const partInvoiced = o.status !== "invoiced" && o.invoices.length > 0;
-  // Suppliers (owner, 11 November 2026): amber once ordered, green once every
+  // Purchasing (called "Suppliers ordered" until 12 November 2026; owner, 11 November 2026): amber once ordered, green once every
   // purchase order's goods are in. Drafts don't count as ordered.
   const livePos = o.pos.filter((p) => p.status !== "cancelled");
   const orderedPos = livePos.filter((p) => ["sent", "received", "closed"].includes(p.status));
@@ -88,11 +88,11 @@ export function orderStages(o: {
         tone: openJob ? "pending" : undefined,
       },
       orderedPos.length === 0
-        ? { label: "Suppliers ordered", note: draftPos ? `${plural(draftPos, "draft PO")}` : null, done: false }
+        ? { label: "Purchasing", note: draftPos ? `${plural(draftPos, "draft PO")}` : null, done: false }
         : allReceived
-          ? { label: "Suppliers ordered", note: "Goods received", done: true, tone: "complete" }
+          ? { label: "Purchasing", note: "Goods received", done: true, tone: "complete" }
           : {
-              label: "Suppliers ordered",
+              label: "Purchasing",
               note: `Waiting for goods · ${receivedPos.length} of ${livePos.length} received`,
               done: true,
               tone: "pending",
