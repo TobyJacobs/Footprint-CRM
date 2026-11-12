@@ -235,6 +235,19 @@ export async function raiseShortfallPo(poId: string, fd: FormData) {
   redirect(`/sales/purchase-orders/${created.id}?saved=1`);
 }
 
+// Change when a PO is due from the Due box (DJ, 12 November 2026). Blank clears it.
+export async function savePoDueDate(poId: string, fd: FormData) {
+  await requirePermission("quotes", "edit");
+  const back = `/sales/purchase-orders/${poId}`;
+  const due = str(fd, "expected_date");
+  if (due && !/^\d{4}-\d{2}-\d{2}$/.test(due)) fail(back, "Please choose a date");
+  const supabase = await createClient();
+  const { error } = await supabase.from("purchase_orders").update({ expected_date: due ?? null }).eq("id", poId);
+  if (error) fail(back, error.message);
+  revalidatePath("/sales", "layout");
+  redirect(`${back}?saved=1`);
+}
+
 // The courier's tracking link and an optional note (DJ, 11 November 2026).
 // Only ordinary web links; "dpd.co.uk/…" gets https:// added.
 export async function savePoTracking(poId: string, fd: FormData) {
