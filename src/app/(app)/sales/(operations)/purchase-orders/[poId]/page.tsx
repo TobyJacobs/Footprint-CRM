@@ -7,11 +7,12 @@ import { Badge, Card, Field, Notice, dangerButton, inputClass, primaryButton, se
 import { requirePermission } from "@/lib/auth";
 import { gbp, longDate, shortDateTime } from "@/lib/customers/display";
 import { getPurchaseOrderLines, getSuppliers } from "@/lib/sales/data";
-import { poOrderMethods, poOrderedViaLabel, poStatusLabel, statusToneFor } from "@/lib/sales/options";
+import { poDueStatus, poOrderMethods, poOrderedViaLabel, poStatusLabel, statusToneFor } from "@/lib/sales/options";
+import { ukToday } from "@/lib/dates";
 import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
 import EmailStatus from "@/components/EmailStatus";
 import { createClient } from "@/lib/supabase/server";
-import { deletePurchaseOrder, markPoOrderedManually, raiseShortfallPo, savePoActualCosts, savePoTracking, setPurchaseOrderStatus } from "../actions";
+import { deletePurchaseOrder, markPoOrderedManually, raiseShortfallPo, savePoActualCosts, savePoDueDate, savePoTracking, setPurchaseOrderStatus } from "../actions";
 import { poStages } from "@/lib/sales/stages";
 import { StageBar } from "../../../[id]/SalesOrderSections";
 import { ExternalLink } from "lucide-react";
@@ -144,8 +145,33 @@ ${company}`;
         />
       </div>
 
+      <div className="mb-6 grid gap-6 lg:grid-cols-[1fr_2fr]">
+      {/* When it's due (DJ, 12 November 2026). */}
+      <Card title="Due">
+        {(() => {
+          const due = poDueStatus(po.expected_date, po.status, ukToday());
+          const tones = { red: "text-fp-error", amber: "text-fp-orange", grey: "text-fp-dark/75", teal: "text-fp-teal-deep" };
+          return (
+            <div className="grid gap-1">
+              {po.expected_date && <p className="text-2xl font-black">{longDate(po.expected_date)}</p>}
+              <p className={`text-sm font-semibold ${tones[due.tone]}`}>{due.text}</p>
+            </div>
+          );
+        })()}
+        {canEdit && !["cancelled", "closed"].includes(po.status) && (
+          <form action={savePoDueDate.bind(null, poId)} className="mt-3 flex flex-wrap items-end gap-2">
+            <Field label="Needed by">
+              <input name="expected_date" type="date" defaultValue={po.expected_date ?? ""} className={inputClass} />
+            </Field>
+            <button type="submit" className={secondaryButton}>
+              Save
+            </button>
+          </form>
+        )}
+      </Card>
+
       {/* Delivery tracking (DJ, 11 November 2026). */}
-      <div id="tracking" className="mb-6">
+      <div id="tracking">
         <Card title="Tracking">
           {po.tracking_url ? (
             <p className="mb-3 flex flex-wrap items-center gap-3 text-sm">
@@ -171,6 +197,7 @@ ${company}`;
             </form>
           )}
         </Card>
+      </div>
       </div>
 
       {/* How it was ordered (DJ, 11 November 2026). */}

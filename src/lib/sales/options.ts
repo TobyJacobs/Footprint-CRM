@@ -111,6 +111,19 @@ export const poOrderMethods = [
 export const poOrderedViaLabel = (v: string | null) =>
   v === "email" ? "By email" : (poOrderMethods.find((m) => m.value === v)?.label ?? null);
 
+// When a purchase order's goods are due (its "Needed by" date), in words
+// (DJ, 12 November 2026). today and due are plain "2026-11-12" dates.
+export function poDueStatus(due: string | null, status: string, today: string): { text: string; tone: "red" | "amber" | "grey" | "teal" } {
+  if (["received", "closed"].includes(status)) return { text: "Goods received", tone: "teal" };
+  if (status === "cancelled") return { text: "Cancelled", tone: "grey" };
+  if (!due) return { text: "No due date set", tone: "grey" };
+  const days = Math.round((Date.parse(`${due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86400000);
+  if (days < 0) return { text: `Overdue by ${-days} day${days === -1 ? "" : "s"}`, tone: "red" };
+  if (days === 0) return { text: "Due today", tone: "amber" };
+  if (days === 1) return { text: "Due tomorrow", tone: "amber" };
+  return { text: `Due in ${days} days`, tone: "grey" };
+}
+
 export function poStatusLabel(status: string) {
   return poStatuses.find((s) => s.value === status)?.label ?? status;
 }

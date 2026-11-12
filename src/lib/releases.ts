@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.91.0",
+    date: "2026-11-12",
+    title: "When purchase orders are due",
+    changes: [
+      "Each purchase order has a Due box near the top: the date it's needed by, in big letters, with Due in 3 days, Due today, or Overdue by 2 days (in red), and Goods received once they're in. You can change the date right there.",
+      "The purchase orders list has a Due column, with overdue orders in red and ones due today or tomorrow in amber.",
+    ],
+  },
+  {
     version: "0.90.1",
     date: "2026-11-12",
     title: "Purchasing",

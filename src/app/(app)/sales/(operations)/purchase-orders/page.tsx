@@ -4,7 +4,8 @@ import { Plus } from "lucide-react";
 import { Badge, Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { gbp, longDate } from "@/lib/customers/display";
-import { poStatusLabel, poStatuses, statusToneFor } from "@/lib/sales/options";
+import { poDueStatus, poStatusLabel, poStatuses, statusToneFor } from "@/lib/sales/options";
+import { ukToday } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Purchase orders" };
@@ -19,6 +20,7 @@ export default async function PurchaseOrdersPage(props: PageProps<"/sales/purcha
   const forDoc = typeof sp.for === "string" && /^[0-9a-f-]{36}$/i.test(sp.for) ? sp.for : "";
   const page = Math.max(1, Number(sp.page) || 1);
 
+  const today = ukToday();
   const supabase = await createClient();
   let query = supabase
     .from("purchase_orders")
@@ -94,6 +96,7 @@ export default async function PurchaseOrdersPage(props: PageProps<"/sales/purcha
               <th className="px-4 py-3 font-semibold">Supplier</th>
               <th className="px-4 py-3 font-semibold">For order</th>
               <th className="px-4 py-3 font-semibold">Date</th>
+              <th className="px-4 py-3 font-semibold">Due</th>
               <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 text-right font-semibold">Total</th>
             </tr>
@@ -109,6 +112,19 @@ export default async function PurchaseOrdersPage(props: PageProps<"/sales/purcha
                 <td className="px-4 py-3">{(p.suppliers as unknown as { name: string } | null)?.name}</td>
                 <td className="px-4 py-3">{(p.sales_documents as unknown as { number: string } | null)?.number ?? "—"}</td>
                 <td className="px-4 py-3">{longDate(p.issue_date)}</td>
+                {/* When the goods are due; overdue in red (DJ, 12 November 2026). */}
+                <td className="px-4 py-3">
+                  {(() => {
+                    const due = poDueStatus(p.expected_date, p.status, today);
+                    if (!p.expected_date || due.tone === "teal" || due.tone === "grey" && p.status === "cancelled") return <span className="text-fp-mid">{p.expected_date ? longDate(p.expected_date) : "—"}</span>;
+                    return (
+                      <span className={due.tone === "red" ? "font-semibold text-fp-error" : due.tone === "amber" ? "font-semibold text-fp-orange" : ""}>
+                        {longDate(p.expected_date)}
+                        {due.tone !== "grey" && <span className="block text-xs">{due.text}</span>}
+                      </span>
+                    );
+                  })()}
+                </td>
                 <td className="px-4 py-3">
                   <Badge tone={statusToneFor(p.status)}>{poStatusLabel(p.status)}</Badge>
                 </td>
@@ -117,7 +133,7 @@ export default async function PurchaseOrdersPage(props: PageProps<"/sales/purcha
             ))}
             {(pos ?? []).length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-fp-mid">
+                <td colSpan={7} className="px-4 py-10 text-center text-fp-mid">
                   No purchase orders{q || status ? " match those filters" : " yet"}.
                 </td>
               </tr>
