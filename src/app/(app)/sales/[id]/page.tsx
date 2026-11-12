@@ -15,7 +15,7 @@ import { getDocumentLines } from "@/lib/sales/data";
 import { purchasingSummary } from "@/lib/sales/purchasing";
 import { docTypes, gpOverrideReasons, isDocType, isLockedRecord, lossReasons, marginPercent, marginText, poStatusLabel, quoteKindLabel, splitGpOverrideReason, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
-import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, markQuoteDeclined, requestAdvertArtwork, setDocumentStatus, setLineGpOverride, setProjectNotNeeded } from "../actions";
+import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, markQuoteDeclined, requestAdvertArtwork, setDocumentStatus, setLineGpOverride, setOrderShipped, setProjectNotNeeded } from "../actions";
 import { createProjectForOrder } from "../../projects/actions";
 import EmailCard from "../EmailCard";
 import { orderStages, quoteStages } from "@/lib/sales/stages";
@@ -263,6 +263,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
               status: doc.status,
               project: orderProject,
               projectNotNeeded: !!doc.project_not_needed,
+              shippedAt: doc.shipped_at,
               designJobs: designJobs ?? [],
               pos: orderPos,
               invoices: orderInvoices,
@@ -339,6 +340,17 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
                 <ActionButton action={setDocumentStatus.bind(null, id, "completed")}>Mark completed</ActionButton>
                 <ActionButton action={setDocumentStatus.bind(null, id, "cancelled")}>Cancel order</ActionButton>
               </>
+            )}
+            {/* Shipped (DJ, 12 November 2026). */}
+            {type === "sales_order" && ["open", "completed", "invoiced"].includes(doc.status) && !doc.shipped_at && (
+              <ActionButton action={setOrderShipped.bind(null, id, true)}>Mark as shipped</ActionButton>
+            )}
+            {type === "sales_order" && doc.shipped_at && doc.status !== "cancelled" && (
+              <form action={setOrderShipped.bind(null, id, false)}>
+                <button type="submit" className="py-2 text-xs font-semibold text-fp-dark/70 underline hover:text-fp-black">
+                  Undo shipped
+                </button>
+              </form>
             )}
             {type === "invoice" && ["issued", "paid"].includes(doc.status) && (
               <ActionButton action={convertDocument.bind(null, id, "credit_note")}>Raise credit note</ActionButton>

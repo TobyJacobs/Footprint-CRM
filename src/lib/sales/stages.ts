@@ -15,6 +15,7 @@ export type StageState = "done" | "current" | "skipped" | "todo" | "stopped";
 export type Stage = { label: string; note: string | null; done: boolean; href?: string | null; tone?: "pending" | "complete"; skip?: boolean };
 export type Stages = { stages: Stage[]; states: StageState[] };
 
+const shipDate = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", day: "numeric", month: "short" });
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 // Steps an order didn't need (e.g. no design) are "skipped" once a later step
@@ -49,6 +50,8 @@ export function orderStages(o: {
   project: { number: string; status?: string } | null;
   // "No project needed" ticked on the order (DJ, 11 November 2026).
   projectNotNeeded?: boolean;
+  // When it was marked as shipped (DJ, 12 November 2026).
+  shippedAt?: string | null;
   designJobs: { stage: string }[];
   // The order's purchase orders (status) and invoices (status: paid or not).
   pos: { status: string }[];
@@ -99,6 +102,8 @@ export function orderStages(o: {
             },
       // Called "In production" (DJ, 11 November 2026); ticked once the order is marked completed.
       { label: "In production", note: null, done: ["completed", "invoiced"].includes(o.status) },
+      // Shipped (DJ, 12 November 2026): ticked with "Mark as shipped" on the order.
+      { label: "Shipped", note: o.shippedAt ? shipDate.format(new Date(o.shippedAt)) : null, done: !!o.shippedAt },
       {
         label: allPaid ? "Paid" : "Invoiced",
         note: partInvoiced
