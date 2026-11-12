@@ -271,6 +271,23 @@ export async function markQuoteDeclined(documentId: string, fd: FormData) {
   await setDocumentStatus(documentId, "declined");
 }
 
+// Mark a sales order as shipped, or undo it (DJ, 12 November 2026).
+export async function setOrderShipped(orderId: string, shipped: boolean) {
+  const user = await requirePermission("quotes", "edit");
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("sales_documents")
+    .update(shipped ? { shipped_at: new Date().toISOString(), shipped_by: user.id } : { shipped_at: null, shipped_by: null })
+    .eq("id", orderId)
+    .eq("doc_type", "sales_order")
+    .neq("status", "cancelled")
+    .select("id");
+  if (error) fail(`/sales/${orderId}`, error.message);
+  if (!data?.length) fail(`/sales/${orderId}`, "You can't change that order");
+  revalidatePath("/sales", "layout");
+  redirect(`/sales/${orderId}?saved=1`);
+}
+
 // "No project needed" on a sales order, or undo it (DJ, 11 November 2026).
 export async function setProjectNotNeeded(orderId: string, notNeeded: boolean) {
   await requirePermission("quotes", "edit");

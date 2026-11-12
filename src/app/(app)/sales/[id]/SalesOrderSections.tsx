@@ -22,7 +22,7 @@ export function StageBar({ stages, states, cancelled, label = "Order stage" }: S
   return (
     <div>
       {cancelled && <p className="mb-3 text-sm font-semibold text-fp-error">This order was cancelled.</p>}
-      <ol aria-label={label} className={`grid gap-2 sm:grid-cols-3 ${stages.length > 4 ? "lg:grid-cols-6" : "lg:grid-cols-4"}`}>
+      <ol aria-label={label} className={`grid gap-2 sm:grid-cols-3 ${stages.length > 6 ? "lg:grid-cols-7" : stages.length > 4 ? "lg:grid-cols-6" : "lg:grid-cols-4"}`}>
         {stages.map((s, i) => {
           const state = states[i];
           // Amber: under way (pending acceptance, waiting for goods, not all
