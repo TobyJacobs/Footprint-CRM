@@ -411,3 +411,8 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 16 November 2026 - Commission rules (Jack Burton's sheet)
 **Decision (owner):** targets are monthly; sales count when invoiced (credit notes take away); the band's percentage is paid on all of the figure (not just above target); Jack Burton's and Wendy's targets are on revenue (sales before VAT), the rest on GP. An extra bonus for hitting target exists but is ignored for now. Wendy's sheet lists 50% twice; the second was set to 60% to be confirmed with Jack. A "Digital" business area is added to quotes/orders so digital sales count. Business areas: Print = Print/Merch (+ old "Print"), Signage, Digital, FMN = Advertising. The figures live in the database (public repo), editable by Directors and Jack.
+
+## 16 November 2026 - Customer portal welcome email; orders and artwork in the portal
+**Decision (owner):** new accounts are sent a link to the customer portal automatically, with a button on each contact to send it by hand. "POs" in the portal means the customer's **own** purchase order numbers on their sales orders; Footprint's purchase orders to suppliers (costs, supplier names) are never shown to customers. The automatic email goes to any new contact with an email address, unless they've opted out of emails.
+**Why:** customers can follow their orders and artwork themselves, and approve proofs, without chasing the team.
+
