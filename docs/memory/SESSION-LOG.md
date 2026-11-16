@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 16 November 2026: Live portal test
+- With the owner: test customer + contact on live, welcome email arrived, owner signed in to the portal (as tj holds), every page checked, test customer deleted, Roadmap ticked.
+
 ## 16 November 2026: Customer portal side menu
 - Owner asked for OS-style side navigation in the portal, design work visible, clean look. Built 0.102.0: side menu with counts, Overview, a page per section, Design work page with progress and proof history. Checked locally with sample data; merged at the owner's request (#161) and live. Signed-in live test still to do.
 
