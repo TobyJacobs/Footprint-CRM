@@ -6,6 +6,7 @@ One short entry per session. Newest at the top.
 
 ## 16 November 2026: Team chat
 - Owner asked for a simple Teams-like chat in FootprintOS. Explained upkeep (always-on, live connections, no phone alerts, storage, GDPR). Owner chose: DMs readable only by members; keep 2 years. Built Team chat (0.97.0, #155): 23 database checks, full build, merged, tested live (message, live delivery, file, delete, file tidy-up). A commit briefly landed on local main because another session switched branches in the same folder; moved to its branch before pushing.
+- Owner asked about browser alerts: they only worked for the open chat. Built alerts on every page and a live menu badge (0.98.0, #156); merged, live, needs a colleague to test.
 
 ## 16 November 2026
 - Contract builder for proposals live (0.93.0, #151) after DJ's decisions (sign by accepting online; admins + Directors edit wording; one step). Magazine reports 3, 4 (now: email advertisers their copy) and 5 built as stacked PRs #152 (0.94.0, Reports → Production), #153 (0.95.0, email advertisers their copy) and #154 (0.96.0, Reports → Advertisers + consented mailing list CSV); merged and live (0.96.0); empty until adverts are booked.
