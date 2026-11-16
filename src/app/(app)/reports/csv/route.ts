@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { advertiserPeriod, getAdvertisers, mailingList } from "@/lib/advertisers";
 import { getCurrentUser } from "@/lib/auth";
 import { addDaysTo, addMonthsTo, ukToday } from "@/lib/dates";
 import { monthLabel } from "@/lib/magazines";
@@ -109,6 +110,24 @@ export async function GET(request: NextRequest) {
       ["Issue month", "Edition", "Customer", "Category", "Advert size", "Section", "Premium position", "Salesperson", "Order", "Invoiced", "Pages", "Booked (before VAT)"],
       rows.map((b) => [monthLabel(b.month), `${b.edition_code}. ${b.edition_name}`, b.customer_name, b.category, b.size, b.section, b.premium_position, b.salesperson, b.order_number, b.invoiced ? "Yes" : "No", r2(b.pages), r2(b.net)]),
     );
+  } else if ((report === "advertisers" || report === "mailing-list") && user.can("magazines", "view")) {
+    // Magazine reports 5: advertisers, or the mailing list of contacts who've
+    // agreed to emails only (UK GDPR).
+    const period = advertiserPeriod(sp);
+    const rows = await getAdvertisers(period.from, period.to, sp.edition && /^[0-9a-f-]{36}$/i.test(sp.edition) ? sp.edition : null);
+    if (report === "advertisers") {
+      name = `advertisers-${period.from}-to-${period.to}`;
+      csv = toCsv(
+        ["Advertiser", "Editions", "Issues", "Booked (before VAT)", "Latest issue", "Phone", "Email", "Main contact", "Contact email", "Last activity"],
+        rows.map((a) => {
+          const c = a.contacts[0];
+          return [a.name, a.editions.join("; "), a.issues, r2(a.net), monthLabel(a.lastMonth), a.phone, a.email, c?.name, c?.email, a.lastActivityOn];
+        }),
+      );
+    } else {
+      name = `mailing-list-${period.from}-to-${period.to}`;
+      csv = toCsv(["First name", "Last name", "Email", "Company", "Editions"], mailingList(rows).map((m) => [m.first, m.last, m.email, m.company, m.editions]));
+    }
   } else if (report === "invoices") {
     const period = periodFrom(sp, "last_month");
     const rows = (await getInvoices(period.from, period.to)).filter((r) => sp.adverts !== "1" || r.adverts);
