@@ -5,7 +5,7 @@ One short entry per session. Newest at the top.
 ---
 
 ## 16 November 2026: Portal welcome email, orders and artwork
-- Owner asked for new accounts to get a customer portal link and to track POs, SOs and artwork there. Built 0.100.0: automatic welcome email for new contacts plus a Send portal link button; portal shows sales orders (their PO number) and artwork (approve proofs). PR waiting for the owner.
+- Owner asked for new accounts to get a customer portal link and to track POs, SOs and artwork there. Built 0.100.0: automatic welcome email for new contacts plus a Send portal link button; portal shows sales orders (their PO number) and artwork (approve proofs). Merged at the owner's request (#158); live checks done without changing data; full test with a test contact still to do.
 
 ## 16 November 2026: Team chat
 - Owner asked for a simple Teams-like chat in FootprintOS. Explained upkeep (always-on, live connections, no phone alerts, storage, GDPR). Owner chose: DMs readable only by members; keep 2 years. Built Team chat (0.97.0, #155): 23 database checks, full build, merged, tested live (message, live delivery, file, delete, file tidy-up). A commit briefly landed on local main because another session switched branches in the same folder; moved to its branch before pushing.
