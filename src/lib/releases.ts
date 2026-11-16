@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.98.0",
+    date: "2026-11-16",
+    title: "Team chat alerts everywhere",
+    changes: [
+      "Team chat alerts now work on every FootprintOS page, not just in the chat you have open: a desktop alert pops up for a new message in any of your chats, or when someone @mentions you, as long as FootprintOS is open in a tab. Click it to go straight to the chat.",
+      "The unread number next to Team chat in the menu goes up as messages arrive, without reloading.",
+      "To turn alerts on, open any chat and click \"Alert me to new messages\" once.",
+    ],
+  },
+  {
     version: "0.97.0",
     date: "2026-11-16",
     title: "Team chat",

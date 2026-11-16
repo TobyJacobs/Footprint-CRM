@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, createContext, useContext, useState } from "react";
+import { Suspense, createContext, useCallback, useContext, useState } from "react";
 import { LogOut, Menu, X } from "lucide-react";
 import ActivityBar from "./ActivityBar";
+import ChatAlerts from "./ChatAlerts";
 import { features, home, type Feature } from "@/lib/features";
 import { currentVersion } from "@/lib/releases";
 
@@ -110,23 +111,32 @@ export default function AppShell({
   userName,
   userEmail,
   chatUnread = 0,
+  userId,
 }: {
   children: React.ReactNode;
   visibleFeatureKeys: string[];
   userName: string;
   userEmail: string;
   chatUnread?: number;
+  userId: string;
 }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [section, setSection] = useState<string | null>(null);
   const visible = features.filter((f) => visibleFeatureKeys.includes(f.key));
+  // Messages that arrived since the page loaded; starts again from the
+  // server's count whenever that changes (e.g. after moving to another page).
+  const [live, setLive] = useState({ base: chatUnread, extra: 0 });
+  const extra = live.base === chatUnread ? live.extra : 0;
+  const addUnread = useCallback(() => setLive((l) => ({ base: chatUnread, extra: (l.base === chatUnread ? l.extra : 0) + 1 })), [chatUnread]);
+  const unread = chatUnread + extra;
 
   return (
     <div className="min-h-screen lg:flex">
       <Suspense fallback={null}>
         <ActivityBar />
       </Suspense>
+      <ChatAlerts userId={userId} onUnread={addUnread} />
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-fp-black print:hidden lg:flex">
         <div className="bg-fp-gradient h-1" />
@@ -134,7 +144,7 @@ export default function AppShell({
           <Wordmark />
         </div>
         <div className="flex-1 overflow-y-auto px-3 pb-6">
-          <Nav pathname={pathname} visible={visible} section={section} chatUnread={chatUnread} />
+          <Nav pathname={pathname} visible={visible} section={section} chatUnread={unread} />
         </div>
         <UserBox name={userName} email={userEmail} />
       </aside>
@@ -165,7 +175,7 @@ export default function AppShell({
             }}
           >
             <div className="px-3 pb-4">
-              <Nav pathname={pathname} visible={visible} section={section} chatUnread={chatUnread} />
+              <Nav pathname={pathname} visible={visible} section={section} chatUnread={unread} />
             </div>
             <UserBox name={userName} email={userEmail} />
           </div>
