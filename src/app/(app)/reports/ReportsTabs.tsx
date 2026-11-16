@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export default function ReportsTabs({ magazines }: { magazines: boolean }) {
+export default function ReportsTabs({ magazines, commission = false }: { magazines: boolean; commission?: boolean }) {
   const pathname = usePathname();
   const tabs = [
     { href: "/reports/sales", label: "Sales and profit" },
@@ -20,6 +20,7 @@ export default function ReportsTabs({ magazines }: { magazines: boolean }) {
     { href: "/reports/vat", label: "VAT (cash)" },
     { href: "/reports/direct-debits", label: "Direct Debits" },
     { href: "/reports/customers", label: "Customers" },
+    ...(commission ? [{ href: "/reports/commission", label: "Commission" }] : []),
   ];
   return (
     <nav aria-label="Reports" className="no-scrollbar flex gap-1 overflow-x-auto border-b border-fp-border bg-white px-6 lg:px-10">

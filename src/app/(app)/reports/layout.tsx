@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import NoAccess from "@/components/NoAccess";
 import PageHeader from "@/components/PageHeader";
 import { getCurrentUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import ReportsTabs from "./ReportsTabs";
 
 export const metadata: Metadata = { title: { default: "Reports", template: "%s · Reports · FootprintOS" } };
@@ -10,13 +11,15 @@ export const metadata: Metadata = { title: { default: "Reports", template: "%s �
 export default async function ReportsLayout({ children }: LayoutProps<"/reports">) {
   const user = await getCurrentUser();
   if (!user.can("reports", "view")) return <NoAccess title="Reports" />;
+  // Commission: Directors and named viewers only (owner, 16 November 2026).
+  const { data: commission } = await (await createClient()).rpc("can_see_commission");
   return (
     <>
       <PageHeader
         title="Reports"
         intro={`Figures from live FootprintOS data, with the same period last year and a CSV download for Excel.${user.seesAllSales ? "" : " Only your own customers are included."}`}
       />
-      <ReportsTabs magazines={user.can("magazines", "view")} />
+      <ReportsTabs magazines={user.can("magazines", "view")} commission={commission === true} />
       <div className="px-4 py-6 sm:px-6 lg:px-10">{children}</div>
     </>
   );

@@ -143,7 +143,8 @@ export function statusToneFor(status: string) {
 // Orders, invoices, recurring invoices and products keep Zoho's list.
 export const businessUnits = ["Print", "Account Sales", "Digital"];
 // Quotes use Footprint's own business units (owner, 20 October 2026).
-export const quoteBusinessUnits = ["Print/Merch", "Advertising", "Footprint AI", "Signage"];
+// Digital added for commission (owner, 16 November 2026).
+export const quoteBusinessUnits = ["Print/Merch", "Advertising", "Digital", "Footprint AI", "Signage"];
 
 // The three kinds of new opportunity (owner, 20 October 2026; Zoho CRM Deals
 // weren't checked, so the details below are a first guess for the owner to review).
