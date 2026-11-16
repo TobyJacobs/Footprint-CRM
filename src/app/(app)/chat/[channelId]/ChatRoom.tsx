@@ -84,12 +84,6 @@ export default function ChatRoom({
   const boxRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const nearBottom = useRef(true);
-  // The latest list of people, for alerts from the live connection (which
-  // stays connected while the page refreshes around it).
-  const peopleRef = useRef(people);
-  useEffect(() => {
-    peopleRef.current = people;
-  }, [people]);
 
   const nameOf = useCallback((id: string | null) => people.find((p) => p.id === id)?.name ?? "Former member of staff", [people]);
   const myName = people.find((p) => p.id === userId)?.name ?? null;
@@ -117,13 +111,8 @@ export default function ChatRoom({
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "team_chat_messages", filter: `channel_id=eq.${channelId}` }, (p) => {
           const m = p.new as ChatMessage;
           setMessages((list) => (list.some((x) => x.id === m.id) ? list : [...list, m]));
-          if (m.author_id !== userId) {
-            void markRead();
-            if (document.visibilityState !== "visible" && typeof Notification !== "undefined" && Notification.permission === "granted") {
-              const who = peopleRef.current.find((x) => x.id === m.author_id)?.name ?? "Someone";
-              new Notification(`${who} · Team chat`, { body: m.body.slice(0, 140) || "Sent a file", tag: channelId });
-            }
-          }
+          // Desktop alerts come from ChatAlerts, which listens on every page.
+          if (m.author_id !== userId) void markRead();
         })
         .on("postgres_changes", { event: "UPDATE", schema: "public", table: "team_chat_messages", filter: `channel_id=eq.${channelId}` }, (p) => {
           const m = p.new as ChatMessage;
