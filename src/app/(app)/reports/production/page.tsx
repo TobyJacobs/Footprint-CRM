@@ -3,7 +3,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import PrintButton from "@/components/PrintButton";
 import { Tile } from "@/components/dashboards/parts";
-import { Badge, Card, inputClass, secondaryButton } from "@/components/ui";
+import { Badge, Card, Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
+import { isEmailConfigured } from "@/lib/email/sendgrid";
+import { loadCopyRecipients } from "@/lib/magazine-copies";
+import { shortDateTime } from "@/lib/customers/display";
+import { emailAdvertiserCopies } from "./actions";
 import { getCurrentUser } from "@/lib/auth";
 import { addMonthsTo, ukToday } from "@/lib/dates";
 import { designStageLabel, designStageTone } from "@/lib/design/options";
@@ -52,6 +56,13 @@ export default async function ProductionReport(props: PageProps<"/reports/produc
   const chosen = typeof sp.issue === "string" && list.some((i) => i.id === sp.issue) ? sp.issue : (list.find((i) => i.month.slice(0, 7) >= ym)?.id ?? list[0]?.id);
 
   const plan = chosen ? ((await supabase.rpc("magazine_flatplan", { p_issue: chosen })).data as Plan | null) : null;
+  // Report 4: email advertisers their copy once the flipbook is out (owner, 16 November 2026).
+  const [recipients, { data: issueRow }] = chosen
+    ? await Promise.all([loadCopyRecipients(supabase, chosen), supabase.from("magazine_issues").select("flipbook_published_at").eq("id", chosen).maybeSingle()])
+    : [[], { data: null }];
+  const published = !!issueRow?.flipbook_published_at;
+  const toSend = recipients.filter((r) => r.email && !r.sentAt);
+  const canSend = user.can("magazines", "edit") && isEmailConfigured();
 
   const adverts = plan ? [...plan.placed.filter((p) => p.kind === "advert" && !p.cancelled), ...plan.unplaced] : [];
   const editorial = plan ? plan.placed.filter((p) => p.kind === "editorial") : [];
@@ -95,6 +106,12 @@ export default async function ProductionReport(props: PageProps<"/reports/produc
         </div>
       </form>
 
+      <Notice searchParams={sp} />
+      {typeof sp.copies === "string" && (
+        <p role="status" className="rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-4 py-3 text-sm text-fp-teal-deep">
+          Emailed {sp.copies} advertiser{sp.copies === "1" ? "" : "s"} their copy{typeof sp.copyfailed === "string" ? `; ${sp.copyfailed} couldn't be sent` : ""}.
+        </p>
+      )}
       {!plan ? (
         <p className="text-sm text-fp-mid">No issues to show yet.</p>
       ) : (
@@ -188,6 +205,57 @@ export default async function ProductionReport(props: PageProps<"/reports/produc
               )}
             </Card>
           </div>
+
+          <Card title="Email advertisers their copy">
+            {!published ? (
+              <p className="text-sm text-fp-mid">
+                Once this issue&apos;s online flipbook is published (on the flatplan), you can email every advertiser a link to read it and the page their advert
+                is on.
+              </p>
+            ) : recipients.length === 0 ? (
+              <p className="text-sm text-fp-mid">No advertisers in this issue.</p>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[560px] text-left text-sm">
+                    <thead className="border-b border-fp-border">
+                      <tr>
+                        <th className={th}>Advertiser</th>
+                        <th className={th}>Email</th>
+                        <th className={th}>Pages</th>
+                        <th className={th}>Sent</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recipients.map((r) => (
+                        <tr key={r.customerId} className="border-b border-fp-border last:border-0">
+                          <td className={`${td} font-semibold`}>
+                            <Link href={`/customers/${r.customerId}`} className="hover:text-fp-pink">
+                              {r.name}
+                            </Link>
+                          </td>
+                          <td className={td}>{r.email ?? <span className="text-fp-error">No email address</span>}</td>
+                          <td className={td}>{r.pages.length ? r.pages.join(", ") : "—"}</td>
+                          <td className={td}>{r.sentAt ? shortDateTime(r.sentAt) : <span className="text-fp-mid">Not yet</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {canSend && toSend.length > 0 && (
+                  <form action={emailAdvertiserCopies.bind(null, plan.issue.id)} className="mt-4 print:hidden">
+                    <button type="submit" className={primaryButton}>
+                      Email {toSend.length} advertiser{toSend.length === 1 ? "" : "s"} their copy
+                    </button>
+                  </form>
+                )}
+                <p className="mt-2 text-xs text-fp-mid">
+                  It goes to the order&apos;s contact (or the customer&apos;s email), from the salesperson, with a Read this issue button. Each advertiser is
+                  only emailed once per issue.
+                </p>
+              </>
+            )}
+          </Card>
         </>
       )}
     </div>
