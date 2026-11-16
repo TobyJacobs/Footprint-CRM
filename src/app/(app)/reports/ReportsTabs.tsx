@@ -11,6 +11,7 @@ export default function ReportsTabs({ magazines }: { magazines: boolean }) {
       ? [
           { href: "/reports/magazines", label: "Magazine MI" },
           { href: "/reports/bookings", label: "Bookings" },
+          { href: "/reports/production", label: "Production" },
         ]
       : []),
     { href: "/reports/invoices", label: "Invoices" },

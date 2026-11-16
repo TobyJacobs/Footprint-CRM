@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.94.0",
+    date: "2026-11-16",
+    title: "Magazine production report",
+    changes: ["New Reports → Production for magazines. Pick an issue to see every advert's page and artwork status (ready, in progress, or no artwork job yet), with counts of what's not ready or not placed, plus an advertiser index and a content index to print in the magazine."],
+  },
+  {
     version: "0.93.0",
     date: "2026-11-16",
     title: "Contracts on proposals",
