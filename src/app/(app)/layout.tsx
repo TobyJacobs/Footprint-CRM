@@ -1,17 +1,20 @@
 import AppShell from "@/components/AppShell";
 import { getCurrentUser } from "@/lib/auth";
+import { getChatUnread } from "@/lib/team-chat";
 import { stopPreview } from "./preview-actions";
 
 // Everything inside (app) needs a signed-in, active user. Each page also
 // checks its own permission — this layout only builds the menu.
 export default async function SignedInLayout({ children }: LayoutProps<"/">) {
   const user = await getCurrentUser();
+  const chatUnread = await getChatUnread();
 
   return (
     <AppShell
       visibleFeatureKeys={user.visibleFeatureKeys}
       userName={user.fullName ?? user.email}
       userEmail={user.email}
+      chatUnread={chatUnread}
     >
       {user.previewRole && (
         <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-fp-amber bg-fp-amber/20 px-6 py-3 text-sm lg:px-10">
