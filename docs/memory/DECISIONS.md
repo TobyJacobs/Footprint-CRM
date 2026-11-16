@@ -399,3 +399,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 16 November 2026 - Contract builder for proposals
 **Decision (DJ via owner):** (1) customers sign the same way they accept a quote: they see the proposal and contract on their link and sign by typing their name and accepting; (2) the contract wording (Footprint's nine clauses, copied from quotes.footprintgroup.uk/contract) can be changed by admins and Directors; (3) one step: accepting the proposal online signs the contract. A frozen copy of the signed contract is kept.
+
+## 16 November 2026 - Magazine reports 4 and 5
+**Decision (owner):** no posted complimentary or voucher copies and no address labels ("logistically it won't work"; the magazine is A5). Instead, email each advertiser in an issue a link to read the issue online (the flipbook) and the page their advert is on: a service email, so no marketing consent needed. Report 5's mailing-list export includes only contacts who've consented (include in emails, not opted out), as UK GDPR requires.

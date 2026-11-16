@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 16 November 2026
+- Contract builder for proposals live (0.93.0, #151) after DJ's decisions (sign by accepting online; admins + Directors edit wording; one step). Started magazine reports 3, 4 (now: email advertisers their copy) and 5.
+
 ## 12 November 2026
 - More DJ items: Download proofs live (0.90.0, #147), Purchasing step name (0.90.1, #148), PO Due box + list column (0.91.0, #149). Shipped step live (0.92.0, #150). Note: the app restarted overnight; the browser pane needed signing in again, and the scratchpad test database was cleared (rebuild scratchpad/pgtest if needed).
 
