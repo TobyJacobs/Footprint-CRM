@@ -11,6 +11,17 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.102.0",
+    date: "2026-11-16",
+    title: "Customer portal: new look with a side menu",
+    changes: [
+      "The customer portal now looks like FootprintOS: a menu down the side (a menu button on phones) with Overview, Quotes, Orders, Design work, Adverts, Invoices, Marketing, Hosting and Support, each on its own page.",
+      "A pink count in the menu shows anything waiting for the customer: quotes to reply to, proofs to approve, invoices to pay and content to approve.",
+      "New Overview page: a \"Needs your attention\" list, totals (orders in progress, design jobs under way, still to pay, open support messages) and their latest orders.",
+      "New Design work page: every design job (advert artwork too), a progress tracker from Brief received to In production, and every proof we've sent with what they said about it, each one viewable.",
+    ],
+  },
+  {
     version: "0.101.0",
     date: "2026-11-16",
     title: "Xero: invoices and credit notes",
