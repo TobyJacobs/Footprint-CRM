@@ -396,3 +396,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 11 November 2026 - Automatic follow-ups for new leads: taken off the roadmap for now
 **Decision (owner):** remove the Wave 8 task "Automatic follow-ups for new leads" from the roadmap for now. Its wording, to re-add later: "Automatic emails (and texts, if wanted) that follow up new leads on a set schedule, stopping when they reply. Replaces Footprint's own GoHighLevel sequences." Note for when it comes back: to avoid the form abuse risk (anyone typing someone else's email), start a sequence only once a salesperson marks the lead genuine, or automatically only for chat leads; include an unsubscribe link. Until then, Footprint's own follow-up sequences stay in GoHighLevel.
+
+## 16 November 2026 - Contract builder for proposals
+**Decision (DJ via owner):** (1) customers sign the same way they accept a quote: they see the proposal and contract on their link and sign by typing their name and accepting; (2) the contract wording (Footprint's nine clauses, copied from quotes.footprintgroup.uk/contract) can be changed by admins and Directors; (3) one step: accepting the proposal online signs the contract. A frozen copy of the signed contract is kept.
