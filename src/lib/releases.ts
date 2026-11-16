@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.99.0",
+    date: "2026-11-16",
+    title: "Sales commission",
+    changes: [
+      "New Reports → Commission, only for Directors and Jack Burton: each salesperson's monthly targets, how much they've done so far (revenue or gross profit, by business area), the % of target reached, the band they're on, their commission, and how much more they need for the next band.",
+      "Targets and bands are set in Commission → Targets and bands. Sales count in the month they're invoiced, and the band's % is paid on all of the figure (or a fixed £ bonus).",
+      "Quotes and orders have a new Digital business area, so digital work counts towards the right targets.",
+    ],
+  },
+  {
     version: "0.98.0",
     date: "2026-11-16",
     title: "Team chat alerts everywhere",
