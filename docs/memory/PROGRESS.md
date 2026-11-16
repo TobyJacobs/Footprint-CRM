@@ -9,7 +9,8 @@ _Last updated: 11 November 2026 (end of session)_
 
 ## Earlier (28 October 2026)
 - **FootprintAI transition tracker LIVE (0.38.0, #82):** Transition menu (admins, Directors, invite list Mitch/Jyron/Toby, action owners). Plan imported from DJ's file with `scripts/import-transition.mjs` (40 actions, 4 board-only; owners Mitch 13, Jyron 11, Toby 8, DJ 8). Checked live: Week 2 shows 6 (5 when previewing a non-director role). The plan data is never committed (public repo). Next meeting Wed 4 Nov.
-- **Live version: FootprintOS 0.98.0** (Team chat alerts everywhere).
+- **Live version: FootprintOS 0.101.0** (Xero part 1).
+- **Xero part 1 LIVE (0.101.0, #159), 16 November 2026:** Admin → Xero; invoices and credit notes to Xero as drafts; customers matched/created. **Not connected yet:** owner to create the Xero app and add XERO_CLIENT_ID / XERO_CLIENT_SECRET in Netlify, then Connect. Then test one invoice by hand before turning on Send automatically. Next: Xero part 2 (POs approved, payments back, closed POs back).
 - **Team chat alerts everywhere LIVE (0.98.0, #156):** desktop alerts for any chat the person is in (or @mentions) on every page while FootprintOS is open; live unread badge in the menu. Not yet tested with a second person (alerts never fire for your own messages): owner to test with a colleague.
 - **Team chat LIVE (0.97.0, #155), 16 November 2026:** menu item for all staff; General channel; channels, direct messages, @mentions, files, search, instant messages, desktop alerts while open. Tested live: sent a message, live delivery, a file (upload and download), deleted them, file tidy-up removed it from storage. Roadmap: ticked task added; Go-live "Move team chat from Zoho Cliq" notes changed. Possible next: everyone in General automatically.
 - 0.52.1 (#99/#100): website chat.
