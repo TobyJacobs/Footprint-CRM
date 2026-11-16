@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import { Badge, Card, Field, Notice, inputClass, primaryButton, secondaryButton } from "@/components/ui";
@@ -48,6 +49,13 @@ export default async function TermsPresetsPage(props: PageProps<"/admin/terms">)
         <p className="text-sm text-fp-dark/75">
           Staff pick a preset from the <strong>Use preset…</strong> list above the Terms box on a quote, proposal, order or invoice. It fills the box, and they
           can still edit it for that customer. Each preset is only offered on the documents you tick.
+        </p>
+        <p className="mt-2 text-sm">
+          Proposal contracts have their own terms:{" "}
+          <Link href="/sales/contract-wording" className="font-semibold text-fp-teal-deep hover:underline">
+            Contract wording
+          </Link>
+          .
         </p>
       </Card>
 

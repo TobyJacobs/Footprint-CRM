@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CheckCircle2, XCircle } from "lucide-react";
 import PrintableDocument, { type PrintableData } from "@/components/PrintableDocument";
+import ContractDocument, { type ContractData } from "@/components/ContractDocument";
 import { inputClass } from "@/components/ui";
 import { gbp, longDate } from "@/lib/customers/display";
 import { ukToday } from "@/lib/dates";
@@ -52,10 +53,16 @@ export default async function PublicQuotePage(props: PageProps<"/q/[token]">) {
   const sp = await props.searchParams;
 
   let quote: QuoteView | null = null;
+  // The contract, if this proposal has one (DJ, 16 November 2026).
+  let contract: ContractData | null = null;
   if (/^[0-9a-f-]{36}$/i.test(token)) {
     const supabase = await createClient();
-    const { data } = await supabase.rpc("get_quote_by_token", { p_token: token });
+    const [{ data }, { data: c }] = await Promise.all([
+      supabase.rpc("get_quote_by_token", { p_token: token }),
+      supabase.rpc("contract_by_token", { p_token: token }),
+    ]);
     quote = (data as QuoteView | null) ?? null;
+    contract = (c as ContractData | null) ?? null;
   }
 
   if (!quote) {
@@ -150,11 +157,19 @@ export default async function PublicQuotePage(props: PageProps<"/q/[token]">) {
         </section>
       )}
 
+      {contract && (
+        <div className="mt-6">
+          <ContractDocument c={contract} companyName={company} />
+        </div>
+      )}
+
       {canRespond && (
         <section className="mt-6 rounded-lg bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-black">Happy to go ahead?</h2>
+          <h2 className="text-lg font-black">{contract ? "Happy to go ahead? Sign and accept" : "Happy to go ahead?"}</h2>
           <p className="mt-1 text-sm text-fp-dark/75">
-            Type your name and choose Accept or Decline. Accepting confirms you&apos;d like {company} to go ahead on the terms above.
+            {contract
+              ? `Type your name and choose Accept and sign, or Decline. Accepting confirms you'd like ${company} to go ahead and signs the agreement above on behalf of ${contract.client || "your business"}.`
+              : `Type your name and choose Accept or Decline. Accepting confirms you'd like ${company} to go ahead on the terms above.`}
           </p>
           {error && (
             <p role="alert" className="mt-4 rounded-md border border-fp-error/30 bg-fp-error/5 px-3 py-2 text-sm text-fp-error">
@@ -174,12 +189,21 @@ export default async function PublicQuotePage(props: PageProps<"/q/[token]">) {
               <span className="font-semibold">Anything we should know? (optional)</span>
               <textarea name="note" rows={3} className={inputClass} />
             </label>
+            {contract && (
+              <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" name="agree" className="mt-1 accent-fp-teal-deep" />
+                <span>
+                  I&apos;ve read the agreement above, I agree to its terms, and I&apos;m authorised to sign it for {contract.client || "my business"}. Typing my name
+                  counts as my signature.
+                </span>
+              </label>
+            )}
             <div className="mt-2 flex flex-wrap gap-3">
               <button
                 formAction={respondToQuote.bind(null, token, true)}
                 className="rounded-md bg-fp-teal-deep px-5 py-2.5 text-sm font-bold text-white hover:bg-fp-teal-deep/90"
               >
-                Accept quote
+                {contract ? "Accept and sign" : "Accept quote"}
               </button>
               <button
                 formAction={respondToQuote.bind(null, token, false)}

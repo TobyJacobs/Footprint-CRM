@@ -130,6 +130,19 @@ function headerFields(fd: FormData, docType: DocType) {
           deposit_percent: isDepositPercent(int(fd, "deposit_percent")) ? int(fd, "deposit_percent") : 0,
         }
       : {}),
+    // Contract on a proposal (DJ, 16 November 2026). Not sent once signed (the
+    // database keeps a signed contract unchanged).
+    ...(docType === "quote" && str(fd, "quote_kind") === "proposal" && fd.has("contract_notice_days")
+      ? {
+          contract_enabled: bool(fd, "contract_enabled"),
+          contract_objectives: str(fd, "contract_objectives")?.slice(0, 5000) ?? null,
+          contract_longterm: str(fd, "contract_longterm")?.slice(0, 5000) ?? null,
+          contract_start_date: /^\d{4}-\d{2}-\d{2}$/.test(str(fd, "contract_start_date") ?? "") ? str(fd, "contract_start_date") : null,
+          contract_notice_days: Math.min(365, Math.max(1, int(fd, "contract_notice_days") ?? 30)),
+          contract_signatory_name: str(fd, "contract_signatory_name")?.slice(0, 200) ?? null,
+          contract_signatory_title: str(fd, "contract_signatory_title")?.slice(0, 200) ?? null,
+        }
+      : {}),
   };
 }
 
