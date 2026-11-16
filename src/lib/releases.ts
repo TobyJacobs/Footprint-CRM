@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.95.0",
+    date: "2026-11-16",
+    title: "Email advertisers their copy",
+    changes: ["Reports → Production has an Email advertisers their copy box. Once an issue's online flipbook is published, one click emails every advertiser in it (that hasn't had it yet) a Read this issue link and the page their advert is on, from their salesperson. It shows who's been sent it and when. This replaces posting complimentary and voucher copies."],
+  },
+  {
     version: "0.94.0",
     date: "2026-11-16",
     title: "Magazine production report",
