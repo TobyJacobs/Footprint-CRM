@@ -7,6 +7,7 @@ import { ukToday } from "@/lib/dates";
 import {
   advertArtworkLabel,
   getPortal,
+  orderProgressLabel,
   ticketKindLabel,
   ticketNumber,
   ticketStatusLabel,
@@ -15,6 +16,7 @@ import {
   type PortalContent,
   type PortalQuote,
 } from "@/lib/portal";
+import { jobNumber } from "@/lib/design/options";
 import { quoteKindLabel } from "@/lib/sales/options";
 import { signOutOfPortal } from "./actions";
 
@@ -39,7 +41,7 @@ function quoteStatus(q: PortalQuote): { label: string; tone: "grey" | "teal" | "
   return { label: "Waiting for your reply", tone: "pink" };
 }
 
-// The signed-in customer's home: their quotes, adverts, invoices, marketing,
+// The signed-in customer's home: their quotes, orders, artwork, adverts, invoices, marketing,
 // hosting plans and support messages, and only theirs.
 export default async function PortalHomePage() {
   const portal = await getPortal();
@@ -66,6 +68,8 @@ export default async function PortalHomePage() {
       <nav aria-label="Sections" className="flex flex-wrap gap-2 text-sm">
         {[
           ["#quotes", "Quotes"],
+          ["#orders", "Orders"],
+          ["#artwork", "Artwork"],
           ["#adverts", "Adverts"],
           ["#invoices", "Invoices"],
           ["#marketing", "Marketing"],
@@ -104,6 +108,77 @@ export default async function PortalHomePage() {
                       <Link href={`/q/${q.token}`} className={secondaryButton}>
                         {status.label === "Waiting for your reply" ? "View and reply" : "View"}
                       </Link>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Card>
+      </div>
+
+      <div id="orders" className="scroll-mt-4">
+        <Card title="Your orders">
+          {portal.orders.length === 0 ? (
+            <p className="text-sm text-fp-mid">No orders yet.</p>
+          ) : (
+            <ul className="divide-y divide-fp-border text-sm">
+              {portal.orders.map((o) => {
+                const progress = orderProgressLabel(o);
+                return (
+                  <li key={o.token} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold">
+                        {o.number}
+                        {o.title ? ` · ${o.title}` : ""}
+                      </p>
+                      <p className="text-xs text-fp-mid">
+                        {o.po ? `Your PO ${o.po} · ` : ""}
+                        {longDate(o.issue_date)}
+                        {o.shipped_at ? ` · shipped ${longDate(o.shipped_at.slice(0, 10))}` : ""}
+                        {several ? ` · ${o.customer_name}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold">{gbp(Number(o.total))}</span>
+                      <Badge tone={progress.tone}>{progress.label}</Badge>
+                      <Link href={`/d/${o.token}`} className={secondaryButton}>
+                        View
+                      </Link>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Card>
+      </div>
+
+      <div id="artwork" className="scroll-mt-4">
+        <Card title="Your artwork">
+          {portal.artwork.length === 0 ? (
+            <p className="text-sm text-fp-mid">No artwork in progress.</p>
+          ) : (
+            <ul className="divide-y divide-fp-border text-sm">
+              {portal.artwork.map((a) => {
+                const art = advertArtworkLabel(a.stage, a.artwork_source);
+                return (
+                  <li key={a.number} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold">{a.title}</p>
+                      <p className="text-xs text-fp-mid">
+                        {jobNumber(a.number)}
+                        {a.order_number ? ` · order ${a.order_number}` : ""}
+                        {several ? ` · ${a.customer_name}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge tone={art === "Artwork approved" ? "teal" : art === "Waiting for your approval" ? "pink" : "grey"}>{art}</Badge>
+                      {a.proof_token && (
+                        <Link href={`/p/${a.proof_token}`} className={primaryButton}>
+                          View and approve proof
+                        </Link>
+                      )}
                     </div>
                   </li>
                 );

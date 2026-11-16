@@ -95,6 +95,36 @@ export type PortalOverview = {
   tickets: PortalTicketSummary[];
   adverts: PortalAdvert[];
   invoices: PortalInvoice[];
+  orders: PortalOrder[];
+  artwork: PortalArtwork[];
+};
+
+// A sales order, with the customer's own PO number (never Footprint's
+// purchase orders to suppliers).
+export type PortalOrder = {
+  number: string;
+  title: string | null;
+  po: string | null;
+  status: "open" | "completed" | "invoiced";
+  issue_date: string;
+  total: number;
+  shipped_at: string | null;
+  customer_name: string;
+  token: string;
+  // The stage of each design job on the order.
+  artwork: string[];
+};
+
+// A design job (not a magazine advert: those show under Adverts).
+export type PortalArtwork = {
+  number: number;
+  title: string;
+  stage: string;
+  artwork_source: "design" | "customer" | "repeat" | null;
+  order_number: string | null;
+  customer_name: string;
+  // The proof waiting for their approval, if there is one.
+  proof_token: string | null;
 };
 
 export type PortalAdvert = {
@@ -128,6 +158,18 @@ export function advertArtworkLabel(stage: string | null, source: string | null):
   return source === "customer" ? "Checking your artwork" : "Being designed";
 }
 
+// Where a sales order is up to, in the customer's words.
+export function orderProgressLabel(o: Pick<PortalOrder, "status" | "shipped_at" | "artwork">): {
+  label: string;
+  tone: "grey" | "teal" | "pink" | "amber";
+} {
+  if (o.status !== "open") return { label: "Completed", tone: "teal" };
+  if (o.shipped_at) return { label: "Shipped", tone: "teal" };
+  if (o.artwork.includes("with_customer")) return { label: "Artwork waiting for your approval", tone: "pink" };
+  if (o.artwork.some((s) => !["approved", "production", "done"].includes(s))) return { label: "Artwork in progress", tone: "amber" };
+  return { label: "In progress", tone: "amber" };
+}
+
 // Customer support wording, shared by the portal and the staff tab.
 export const ticketKindLabel = (k: string) => (k === "change" ? "Change request" : "Question");
 export const ticketStatusLabel = (s: string) => (s === "in_progress" ? "In progress" : s === "done" ? "Done" : "New");
@@ -146,7 +188,10 @@ export async function getPortal(): Promise<PortalOverview | null> {
   if (!session) return null;
   const supabase = await createClient();
   const { data } = await supabase.rpc("portal_overview", { p_session: session });
-  return (data as PortalOverview | null) ?? null;
+  const portal = data as PortalOverview | null;
+  // Orders and artwork arrived later (16 November 2026): empty until the
+  // database has them, so the page never breaks while an update rolls out.
+  return portal ? { ...portal, orders: portal.orders ?? [], artwork: portal.artwork ?? [] } : null;
 }
 
 // One of the customer's own support conversations, or null.
