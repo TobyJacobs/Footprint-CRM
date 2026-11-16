@@ -9,7 +9,7 @@ One short entry per session. Newest at the top.
 - Owner asked about browser alerts: they only worked for the open chat. Built alerts on every page and a live menu badge (0.98.0, #156); merged, live, needs a colleague to test.
 
 ## 16 November 2026
-- Contract builder for proposals live (0.93.0, #151) after DJ's decisions (sign by accepting online; admins + Directors edit wording; one step). Magazine reports 3, 4 (now: email advertisers their copy) and 5 built as stacked PRs #152 (0.94.0, Reports → Production), #153 (0.95.0, email advertisers their copy) and #154 (0.96.0, Reports → Advertisers + consented mailing list CSV); merged and live (0.96.0); empty until adverts are booked.
+- Contract builder for proposals live (0.93.0, #151) after DJ's decisions (sign by accepting online; admins + Directors edit wording; one step). Magazine reports 3, 4 (now: email advertisers their copy) and 5 built as stacked PRs #152 (0.94.0, Reports → Production), #153 (0.95.0, email advertisers their copy) and #154 (0.96.0, Reports → Advertisers + consented mailing list CSV); merged and live (0.96.0); empty until adverts are booked. Commission from Jack Burton's sheet: PR #157 (0.99.0); after merge, load the targets/bands through the data API (not in code) and add Jack Burton as a commission viewer. Only Jack Burton has a login; Jack Williams, Steve Knight, Wendy Wilson and Danny Cox need to sign in for their sales to count.
 
 ## 12 November 2026
 - More DJ items: Download proofs live (0.90.0, #147), Purchasing step name (0.90.1, #148), PO Due box + list column (0.91.0, #149). Shipped step live (0.92.0, #150). Note: the app restarted overnight; the browser pane needed signing in again, and the scratchpad test database was cleared (rebuild scratchpad/pgtest if needed).
