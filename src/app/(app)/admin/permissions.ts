@@ -13,4 +13,5 @@ export const actionLabels: Record<(typeof ACTIONS)[number], string> = {
 // not by roles, so it's left out of the permission grid.
 // FootprintAI is left out: access comes only from its invite list (Admin adds people there).
 // FootprintAI (agents and the transition tracker) is invite only, not role permissions.
-export const permissionFeatures = features.filter((f) => !["admin", "ai"].includes(f.key));
+// Team chat is for every active member of staff, so it has no permissions either.
+export const permissionFeatures = features.filter((f) => !["admin", "ai", "chat"].includes(f.key));

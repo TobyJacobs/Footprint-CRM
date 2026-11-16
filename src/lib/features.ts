@@ -10,6 +10,7 @@ import {
   Newspaper,
   Palette,
   Map,
+  MessagesSquare,
   Settings,
   Sparkles,
   Target,
@@ -45,6 +46,14 @@ export const home: Feature = {
 };
 
 export const features: Feature[] = [
+  {
+    key: "chat",
+    label: "Team chat",
+    href: "/chat",
+    icon: MessagesSquare,
+    description: "Channels and direct messages between staff, with files and @mentions.",
+    wave: 0,
+  },
   {
     key: "hub",
     label: "Staff hub",

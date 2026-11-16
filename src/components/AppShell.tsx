@@ -31,7 +31,7 @@ function Wordmark() {
   );
 }
 
-function NavLink({ feature, active }: { feature: Feature; active: boolean }) {
+function NavLink({ feature, active, badge = 0 }: { feature: Feature; active: boolean; badge?: number }) {
   const Icon = feature.icon;
   return (
     <Link
@@ -49,11 +49,16 @@ function NavLink({ feature, active }: { feature: Feature; active: boolean }) {
         aria-hidden
       />
       {feature.label}
+      {badge > 0 && (
+        <span className="ml-auto rounded-full bg-fp-pink px-1.5 text-xs font-bold text-white" aria-label={`${badge} unread`}>
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
     </Link>
   );
 }
 
-function Nav({ pathname, visible, section }: { pathname: string; visible: Feature[]; section: string | null }) {
+function Nav({ pathname, visible, section, chatUnread }: { pathname: string; visible: Feature[]; section: string | null; chatUnread: number }) {
   const isActive = (f: Feature) =>
     f.href === "/" ? pathname === "/" : [f.href, ...(f.alsoActive ?? [])].some((h) => pathname.startsWith(h));
   return (
@@ -70,7 +75,7 @@ function Nav({ pathname, visible, section }: { pathname: string; visible: Featur
             />
           ))
         ) : (
-          <NavLink key={f.key} feature={f} active={isActive(f)} />
+          <NavLink key={f.key} feature={f} active={isActive(f)} badge={f.key === "chat" ? chatUnread : 0} />
         ),
       )}
     </nav>
@@ -104,11 +109,13 @@ export default function AppShell({
   visibleFeatureKeys,
   userName,
   userEmail,
+  chatUnread = 0,
 }: {
   children: React.ReactNode;
   visibleFeatureKeys: string[];
   userName: string;
   userEmail: string;
+  chatUnread?: number;
 }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -127,7 +134,7 @@ export default function AppShell({
           <Wordmark />
         </div>
         <div className="flex-1 overflow-y-auto px-3 pb-6">
-          <Nav pathname={pathname} visible={visible} section={section} />
+          <Nav pathname={pathname} visible={visible} section={section} chatUnread={chatUnread} />
         </div>
         <UserBox name={userName} email={userEmail} />
       </aside>
@@ -158,7 +165,7 @@ export default function AppShell({
             }}
           >
             <div className="px-3 pb-4">
-              <Nav pathname={pathname} visible={visible} section={section} />
+              <Nav pathname={pathname} visible={visible} section={section} chatUnread={chatUnread} />
             </div>
             <UserBox name={userName} email={userEmail} />
           </div>

@@ -11,6 +11,17 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.97.0",
+    date: "2026-11-16",
+    title: "Team chat",
+    changes: [
+      "New Team chat in the menu, for all staff: channels (starting with General) and direct messages to one person or a small group. Messages arrive instantly, with unread counts in the menu and the chat list.",
+      "@mention someone to highlight it for them, attach files (up to 20 MB each, pictures show in the chat), edit or delete your own messages, and search everything you can see.",
+      "Private channels and direct messages can only be read by the people in them (not even admins). Messages and files are deleted automatically after 2 years.",
+      "Turn on desktop alerts in a chat to hear about new messages while FootprintOS is open in another tab. There are no phone notifications yet.",
+    ],
+  },
+  {
     version: "0.96.0",
     date: "2026-11-16",
     title: "Advertisers report and mailing list",
