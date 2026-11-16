@@ -86,6 +86,47 @@ export default async function DocumentForm({
         />
       </Card>
 
+      {/* Contract (DJ, 16 November 2026): proposals can include one; the
+          customer signs it by accepting online. Locked once signed. */}
+      {docType === "quote" && kind === "proposal" && (
+        <Card title="Contract">
+          {v("contract_signed_at") ? (
+            <p className="text-sm">This contract has been signed, so it can&apos;t be changed.</p>
+          ) : (
+            <div className="grid gap-4">
+              <Checkbox name="contract_enabled" label="Include a contract (accepting the proposal online signs it)" defaultChecked={!!v("contract_enabled")} />
+              <p className="-mt-2 text-xs text-fp-mid">
+                The terms and conditions come from{" "}
+                <Link href="/sales/contract-wording" className="font-semibold text-fp-teal-deep hover:underline">
+                  Contract wording
+                </Link>
+                ; the pricing and payment schedule come from this proposal.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Objectives (one per line)">
+                  <TextArea name="contract_objectives" rows={4} defaultValue={(v("contract_objectives") as string) ?? null} />
+                </Field>
+                <Field label="Long-term solution (one per line)">
+                  <TextArea name="contract_longterm" rows={4} defaultValue={(v("contract_longterm") as string) ?? null} />
+                </Field>
+                <Field label="Project start date">
+                  <TextInput name="contract_start_date" type="date" defaultValue={(v("contract_start_date") as string) ?? null} />
+                </Field>
+                <Field label="Termination notice (days)">
+                  <TextInput name="contract_notice_days" type="number" defaultValue={(v("contract_notice_days") as number) ?? 30} />
+                </Field>
+                <Field label="Client signatory name" hint="Leave blank to use the contact.">
+                  <TextInput name="contract_signatory_name" defaultValue={(v("contract_signatory_name") as string) ?? null} />
+                </Field>
+                <Field label="Client signatory job title">
+                  <TextInput name="contract_signatory_title" defaultValue={(v("contract_signatory_title") as string) ?? null} />
+                </Field>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+
       {docType === "sales_order" && (
         <Card title="Addresses & delivery">
           <AddressFields

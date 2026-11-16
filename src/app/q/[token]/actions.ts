@@ -19,6 +19,15 @@ export async function respondToQuote(token: string, accept: boolean, fd: FormDat
   const ip = h.get("x-nf-client-connection-ip") ?? h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
 
   const supabase = await createClient();
+  // A proposal with a contract: accepting signs it, so they must tick to agree
+  // (DJ, 16 November 2026). The database saves the signed copy.
+  if (accept) {
+    const { data: contract } = await supabase.rpc("contract_by_token", { p_token: token });
+    const c = contract as { signed?: boolean } | null;
+    if (c && !c.signed && fd.get("agree") !== "on") {
+      redirect(`/q/${token}?error=${encodeURIComponent("Please tick to confirm you agree to the agreement and can sign it.")}`);
+    }
+  }
   const { data: problem, error } = await supabase.rpc("respond_to_quote", {
     p_token: token,
     p_accept: accept,

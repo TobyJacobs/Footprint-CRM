@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.93.0",
+    date: "2026-11-16",
+    title: "Contracts on proposals",
+    changes: [
+      "A proposal can now include a contract, like Footprint's contract builder: parties, objectives, long-term solution, scope of services, pricing, payment schedule, terms and conditions and signatures. Tick Include a contract on the proposal and fill in the objectives, start date, notice period and who signs.",
+      "The customer sees the contract under the proposal on their link. Ticking to agree, typing their name and clicking Accept and sign accepts the proposal and signs the contract in one step. FootprintOS keeps a copy of exactly what they signed, with the date and time, and it can't be changed afterwards.",
+      "The terms and conditions are in Sales → Contract wording (also linked from Admin → Terms). Admins and Directors can change them; contracts already signed keep their wording. The proposal and its sales order have a Contract button to view or print it.",
+    ],
+  },
+  {
     version: "0.92.0",
     date: "2026-11-12",
     title: "Shipped step on sales orders",

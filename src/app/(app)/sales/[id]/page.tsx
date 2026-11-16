@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { siteUrl } from "@/lib/site-url";
 import { notFound } from "next/navigation";
-import { Download, Pencil, Printer } from "lucide-react";
+import { Download, FileSignature, Pencil, Printer } from "lucide-react";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import CopyButton from "@/components/CopyButton";
 import { Badge, Card, Notice, dangerButton, inputClass, primaryButton, secondaryButton } from "@/components/ui";
@@ -58,7 +58,7 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
   const [lines, { data: source }, { data: children }, { data: pos }, { data: emailLog }, { data: settings }, { data: canOverrideGp }, { data: project }] = await Promise.all([
     getDocumentLines(id),
     doc.source_document_id
-      ? supabase.from("sales_documents").select("id, number, doc_type").eq("id", doc.source_document_id).maybeSingle()
+      ? supabase.from("sales_documents").select("id, number, doc_type, contract_enabled, contract_signed_at").eq("id", doc.source_document_id).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from("sales_documents").select("id, number, doc_type, status, subtotal, total").eq("source_document_id", id),
     type === "sales_order"
@@ -233,6 +233,13 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
           <Link href={`/sales/${id}/print`} className={`${secondaryButton} inline-flex items-center gap-2`}>
             <Printer size={14} aria-hidden /> Print
           </Link>
+          {/* The contract (DJ, 16 November 2026): on a proposal with one, or an
+              order made from a proposal whose contract was signed. */}
+          {(doc.contract_enabled || doc.contract_signed_at || source?.contract_signed_at) && (
+            <Link href={`/sales/${id}/contract`} className={`${secondaryButton} inline-flex items-center gap-2`}>
+              <FileSignature size={14} aria-hidden /> {doc.contract_signed_at || source?.contract_signed_at ? "Signed contract" : "Contract (not signed yet)"}
+            </Link>
+          )}
           {/* A real file (a download, not a page), so a plain link rather than Link. */}
           <a href={`/sales/${id}/pdf`} className={`${secondaryButton} inline-flex items-center gap-2`}>
             <Download size={14} aria-hidden /> Download PDF
