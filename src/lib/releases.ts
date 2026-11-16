@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.100.0",
+    date: "2026-11-16",
+    title: "Xero: invoices and credit notes",
+    changes: [
+      "New Admin → Xero: connect FootprintOS to Footprint's Xero, choose what to send, match each VAT rate to Xero's, and see everything that's been sent (with Try again if Xero turned something down).",
+      "Issued invoices and credit notes go to Xero as drafts, with FootprintOS's numbers (or Xero's, if you switch that in Admin). The customer is matched to their Xero contact, or added to Xero if they're new, and remembered.",
+      "Safety catches: nothing goes automatically until an admin turns on Send automatically, and then only invoices issued on or after a chosen date. Each issued invoice and credit note also has a Send to Xero now button.",
+    ],
+  },
+  {
     version: "0.99.0",
     date: "2026-11-16",
     title: "Sales commission",

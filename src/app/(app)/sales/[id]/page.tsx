@@ -16,6 +16,7 @@ import { purchasingSummary } from "@/lib/sales/purchasing";
 import { docTypes, gpOverrideReasons, isDocType, isLockedRecord, lossReasons, marginPercent, marginText, poStatusLabel, quoteKindLabel, splitGpOverrideReason, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
 import { createClient } from "@/lib/supabase/server";
 import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, markQuoteDeclined, requestAdvertArtwork, setDocumentStatus, setLineGpOverride, setOrderShipped, setProjectNotNeeded } from "../actions";
+import { sendToXero } from "../xero-actions";
 import { createProjectForOrder } from "../../projects/actions";
 import EmailCard from "../EmailCard";
 import { orderStages, quoteStages } from "@/lib/sales/stages";
@@ -228,6 +229,25 @@ export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
             {contact && ` · FAO ${personName(contact)}`}
             {doc.title && ` · ${doc.title}`}
           </p>
+          {/* Xero (Admin → Xero): issued invoices and credit notes go there as drafts. */}
+          {(type === "invoice" || type === "credit_note") && ["issued", "paid"].includes(doc.status) && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+              {doc.xero_id ? (
+                <Badge tone="teal">In Xero{doc.xero_number && doc.xero_number !== doc.number ? ` as ${doc.xero_number}` : ""}</Badge>
+              ) : (
+                <>
+                  <Badge>Not in Xero yet</Badge>
+                  {canEdit && (
+                    <form action={sendToXero.bind(null, id)}>
+                      <button type="submit" className="text-xs font-semibold text-fp-teal-deep hover:underline">
+                        Send to Xero now
+                      </button>
+                    </form>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <Link href={`/sales/${id}/print`} className={`${secondaryButton} inline-flex items-center gap-2`}>
