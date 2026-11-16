@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.96.0",
+    date: "2026-11-16",
+    title: "Advertisers report and mailing list",
+    changes: [
+      "New Reports → Advertisers: every company that advertised in a period (by issue month, optionally one edition), with their editions, issues, amount booked, latest issue, contacts and last activity, plus a link to their notes and actions.",
+      "Download the list as a CSV, or download a mailing list (CSV) of only the contacts who've agreed to emails (ticked \"include in emails\" and not opted out), in place of Mag Manager's Mailchimp export.",
+    ],
+  },
+  {
     version: "0.95.0",
     date: "2026-11-16",
     title: "Email advertisers their copy",
