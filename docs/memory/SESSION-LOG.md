@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 16 November 2026: Customer portal side menu
+- Owner asked for OS-style side navigation in the portal, design work visible, clean look. Built 0.102.0: side menu with counts, Overview, a page per section, Design work page with progress and proof history. Checked locally with sample data; PR waiting for the owner.
+
 ## 16 November 2026: Portal welcome email, orders and artwork
 - Owner asked for new accounts to get a customer portal link and to track POs, SOs and artwork there. Built 0.100.0: automatic welcome email for new contacts plus a Send portal link button; portal shows sales orders (their PO number) and artwork (approve proofs). Merged at the owner's request (#158); live checks done without changing data; full test with a test contact still to do.
 
