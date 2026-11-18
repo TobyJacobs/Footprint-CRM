@@ -3,6 +3,8 @@ import { BOT_SKILLS, defaultModel, engineLabel, type BotEngine } from "@/lib/ai/
 
 export type BotValues = {
   name?: string;
+  description?: string | null;
+  webhook_url?: string | null;
   engine?: string;
   model?: string | null;
   skills?: string[];
@@ -17,18 +19,20 @@ export default function BotForm({
   values = {},
   agents,
   submitLabel,
+  canQuote,
 }: {
   action: (fd: FormData) => Promise<void>;
   values?: BotValues;
   agents: { id: string; title: string }[];
   submitLabel: string;
+  canQuote: boolean;
 }) {
   return (
     <form action={action} className="grid gap-4 sm:grid-cols-2">
       <Field label="Name">
         <input name="name" required maxLength={80} defaultValue={values.name ?? ""} className={inputClass} />
       </Field>
-      <Field label="Engine" hint="Claude and Grok bots run inside FootprintOS. An outside bot connects in with its own key.">
+      <Field label="Engine" hint="Claude and Grok bots run inside FootprintOS with your instructions. An outside bot lives somewhere else and connects with its own key and web address.">
         <select name="engine" defaultValue={values.engine ?? "claude"} className={inputClass}>
           {(Object.keys(engineLabel) as BotEngine[]).map((e) => (
             <option key={e} value={e}>
@@ -36,6 +40,16 @@ export default function BotForm({
             </option>
           ))}
         </select>
+      </Field>
+      <Field label="What it's for" hint="One line, shown to everyone, e.g. 'Jack's account manager: knows our customers and follow-ups'." wide>
+        <input name="description" maxLength={300} defaultValue={values.description ?? ""} className={inputClass} />
+      </Field>
+      <Field
+        label="Web address (outside bots)"
+        hint="Optional. If your bot has its own https address, FootprintOS sends it requests and group chats there, so everyone can use it here."
+        wide
+      >
+        <input name="webhook_url" type="url" maxLength={500} placeholder="https://" defaultValue={values.webhook_url ?? ""} className={inputClass} />
       </Field>
       <Field label="Model (Claude and Grok bots)" hint={`Leave blank for the usual one: ${defaultModel.claude} for Claude, ${defaultModel.grok} for Grok.`}>
         <input name="model" maxLength={80} defaultValue={values.model ?? ""} className={inputClass} />
@@ -54,15 +68,28 @@ export default function BotForm({
         <legend className="mb-1 font-semibold">What it&apos;s allowed to do</legend>
         {BOT_SKILLS.map((s) => (
           <label key={s.key} className="flex items-start gap-2">
-            <input type="checkbox" name="skills" value={s.key} defaultChecked={values.skills?.includes(s.key) ?? true} className="mt-1" />
+            <input
+              type="checkbox"
+              name="skills"
+              value={s.key}
+              defaultChecked={values.skills?.includes(s.key) ?? false}
+              disabled={!canQuote && !values.skills?.includes(s.key)}
+              className="mt-1"
+            />
             <span>
-              <span className="font-semibold">{s.label}</span> <span className="text-fp-mid">· {s.hint} (drafts only)</span>
+              <span className="font-semibold">{s.label}</span> <span className="text-fp-mid">
+                · {s.hint} (drafts only){canQuote ? "" : ". Only people who can make quotes can switch this on."}
+              </span>
             </span>
           </label>
         ))}
       </fieldset>
-      <Field label="Extra instructions (Claude and Grok bots)" hint="Anything this bot should always do, e.g. 'Always quote in boxes of 250'." wide>
-        <textarea name="instructions" rows={4} maxLength={4000} defaultValue={values.instructions ?? ""} className={inputClass} />
+      <Field
+        label="Instructions (Claude and Grok bots)"
+        hint="Who the bot is and how it should work. To bring over a bot you already use in Claude or Grok, paste its instructions here."
+        wide
+      >
+        <textarea name="instructions" rows={6} maxLength={4000} defaultValue={values.instructions ?? ""} className={inputClass} />
       </Field>
       <label className="flex items-center gap-2 text-sm sm:col-span-2">
         <input type="checkbox" name="active" defaultChecked={values.active ?? true} /> Switched on

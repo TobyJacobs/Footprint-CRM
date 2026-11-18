@@ -3,7 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { longDate } from "@/lib/customers/display";
 import { ukToday } from "@/lib/dates";
-import { MAX_TURNS, botRules, defaultModel, toolsFor, type BotTool } from "./bot-tools";
+import { MAX_TURNS, botRules, chatRules, chatTranscript, defaultModel, toolsFor, type BotTool, type ChatLine } from "./bot-tools";
+import { callOutsideBot } from "./outside-bots";
 
 // The AI control room's engines (owner, 18 November 2026): runs an in-house
 // bot one step at a time (one reply from Claude or Grok, then the tools it
@@ -14,7 +15,15 @@ import { MAX_TURNS, botRules, defaultModel, toolsFor, type BotTool } from "./bot
 
 export const engineReady = { claude: () => !!process.env.ANTHROPIC_API_KEY, grok: () => !!process.env.XAI_API_KEY };
 
-export type RunBot = { name: string; engine: "claude" | "grok"; model: string | null; instructions: string | null; skills: string[] };
+export type RunBot = {
+  id: string;
+  name: string;
+  engine: "claude" | "grok" | "outside";
+  model: string | null;
+  instructions: string | null;
+  skills: string[];
+  webhook_url: string | null;
+};
 export type RunRow = { id: string; request: string; conversation: unknown[]; turns: number };
 export type StepOutcome = { status: "running" | "done" | "failed" | "stopped"; reply?: string };
 
@@ -137,13 +146,29 @@ export async function stepRun(supabase: SupabaseClient, run: RunRow, bot: RunBot
   };
 
   if (run.turns >= MAX_TURNS) return finish({ status: "stopped", reply: `Stopped after ${MAX_TURNS} steps without finishing. Please check any drafts it made.` });
+  // An outside bot gets the request at its own address and answers in one go
+  // (it can use its tools on this run with its key while it works).
+  if (bot.engine === "outside") {
+    try {
+      const reply = await callOutsideBot(bot, {
+        type: "run",
+        run_id: run.id,
+        request: run.request,
+        bot: { id: bot.id, name: bot.name },
+        tools: "Send tools to /api/control-room with your key and this run_id. Drafts only.",
+      });
+      return finish({ status: "done", reply });
+    } catch (e) {
+      return finish({ status: "failed", reply: `${bot.name} didn't answer: ${e instanceof Error ? e.message.slice(0, 200) : "unknown problem"}` });
+    }
+  }
   if (!engineReady[bot.engine]()) {
     return finish({ status: "failed", reply: `${bot.engine === "claude" ? "Claude" : "Grok"} isn't connected yet: an admin needs to add its key in Netlify.` });
   }
   const tools = toolsFor(bot.skills);
   const system = botRules(bot.name, longDate(ukToday()) ?? ukToday(), bot.instructions);
   try {
-    const { conversation, outcome } = await (bot.engine === "claude" ? claudeStep : grokStep)(supabase, run, bot, system, tools);
+    const { conversation, outcome } = await (bot.engine === "claude" ? claudeStep : grokStep)(supabase, run, bot as RunBot & { engine: "claude" | "grok" }, system, tools);
     return finish(outcome, conversation);
   } catch (e) {
     const reason =
@@ -158,3 +183,61 @@ export async function stepRun(supabase: SupabaseClient, run: RunRow, bot: RunBot
     return finish({ status: "failed", reply: reason });
   }
 }
+
+// A bot's next message in a group chat (no tools: bots only talk there).
+export async function chatReply(bot: RunBot, chat: { id: string; title: string }, others: string[], lines: ChatLine[]): Promise<string> {
+  const recent = lines.slice(-40);
+  if (bot.engine === "outside") {
+    return callOutsideBot(bot, {
+      type: "chat",
+      chat_id: chat.id,
+      title: chat.title,
+      you: bot.name,
+      others,
+      messages: recent.map((l) => ({ from: l.from, text: l.body })),
+    });
+  }
+  if (!engineReady[bot.engine]()) throw new Error(`${bot.engine === "claude" ? "Claude" : "Grok"} isn't connected yet (its key needs adding in Netlify)`);
+  const system = chatRules(bot.name, others, chat.title, longDate(ukToday()) ?? ukToday(), bot.instructions);
+  const prompt = `The chat so far:\n\n${chatTranscript(recent)}\n\nWrite ${bot.name}'s next message (just the message, without your name in front).`;
+  if (bot.engine === "claude") {
+    const model = bot.model?.trim() || defaultModel.claude;
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 50_000, maxRetries: 1 });
+    const response = await client.beta.messages.create({
+      model,
+      max_tokens: 4000,
+      system,
+      messages: [{ role: "user", content: prompt }],
+      ...(isCurrentClaude(model) ? { output_config: { effort: "low" as const } } : {}),
+      ...(takesFallbacks(model) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
+    });
+    if (response.stop_reason === "refusal") throw new Error("Claude declined to answer");
+    const text = response.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("\n").trim();
+    if (!text) throw new Error("Claude sent an empty answer");
+    return stripName(text, bot.name);
+  }
+  const res = await fetch("https://api.x.ai/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.XAI_API_KEY}` },
+    body: JSON.stringify({
+      model: bot.model?.trim() || process.env.XAI_MODEL || defaultModel.grok,
+      temperature: 0.5,
+      max_tokens: 600,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: prompt },
+      ],
+    }),
+    signal: AbortSignal.timeout(50_000),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Grok said ${res.status}`);
+  const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  const text = (data.choices?.[0]?.message?.content ?? "").trim();
+  if (!text) throw new Error("Grok sent an empty answer");
+  return stripName(text, bot.name);
+}
+
+// Bots sometimes start with their own name ("Design bot: ..."): take it off.
+const stripName = (text: string, name: string) =>
+  text.replace(new RegExp(`^\\s*\\**${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\**\\s*:\\s*`, "i"), "").slice(0, 8000);

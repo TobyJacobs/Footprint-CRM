@@ -11,6 +11,18 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.108.0",
+    date: "2026-11-18",
+    title: "Control room: group chats and everyone's bots",
+    changes: [
+      "Control room now has its own link in the side menu, under FootprintAI.",
+      "Group chats: choose two or more bots (for example an account manager and a design bot), write the first message and let them talk it through in turns. Join in whenever you like, ask one bot on its own, or let them go for up to 3 rounds. Bots in a group chat only talk; they don't make quotes or send anything.",
+      "Everyone on the FootprintAI list can now connect their own bots (Control room → Connect or manage bots), not just admins. A Claude or Grok bot runs here with your own instructions: to bring over a bot you already use, paste its instructions in. Each bot shows who owns it, and only its owner or an admin can change it.",
+      "Bots that live somewhere else can have their own web address: FootprintOS then sends them requests and group chats, so everyone can ask them in the control room. Each message is signed so the bot knows it came from FootprintOS.",
+      "Only people who can make quotes can give a bot the Quotes skill, and an outside bot can only make a draft quote when the person who asked could make one themselves.",
+    ],
+  },
+  {
     version: "0.107.0",
     date: "2026-11-18",
     title: "AI control room",

@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Bot,
   Briefcase,
   ClipboardList,
   FileText,
@@ -43,6 +44,18 @@ export const home: Feature = {
   icon: Home,
   description: "Your overview of the platform.",
   wave: 0,
+};
+
+// The AI control room (owner, 18 November 2026): its own link in the menu,
+// just under FootprintAI, for people who can see the agents workspace. It
+// shares FootprintAI's permission, so it isn't a separate row in Roles.
+export const controlRoom: Feature = {
+  key: "control-room",
+  label: "Control room",
+  href: "/ai/control-room",
+  icon: Bot,
+  description: "Ask the team's bots to do work in plain English; they make drafts for a person to check.",
+  wave: 4,
 };
 
 export const features: Feature[] = [

@@ -7,7 +7,7 @@ import { Suspense, createContext, useCallback, useContext, useState } from "reac
 import { LogOut, Menu, X } from "lucide-react";
 import ActivityBar from "./ActivityBar";
 import ChatAlerts from "./ChatAlerts";
-import { features, home, type Feature } from "@/lib/features";
+import { controlRoom, features, home, type Feature } from "@/lib/features";
 import { currentVersion } from "@/lib/releases";
 
 // Which of Sales / Operations is open, set by their tabs (both share /sales).
@@ -59,9 +59,24 @@ function NavLink({ feature, active, badge = 0 }: { feature: Feature; active: boo
   );
 }
 
-function Nav({ pathname, visible, section, chatUnread }: { pathname: string; visible: Feature[]; section: string | null; chatUnread: number }) {
+function Nav({
+  pathname,
+  visible,
+  section,
+  chatUnread,
+  showControlRoom,
+}: {
+  pathname: string;
+  visible: Feature[];
+  section: string | null;
+  chatUnread: number;
+  showControlRoom: boolean;
+}) {
+  const inControlRoom = pathname.startsWith(controlRoom.href);
   const isActive = (f: Feature) =>
-    f.href === "/" ? pathname === "/" : [f.href, ...(f.alsoActive ?? [])].some((h) => pathname.startsWith(h));
+    f.href === "/"
+      ? pathname === "/"
+      : !(f.key === "ai" && inControlRoom) && [f.href, ...(f.alsoActive ?? [])].some((h) => pathname.startsWith(h));
   return (
     <nav aria-label="Main" className="flex flex-col gap-1">
       <NavLink feature={home} active={isActive(home)} />
@@ -75,6 +90,8 @@ function Nav({ pathname, visible, section, chatUnread }: { pathname: string; vis
               active={isActive(f) && section === l.section}
             />
           ))
+        ) : f.key === "ai" && showControlRoom ? (
+          [<NavLink key={f.key} feature={f} active={isActive(f)} />, <NavLink key={controlRoom.key} feature={controlRoom} active={inControlRoom} />]
         ) : (
           <NavLink key={f.key} feature={f} active={isActive(f)} badge={f.key === "chat" ? chatUnread : 0} />
         ),
@@ -112,6 +129,7 @@ export default function AppShell({
   userEmail,
   chatUnread = 0,
   userId,
+  showControlRoom = false,
 }: {
   children: React.ReactNode;
   visibleFeatureKeys: string[];
@@ -119,6 +137,7 @@ export default function AppShell({
   userEmail: string;
   chatUnread?: number;
   userId: string;
+  showControlRoom?: boolean;
 }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -144,7 +163,7 @@ export default function AppShell({
           <Wordmark />
         </div>
         <div className="flex-1 overflow-y-auto px-3 pb-6">
-          <Nav pathname={pathname} visible={visible} section={section} chatUnread={unread} />
+          <Nav pathname={pathname} visible={visible} section={section} chatUnread={unread} showControlRoom={showControlRoom} />
         </div>
         <UserBox name={userName} email={userEmail} />
       </aside>
@@ -175,7 +194,7 @@ export default function AppShell({
             }}
           >
             <div className="px-3 pb-4">
-              <Nav pathname={pathname} visible={visible} section={section} chatUnread={unread} />
+              <Nav pathname={pathname} visible={visible} section={section} chatUnread={unread} showControlRoom={showControlRoom} />
             </div>
             <UserBox name={userName} email={userEmail} />
           </div>
