@@ -34,11 +34,12 @@ const nextConfig: NextConfig = {
   },
   headers() {
     return [
-      // Everything except the flipbooks, forms and chat: never shown inside another site.
-      { source: "/((?!read/|f/|c/).*)", headers: [...securityHeaders, { key: "X-Frame-Options", value: "DENY" }] },
+      // Everything except the flipbooks, forms, chat and advert booking: never shown inside another site.
+      { source: "/((?!read/|f/|c/|book$).*)", headers: [...securityHeaders, { key: "X-Frame-Options", value: "DENY" }] },
       // Flipbooks (/read/…), enquiry forms (/f/…) and the website chat (/c/…)
       // may be shown inside Footprint's own websites.
-      ...["/read/:path*", "/f/:path*", "/c/:path*"].map((source) => ({
+      // Online advert booking (/book) too (owner, 18 November 2026).
+      ...["/read/:path*", "/f/:path*", "/c/:path*", "/book"].map((source) => ({
         source,
         headers: [...securityHeaders, { key: "Content-Security-Policy", value: `frame-ancestors 'self' ${footprintSites.join(" ")}` }],
       })),

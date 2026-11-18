@@ -607,3 +607,19 @@ export async function placeArticle(givenId: string, fd: FormData) {
   if (error) contentFail(to, error.message);
   contentDone(to);
 }
+
+// Online advert booking settings (owner, 18 November 2026): on or off, who new
+// booking quotes are given to, and who's emailed about them.
+export async function saveOnlineBooking(fd: FormData) {
+  await requirePermission("magazines", "edit");
+  const uuid = /^[0-9a-f-]{36}$/i;
+  const owner = str(fd, "owner_id");
+  const notify = fd.getAll("notify_ids").map(String).filter((v) => uuid.test(v));
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("online_booking_settings")
+    .update({ active: bool(fd, "active"), owner_id: owner && uuid.test(owner) ? owner : null, notify_ids: notify })
+    .eq("id", true);
+  if (error) fail(error.message);
+  done();
+}

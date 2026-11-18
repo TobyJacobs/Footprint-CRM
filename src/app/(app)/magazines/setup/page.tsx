@@ -7,7 +7,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { addMonthsTo, ukMonth } from "@/lib/dates";
 import { monthLabel, type AdvertSize, type Edition, type Issue } from "@/lib/magazines";
 import { createClient } from "@/lib/supabase/server";
-import { addIssueMonths, addMagazineListItem, saveAdvertSize, saveEdition, saveIssue, saveMagazineListItem, saveRates } from "../actions";
+import { addIssueMonths, addMagazineListItem, saveAdvertSize, saveEdition, saveIssue, saveMagazineListItem, saveOnlineBooking, saveRates } from "../actions";
+import CopyButton from "@/components/CopyButton";
+import { siteUrl } from "@/lib/site-url";
 import MagazineTabs from "../MagazineTabs";
 
 export const metadata: Metadata = { title: "Magazines setup" };
@@ -31,6 +33,14 @@ export default async function MagazinesSetupPage(props: PageProps<"/magazines/se
     supabase.from("magazine_rate_products").select("key, label").order("position"),
     supabase.from("magazine_rates").select("year, product, term, area, price"),
   ]);
+  // Online advert booking (owner, 18 November 2026).
+  const [{ data: booking }, { data: staff }] = await Promise.all([
+    supabase.from("online_booking_settings").select("active, owner_id, notify_ids").maybeSingle(),
+    supabase.from("profiles").select("id, full_name, email").eq("is_active", true).order("full_name"),
+  ]);
+  const site = await siteUrl();
+  const bookingEmbed = `<iframe id="fpos-booking" src="${site}/book?embed=1" title="Book your advert" loading="lazy" style="width:100%;min-height:1400px;border:0"></iframe>
+<script>addEventListener("message",function(e){if(e.origin==="${site}"&&e.data&&e.data.fposForm==="advertbooking"){document.getElementById("fpos-booking").style.height=e.data.height+"px"}});</script>`;
   const rateYears = [...new Set((rates ?? []).map((r) => Number(r.year)))].sort((a, b) => b - a);
   const thisYear = Number(ukMonth().slice(0, 4));
   const rateYear = typeof sp.year === "string" && /^\d{4}$/.test(sp.year) ? Number(sp.year) : (rateYears.find((y) => y <= thisYear) ?? rateYears[0] ?? thisYear);
@@ -46,6 +56,58 @@ export default async function MagazinesSetupPage(props: PageProps<"/magazines/se
       <MagazineTabs current="setup" canEdit />
       <div className="grid gap-6 px-6 py-8 lg:px-10">
         <Notice searchParams={sp} />
+
+        <Card title="Online booking">
+          <form action={saveOnlineBooking} className="grid gap-3 text-sm">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="active" defaultChecked={booking?.active ?? true} className="accent-fp-pink" /> Take online booking requests
+            </label>
+            <label className="grid max-w-sm gap-1">
+              <span className="font-semibold">New booking quotes go to</span>
+              <select name="owner_id" defaultValue={booking?.owner_id ?? ""} className={inputClass}>
+                <option value="">Nobody yet</option>
+                {(staff ?? []).map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.full_name ?? p.email}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <fieldset className="grid gap-1">
+              <legend className="mb-1 font-semibold">Also email</legend>
+              <div className="flex flex-wrap gap-x-5 gap-y-1">
+                {(staff ?? []).map((p) => (
+                  <label key={p.id} className="flex items-center gap-2">
+                    <input type="checkbox" name="notify_ids" value={p.id} defaultChecked={(booking?.notify_ids ?? []).includes(p.id)} className="accent-fp-pink" />
+                    {p.full_name ?? p.email}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <div>
+              <button type="submit" className={secondaryButton}>
+                Save
+              </button>
+            </div>
+          </form>
+          <div className="mt-4 grid gap-2 border-t border-fp-border pt-4 text-sm">
+            <p>
+              The booking page is{" "}
+              <Link href="/book" target="_blank" className="font-semibold text-fp-teal-deep hover:underline">
+                {site}/book
+              </Link>
+              . To show it on forgetmenotonline.org (in place of the Request a Space form), paste this into the page:
+            </p>
+            <pre className="overflow-x-auto rounded-md bg-fp-offwhite p-3 text-xs">{bookingEmbed}</pre>
+            <div>
+              <CopyButton text={bookingEmbed} label="Copy the code" />
+            </div>
+            <p className="text-xs text-fp-mid">
+              Each request becomes a draft advertising quote (with the customer added if they&apos;re new) for you to check and send. The customer accepts it
+              on their link, which makes the order and the deposit or full invoice as usual.
+            </p>
+          </div>
+        </Card>
 
         <Card title="Editions">
           <div className="overflow-x-auto">
