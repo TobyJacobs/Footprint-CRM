@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin, requirePermission } from "@/lib/auth";
 import { bool, dateTime, int, list, num, str } from "@/lib/forms";
 import { accountAreas } from "@/lib/customers/account-managers";
+import { sendPortalWelcome } from "@/lib/portal-invite";
 import { createClient } from "@/lib/supabase/server";
 
 // Every action checks the person's "customers" permission and runs as them,
@@ -147,7 +148,7 @@ export async function deleteCustomer(customerId: string) {
 // ─── Contacts ───────────────────────────────────────────────────────────────
 
 export async function saveContact(customerId: string, contactId: string | null, fd: FormData) {
-  await requirePermission("customers", "edit");
+  const user = await requirePermission("customers", "edit");
   const back = contactId
     ? `/customers/${customerId}/contacts/${contactId}`
     : `/customers/${customerId}/contacts/new`;
@@ -201,8 +202,28 @@ export async function saveContact(customerId: string, contactId: string | null, 
       .neq("id", id!);
   }
 
+  // A new contact with an email gets the customer portal welcome email,
+  // unless they've opted out of emails. The contact is saved either way.
+  let invite = "";
+  if (!contactId && fields.email && !fields.email_opt_out) {
+    const sent = await sendPortalWelcome(supabase, id!, user);
+    invite = sent.ok ? "&invited=1" : `&error=${encodeURIComponent(`Contact saved, but the portal welcome email wasn't sent: ${sent.error}`)}`;
+  }
+
   revalidatePath(`/customers/${customerId}`);
-  redirect(`/customers/${customerId}?saved=1#contacts`);
+  redirect(`/customers/${customerId}?saved=1${invite}#contacts`);
+}
+
+// The "Send portal link" button on a contact: (re)sends the customer portal
+// welcome email.
+export async function sendPortalInvite(customerId: string, contactId: string) {
+  const user = await requirePermission("customers", "edit");
+  const back = `/customers/${customerId}/contacts/${contactId}`;
+  const supabase = await createClient();
+  const sent = await sendPortalWelcome(supabase, contactId, user);
+  if (!sent.ok) fail(back, sent.error);
+  revalidatePath(back);
+  redirect(`${back}?invited=1`);
 }
 
 export async function deleteContact(customerId: string, contactId: string) {
@@ -503,6 +524,12 @@ export async function quickAddCustomer(input: QuickCustomerInput): Promise<Quick
       .single();
     if (contactError) return { ok: false, error: `The customer was added, but not the contact: ${contactError.message}` };
     contact = data;
+    // New account: send the contact the customer portal welcome email. A
+    // failed email doesn't undo the new customer (it's in the activity if sent).
+    if (contact.email) {
+      const sent = await sendPortalWelcome(supabase, contact.id, user);
+      if (!sent.ok) console.error("Portal welcome email failed:", sent.error);
+    }
   }
 
   await supabase.from("customer_activity").insert({

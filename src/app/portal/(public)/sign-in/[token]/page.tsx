@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import SubmitButton from "@/components/SubmitButton";
 import { primaryButton } from "@/components/ui";
-import { signInWithLink } from "../../actions";
+import { signInWithLink } from "@/app/portal/actions";
 
 export const metadata: Metadata = { title: "Sign in" };
 

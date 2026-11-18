@@ -1,6 +1,8 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
+import { cache } from "react";
+import { ukToday } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 
 // The customer portal (/portal). Customers never get a staff account: they
@@ -95,6 +97,48 @@ export type PortalOverview = {
   tickets: PortalTicketSummary[];
   adverts: PortalAdvert[];
   invoices: PortalInvoice[];
+  orders: PortalOrder[];
+  artwork: PortalArtwork[];
+};
+
+// A sales order, with the customer's own PO number (never Footprint's
+// purchase orders to suppliers).
+export type PortalOrder = {
+  number: string;
+  title: string | null;
+  po: string | null;
+  status: "open" | "completed" | "invoiced";
+  issue_date: string;
+  total: number;
+  shipped_at: string | null;
+  customer_name: string;
+  token: string;
+  // The stage of each design job on the order.
+  artwork: string[];
+};
+
+// A design job, including magazine advert artwork (is_advert).
+export type PortalArtwork = {
+  number: number;
+  title: string;
+  stage: string;
+  artwork_source: "design" | "customer" | "repeat" | null;
+  order_number: string | null;
+  customer_name: string;
+  is_advert?: boolean;
+  stage_changed_at?: string;
+  // The proof waiting for their approval, if there is one.
+  proof_token: string | null;
+  // Every proof sent to them, newest first (each opens on its own page).
+  proofs?: PortalProof[];
+};
+
+export type PortalProof = {
+  version: number | null;
+  status: "waiting" | "approved" | "changes";
+  sent_at: string;
+  responded_at: string | null;
+  token: string;
 };
 
 export type PortalAdvert = {
@@ -128,6 +172,18 @@ export function advertArtworkLabel(stage: string | null, source: string | null):
   return source === "customer" ? "Checking your artwork" : "Being designed";
 }
 
+// Where a sales order is up to, in the customer's words.
+export function orderProgressLabel(o: Pick<PortalOrder, "status" | "shipped_at" | "artwork">): {
+  label: string;
+  tone: "grey" | "teal" | "pink" | "amber";
+} {
+  if (o.status !== "open") return { label: "Completed", tone: "teal" };
+  if (o.shipped_at) return { label: "Shipped", tone: "teal" };
+  if (o.artwork.includes("with_customer")) return { label: "Artwork waiting for your approval", tone: "pink" };
+  if (o.artwork.some((s) => !["approved", "production", "done"].includes(s))) return { label: "Artwork in progress", tone: "amber" };
+  return { label: "In progress", tone: "amber" };
+}
+
 // Customer support wording, shared by the portal and the staff tab.
 export const ticketKindLabel = (k: string) => (k === "change" ? "Change request" : "Question");
 export const ticketStatusLabel = (s: string) => (s === "in_progress" ? "In progress" : s === "done" ? "Done" : "New");
@@ -140,13 +196,33 @@ export async function getPortalSession(): Promise<string | null> {
 }
 
 // The signed-in customer's portal, or null if they aren't signed in (or no
-// longer a contact anywhere).
-export async function getPortal(): Promise<PortalOverview | null> {
+// longer a contact anywhere). Loaded once per page view (the menu and the
+// page share it).
+export const getPortal = cache(async (): Promise<PortalOverview | null> => {
   const session = await getPortalSession();
   if (!session) return null;
   const supabase = await createClient();
   const { data } = await supabase.rpc("portal_overview", { p_session: session });
-  return (data as PortalOverview | null) ?? null;
+  const portal = data as PortalOverview | null;
+  // Orders and artwork arrived later (16 November 2026): empty until the
+  // database has them, so the page never breaks while an update rolls out.
+  return portal ? { ...portal, orders: portal.orders ?? [], artwork: portal.artwork ?? [] } : null;
+});
+
+// A quote still waiting for the customer's answer (not accepted, declined or expired).
+export const quoteWaiting = (q: PortalQuote) =>
+  q.status === "sent" && !(q.valid_until && q.valid_until < ukToday());
+
+// Everything waiting for the customer: quotes to answer, proofs to approve,
+// invoices to pay and content to approve. Drives the menu counts and the
+// Overview's "Needs your attention".
+export function portalAttention(p: PortalOverview) {
+  return {
+    quotes: p.quotes.filter(quoteWaiting),
+    proofs: p.artwork.filter((a) => a.proof_token),
+    invoices: p.invoices.filter((v) => Number(v.owed) > 0),
+    content: p.content.filter((c) => c.status === "client_approval"),
+  };
 }
 
 // One of the customer's own support conversations, or null.

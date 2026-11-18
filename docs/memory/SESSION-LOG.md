@@ -5,11 +5,21 @@ One short entry per session. Newest at the top.
 ---
 
 ## 16 November 2026: Portal sign-in email delay
-- Owner's portal sign-in email took ~5 minutes (SendGrid → iCloud, not FootprintOS). Added "Signing in…"/"Sending…" buttons and a "can take a few minutes" note (0.99.1). PR waiting for the owner.
+- Owner's portal sign-in email took ~5 minutes (SendGrid → iCloud, not FootprintOS). Added "Signing in…"/"Sending…" buttons and a "can take a few minutes" note (0.102.1). PR waiting for the owner.
+
+## 16 November 2026: Live portal test
+- With the owner: test customer + contact on live, welcome email arrived, owner signed in to the portal (as tj holds), every page checked, test customer deleted, Roadmap ticked.
+
+## 16 November 2026: Customer portal side menu
+- Owner asked for OS-style side navigation in the portal, design work visible, clean look. Built 0.102.0: side menu with counts, Overview, a page per section, Design work page with progress and proof history. Checked locally with sample data; merged at the owner's request (#161) and live. Signed-in live test still to do.
+
+## 16 November 2026: Portal welcome email, orders and artwork
+- Owner asked for new accounts to get a customer portal link and to track POs, SOs and artwork there. Built 0.100.0: automatic welcome email for new contacts plus a Send portal link button; portal shows sales orders (their PO number) and artwork (approve proofs). Merged at the owner's request (#158); live checks done without changing data; full test with a test contact still to do.
 
 ## 16 November 2026: Team chat
 - Owner asked for a simple Teams-like chat in FootprintOS. Explained upkeep (always-on, live connections, no phone alerts, storage, GDPR). Owner chose: DMs readable only by members; keep 2 years. Built Team chat (0.97.0, #155): 23 database checks, full build, merged, tested live (message, live delivery, file, delete, file tidy-up). A commit briefly landed on local main because another session switched branches in the same folder; moved to its branch before pushing.
 - Owner asked about browser alerts: they only worked for the open chat. Built alerts on every page and a live menu badge (0.98.0, #156); merged, live, needs a colleague to test.
+- Owner asked for a Xero sync (offered an API key; explained Xero uses an app and the secret goes in Netlify, never chat). Choices: real Xero now, invoices as drafts, POs approved, FootprintOS numbers switchable. Built part 1 (#159, 0.101.0): 16 database checks; merged and live; waiting on the owner's Xero app. Another session kept switching the shared folder's branch, so the work moved to a separate worktree; a merge clash (0.100.0 and migration 20261222 taken) was renumbered.
 
 ## 16 November 2026
 - Contract builder for proposals live (0.93.0, #151) after DJ's decisions (sign by accepting online; admins + Directors edit wording; one step). Magazine reports 3, 4 (now: email advertisers their copy) and 5 built as stacked PRs #152 (0.94.0, Reports → Production), #153 (0.95.0, email advertisers their copy) and #154 (0.96.0, Reports → Advertisers + consented mailing list CSV); merged and live (0.96.0); empty until adverts are booked. Commission from Jack Burton's sheet: live (0.99.0, #157); figures loaded through the data API and Jack Burton added as a viewer; checked live (all £0 for now). The preview first failed at Netlify's "Initializing" step; an empty commit re-ran it fine. Only Jack Burton has a login; Jack Williams, Steve Knight, Wendy Wilson and Danny Cox need to sign in for their sales to count.

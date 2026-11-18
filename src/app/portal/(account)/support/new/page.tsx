@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { getPortal } from "@/lib/portal";
-import { createSupportTicket } from "../../actions";
+import { createSupportTicket } from "@/app/portal/actions";
 
 export const metadata: Metadata = { title: "Send us a message" };
 
@@ -15,10 +15,10 @@ export default async function NewSupportMessagePage(props: PageProps<"/portal/su
   const { error, kind } = await props.searchParams;
 
   return (
-    <div className="mx-auto grid max-w-2xl gap-6">
+    <div className="grid max-w-3xl gap-6 px-6 py-8 lg:px-10">
       <div>
-        <Link href="/portal#support" className="text-sm font-semibold text-fp-teal-deep hover:underline">
-          ← Back to your portal
+        <Link href="/portal/support" className="text-sm font-semibold text-fp-teal-deep hover:underline">
+          ← Back to Support
         </Link>
         <h1 className="mt-2 text-2xl font-black">Send us a message</h1>
         <p className="mt-1 text-sm text-fp-dark/75">Ask for a change or ask us anything. We&apos;ll reply here and email you when we do.</p>
@@ -66,7 +66,7 @@ export default async function NewSupportMessagePage(props: PageProps<"/portal/su
           <button type="submit" className={primaryButton}>
             Send message
           </button>
-          <Link href="/portal#support" className={secondaryButton}>
+          <Link href="/portal/support" className={secondaryButton}>
             Cancel
           </Link>
         </div>

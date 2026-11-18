@@ -17,7 +17,7 @@ export function Notice({
 }: {
   searchParams: Record<string, string | string[] | undefined>;
 }) {
-  const { error, saved, deleted, erased } = searchParams;
+  const { error, saved, deleted, erased, invited } = searchParams;
   if (erased) {
     return (
       <p role="status" className="mb-6 rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-4 py-3 text-sm text-fp-teal-deep">
@@ -29,6 +29,13 @@ export function Notice({
     return (
       <p role="alert" className="mb-6 rounded-md border border-fp-error/30 bg-fp-error/5 px-4 py-3 text-sm text-fp-error">
         {error}
+      </p>
+    );
+  }
+  if (invited) {
+    return (
+      <p role="status" className="mb-6 rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-4 py-3 text-sm text-fp-teal-deep">
+        {saved ? "Saved, and the customer portal welcome email has been sent." : "Customer portal welcome email sent."}
       </p>
     );
   }

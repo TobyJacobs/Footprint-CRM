@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { Badge, inputClass, primaryButton } from "@/components/ui";
 import { shortDateTime } from "@/lib/customers/display";
 import { getPortalSession, getPortalTicket, ticketKindLabel, ticketNumber, ticketStatusLabel, ticketTone } from "@/lib/portal";
-import { replyToSupportTicket } from "../../actions";
+import { replyToSupportTicket } from "@/app/portal/actions";
 
 export const metadata: Metadata = { title: "Your message" };
 
@@ -18,10 +18,10 @@ export default async function PortalTicketPage(props: PageProps<"/portal/support
   const { error, sent } = await props.searchParams;
 
   return (
-    <div className="mx-auto grid max-w-2xl gap-6">
+    <div className="grid max-w-3xl gap-6 px-6 py-8 lg:px-10">
       <div>
-        <Link href="/portal#support" className="text-sm font-semibold text-fp-teal-deep hover:underline">
-          ← Back to your portal
+        <Link href="/portal/support" className="text-sm font-semibold text-fp-teal-deep hover:underline">
+          ← Back to Support
         </Link>
         <h1 className="mt-2 text-2xl font-black">{ticket.subject}</h1>
         <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-fp-dark/75">

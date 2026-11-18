@@ -10,6 +10,7 @@ const tabs = [
   { href: "/admin/roles", label: "Roles & permissions" },
   { href: "/admin/targets", label: "Targets & commission" },
   { href: "/admin/company", label: "Company" },
+  { href: "/admin/xero", label: "Xero" },
   { href: "/admin/email-templates", label: "Email templates" },
   { href: "/admin/terms", label: "Terms" },
   { href: "/admin/audit", label: "Audit log" },

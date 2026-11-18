@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import SubmitButton from "@/components/SubmitButton";
 import { inputClass, primaryButton } from "@/components/ui";
 import { getPortal } from "@/lib/portal";
-import { requestPortalLink, signInWithCode } from "../actions";
+import { requestPortalLink, signInWithCode } from "@/app/portal/actions";
 
 export const metadata: Metadata = { title: "Sign in" };
 
