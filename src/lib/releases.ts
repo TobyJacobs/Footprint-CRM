@@ -11,6 +11,17 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.110.0",
+    date: "2026-11-18",
+    title: "Control room: new look",
+    changes: [
+      "The Control room has a new look, laid out like Team chat: a dark panel down the side with every bot (a green light when it's ready), the group chats and the latest runs, and the work area on the right.",
+      "The front page has a bigger \"What needs doing?\" box: pick a bot, type the job and send it. Below it: numbers at a glance (bots online, runs today, drafts made, group chats), the team of bots with their skills, and the latest activity.",
+      "Group chats look like Team chat rooms, with each bot's badge, the newest message at the bottom and the box to join in underneath.",
+      "Each run shows the request as a message, what the bot did as a live log (with times) and its answer underneath, with any drafts to check in between.",
+    ],
+  },
+  {
     version: "0.109.0",
     date: "2026-11-18",
     title: "Control room: each bot can use its own AI account",

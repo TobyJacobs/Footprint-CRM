@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/auth";
 import { engineLabel, type BotEngine } from "@/lib/ai/bot-tools";
 import { createClient } from "@/lib/supabase/server";
 import { startChat } from "../../actions";
+import { Pane } from "../../parts";
 
 export const metadata: Metadata = { title: "New group chat · Control room" };
 
@@ -16,7 +17,7 @@ export default async function NewChatPage(props: PageProps<"/ai/control-room/cha
   const { data: bots } = await supabase.from("ai_bots").select("id, name, engine, description, webhook_url").eq("active", true).order("name");
   const usable = (bots ?? []).filter((b) => b.engine !== "outside" || b.webhook_url);
   return (
-    <div className="grid max-w-3xl gap-6">
+    <Pane>
       <Link href="/ai/control-room" className="text-sm font-semibold text-fp-teal-deep hover:underline">
         ← Control room
       </Link>
@@ -52,6 +53,6 @@ export default async function NewChatPage(props: PageProps<"/ai/control-room/cha
           </div>
         </form>
       </Card>
-    </div>
+    </Pane>
   );
 }

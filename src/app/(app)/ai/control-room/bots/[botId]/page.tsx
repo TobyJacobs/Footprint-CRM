@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 import { saveBot } from "../../actions";
 import BotForm from "../BotForm";
 import KeyMaker from "./KeyMaker";
+import { Pane } from "../../parts";
 
 export const metadata: Metadata = { title: "Bot · Control room" };
 
@@ -42,7 +43,7 @@ export default async function BotPage(props: PageProps<"/ai/control-room/bots/[b
   const secret = canEdit && bot.engine === "outside" ? signingSecret(bot.id) : null;
 
   return (
-    <div className="grid max-w-3xl gap-6">
+    <Pane>
       <Link href="/ai/control-room/bots" className="text-sm font-semibold text-fp-teal-deep hover:underline">
         ← Bots
       </Link>
@@ -127,6 +128,6 @@ export default async function BotPage(props: PageProps<"/ai/control-room/bots/[b
           </Card>
         </>
       )}
-    </div>
+    </Pane>
   );
 }
