@@ -11,6 +11,14 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.111.1",
+    date: "2026-11-18",
+    title: "Security update",
+    changes: [
+      "Behind the scenes: updated Next.js (the framework FootprintOS is built on) from 16.4.2 to 16.4.6 to fix a known security problem. Nothing looks or works differently.",
+    ],
+  },
+  {
     version: "0.111.0",
     date: "2026-11-18",
     title: "Control room: new look",

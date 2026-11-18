@@ -922,3 +922,8 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - **LIVE 18 November 2026 as 0.110.0:** merged by Claude at the owner's request (PR [TobyJacobs/Footprint-CRM#170](https://github.com/TobyJacobs/Footprint-CRM/pull/170), `5061746`; one merge of main first, session-log entries kept). Checked live: signed out, no bar; signed in (tj holds portal in the pane) a quote shows "Back to your quotes" which returns to /portal/quotes; an order shows "Back to your orders".
 - The build printed a Next.js security notice: this version of Next.js (16.4.2) has a known vulnerability and an upgrade is recommended. Not done here; raised with the owner.
 
+## 18 November 2026 - Next.js security update (0.111.1, branch `chore/nextjs-security-upgrade`, PR waiting for the owner)
+- The build had been warning that Next.js 16.4.2 has a known security vulnerability (`npm audit` listed `next`, moderate). Owner said yes to the upgrade.
+- `next` and `eslint-config-next` 16.4.2 → 16.4.6 (latest 16.4 patch; package.json and lock only). After: the build passes first time with no security notice; `next` no longer in `npm audit`. Type check, lint, build clean. Ran the production build locally (`next start`): sign-in pages, portal, public quote/document pages, booking page, signed-out redirects and the signed-in Quotes page all fine, no console errors.
+- **Still in `npm audit` (there before, not part of this):** Sentry's build tools (`@sentry/nextjs` via rollup/picomatch/glob/minimatch) and `zod`. npm's suggested fix is a breaking Sentry downgrade, so not applied; possible follow-up: update `@sentry/nextjs` and `zod` to patched versions.
+
