@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.103.0",
+    date: "2026-11-18",
+    title: "Online advert booking",
+    changes: [
+      "Advertisers can book Forget Me Not adverts online at /book (to be shown on forgetmenotonline.org in place of the Request a Space form): choose editions, an advert size or premium position, how many months and the start month, and see live prices from the rate card and live availability (Taken for premium positions, Limited or Full when an issue is nearly sold).",
+      "Each request arrives as a draft advertising quote (adding the customer if they're new), logged on their timeline, and the team is emailed; the customer gets a we've-received-it email. Check it and send it: the customer accepts on their link, which makes the order and the deposit or full invoice as usual.",
+      "Magazines → Setup has an Online booking box: switch it on or off, choose who booking quotes go to and who's emailed, and copy the code for the website.",
+    ],
+  },
+  {
     version: "0.102.0",
     date: "2026-11-16",
     title: "Customer portal: new look with a side menu",

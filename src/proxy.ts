@@ -13,7 +13,7 @@ import {
 // "/read/" is the public magazine flipbooks, "/f/" the website enquiry forms,
 // and "/c/" (with /chat-widget.js) the website chat. "/api/email-events" is
 // SendGrid's delivery reports (checked against SendGrid's signature).
-const PUBLIC_PATHS = ["/login", "/auth/", "/q/", "/d/", "/p/", "/api/cron/", "/invite/", "/portal", "/read/", "/f/", "/c/", "/chat-widget.js", "/api/email-events"];
+const PUBLIC_PATHS = ["/login", "/auth/", "/q/", "/d/", "/p/", "/api/cron/", "/invite/", "/portal", "/read/", "/f/", "/c/", "/book", "/chat-widget.js", "/api/email-events"];
 
 // Runs before every page request: keeps the login session fresh and sends
 // signed-out visitors to the login page. The real permission checks happen
