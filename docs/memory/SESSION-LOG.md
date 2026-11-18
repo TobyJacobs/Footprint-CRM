@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 18 November 2026 - New address os.footprintgroup.uk
+- Owner moved FootprintOS to os.footprintgroup.uk. Fixed the live address in code (next.config.ts LIVE_SITE, email fallback, chat-widget example) and forwarded the old netlify.app address (src/proxy.ts, not /api/). 0.111.4 (#174), renumbered twice because of other sessions' merges. Checked live: old address forwards, new one works, /api/ still answers on the old one.
+
 ## 16-18 November 2026: Portal sign-in email delay
 - Owner's portal sign-in email took ~5 minutes (SendGrid → iCloud, not FootprintOS). Added "Signing in…"/"Sending…" buttons and a "can take a few minutes" note (0.111.3, #160). Merged at the owner's request.
 

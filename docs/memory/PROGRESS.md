@@ -207,7 +207,7 @@ _Earlier snapshot (1 October 2026): Wave 1 — Customers went live for the demo 
 - Official logo files, ideally SVG (optional; the website logo is in use).
 
 ## Key IDs (not secret)
-- Netlify site: `footprintgroupos`. **Live address: https://os.footprintgroup.uk** (owner, 18 November 2026; fixed in next.config.ts as LIVE_SITE, so every emailed/shown link uses it). The old https://footprintgroupos.netlify.app still opens the site. (Renamed from `footprinthub` on 6 October 2026.)
+- Netlify site: `footprintgroupos`. **Live address: https://os.footprintgroup.uk** (owner, 18 November 2026; fixed in next.config.ts as LIVE_SITE, so every emailed/shown link uses it). The old https://footprintgroupos.netlify.app forwards (308) to the new address (src/proxy.ts), except /api/ and release-specific addresses. Live 0.111.4 (#174), checked 18 November 2026. Supabase Site URL and Redirect URLs updated to os.footprintgroup.uk by another session. Still pointing at the old address (works via forward, update when convenient): the chat-widget script on footprintgroup.uk and forgetmenotonline.org, the /book embed code, the Xero app's Redirect URI (must be https://os.footprintgroup.uk/api/xero/callback). (Renamed from `footprinthub` on 6 October 2026.)
 - Supabase test project ref: `ifspqkcdatruybgzygic` (Frankfurt; the live site uses this one for now)
 - Supabase live project ref: `khjcplhuenureeobvzqo` (London, "FootprintOS - Live"; nothing uses it yet)
 - Entra app (client) ID: `40bb9fdf-798e-4644-a888-b0e2e788f495`
