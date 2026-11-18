@@ -11,6 +11,16 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.109.0",
+    date: "2026-11-18",
+    title: "Control room: each bot can use its own AI account",
+    changes: [
+      "A Claude or Grok bot can now use its own AI key instead of the company one, so each team member's bot runs on (and is paid for by) their own Claude or Grok account. Put the key in Netlify with a name like XAI_API_KEY_JACK or ANTHROPIC_API_KEY_JACK and an admin types that name in the bot's settings.",
+      "Each bot shows which key it uses (its own or the company key) and whether that key is in Netlify yet. Bots without their own key carry on using the company key.",
+      "Only admins can choose a bot's key, so nobody can spend someone else's credit, and only AI keys can be used, so a bot can never reach FootprintOS's other secrets.",
+    ],
+  },
+  {
     version: "0.108.0",
     date: "2026-11-18",
     title: "Control room: group chats and everyone's bots",

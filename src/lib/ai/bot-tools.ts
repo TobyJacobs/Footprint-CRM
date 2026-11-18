@@ -14,6 +14,15 @@ export const engineLabel: Record<BotEngine, string> = {
 
 export const isEngine = (v: unknown): v is BotEngine => v === "claude" || v === "grok" || v === "outside";
 
+// Which AI key a bot uses (owner, 18 November 2026): its own, named in
+// Netlify (e.g. XAI_API_KEY_JACK), or the company one. Only AI key names are
+// allowed, so a bot can never be pointed at another secret (the database
+// checks this too).
+export const companyKey = { claude: "ANTHROPIC_API_KEY", grok: "XAI_API_KEY" } as const;
+export const keyPrefix = { claude: "ANTHROPIC_API_KEY_", grok: "XAI_API_KEY_" } as const;
+export const isBotKeyName = (engine: string, name: string) =>
+  (engine === "claude" || engine === "grok") && name.startsWith(keyPrefix[engine]) && /^(ANTHROPIC|XAI)_API_KEY_[A-Z0-9_]{1,30}$/.test(name);
+
 // The model each engine uses when a bot doesn't name one.
 export const defaultModel: Record<"claude" | "grok", string> = {
   claude: "claude-opus-5-5",

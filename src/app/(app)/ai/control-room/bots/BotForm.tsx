@@ -1,5 +1,5 @@
 import { Field, inputClass, primaryButton } from "@/components/ui";
-import { BOT_SKILLS, defaultModel, engineLabel, type BotEngine } from "@/lib/ai/bot-tools";
+import { BOT_SKILLS, companyKey, defaultModel, engineLabel, keyPrefix, type BotEngine } from "@/lib/ai/bot-tools";
 
 export type BotValues = {
   name?: string;
@@ -7,6 +7,7 @@ export type BotValues = {
   webhook_url?: string | null;
   engine?: string;
   model?: string | null;
+  key_name?: string | null;
   skills?: string[];
   instructions?: string | null;
   ai_project_id?: string | null;
@@ -20,12 +21,14 @@ export default function BotForm({
   agents,
   submitLabel,
   canQuote,
+  isAdmin = false,
 }: {
   action: (fd: FormData) => Promise<void>;
   values?: BotValues;
   agents: { id: string; title: string }[];
   submitLabel: string;
   canQuote: boolean;
+  isAdmin?: boolean;
 }) {
   return (
     <form action={action} className="grid gap-4 sm:grid-cols-2">
@@ -53,6 +56,21 @@ export default function BotForm({
       </Field>
       <Field label="Model (Claude and Grok bots)" hint={`Leave blank for the usual one: ${defaultModel.claude} for Claude, ${defaultModel.grok} for Grok.`}>
         <input name="model" maxLength={80} defaultValue={values.model ?? ""} className={inputClass} />
+      </Field>
+      <Field
+        label="Its own AI key (Claude and Grok bots)"
+        hint={`So its costs go to its owner's AI account. Put the key in Netlify under a name starting ${keyPrefix.claude} (Claude) or ${keyPrefix.grok} (Grok), e.g. ${keyPrefix.grok}JACK, then type that name here. Leave blank to use the company key (${companyKey.claude} / ${companyKey.grok}).${isAdmin ? "" : " Only an admin can change this."}`}
+        wide
+      >
+        <input
+          name="key_name"
+          maxLength={60}
+          pattern="(ANTHROPIC|XAI)_API_KEY_[A-Z0-9_]{1,30}"
+          placeholder={`${keyPrefix.grok}JACK`}
+          defaultValue={values.key_name ?? ""}
+          readOnly={!isAdmin}
+          className={`${inputClass} font-mono ${isAdmin ? "" : "bg-fp-offwhite"}`}
+        />
       </Field>
       <Field label="FootprintAI agent it belongs to">
         <select name="ai_project_id" defaultValue={values.ai_project_id ?? ""} className={inputClass}>

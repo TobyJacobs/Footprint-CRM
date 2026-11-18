@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Card, Notice } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { engineLabel, finishTool, toolsFor, type BotEngine } from "@/lib/ai/bot-tools";
+import { botKeyName, botReady } from "@/lib/ai/control-room";
 import { signingSecret } from "@/lib/ai/outside-bots";
 import { longDate } from "@/lib/customers/display";
 import { loadPeople } from "@/lib/design/jobs";
@@ -26,7 +27,7 @@ export default async function BotPage(props: PageProps<"/ai/control-room/bots/[b
   const [{ data: bot }, { data: agents }, { data: hints }, site, { nameOf }] = await Promise.all([
     supabase
       .from("ai_bots")
-      .select("id, name, description, engine, model, skills, instructions, ai_project_id, active, owner_id, webhook_url")
+      .select("id, name, description, engine, model, skills, instructions, ai_project_id, active, owner_id, webhook_url, key_name")
       .eq("id", botId)
       .maybeSingle(),
     supabase.from("ai_projects").select("id, title").order("title"),
@@ -49,12 +50,20 @@ export default async function BotPage(props: PageProps<"/ai/control-room/bots/[b
         <h2 className="text-2xl font-black">{bot.name}</h2>
         <p className="text-sm text-fp-mid">
           {engineLabel[bot.engine as BotEngine]} · Owner: {bot.owner_id ? (nameOf.get(bot.owner_id) ?? "—") : "Footprint"}
+          {bot.engine !== "outside" && (
+            <>
+              {" "}
+              · Key: <code>{botKeyName(bot)}</code>
+              {bot.key_name ? " (its own)" : " (the company key)"}{" "}
+              {botReady(bot) ? <span className="text-fp-teal-deep">in Netlify ✓</span> : <span className="text-fp-error">not in Netlify yet</span>}
+            </>
+          )}
         </p>
       </div>
       <Notice searchParams={sp} />
       {canEdit ? (
         <Card title="Settings">
-          <BotForm action={saveBot.bind(null, bot.id)} values={bot} agents={agents ?? []} submitLabel="Save" canQuote={user.can("quotes", "edit")} />
+          <BotForm action={saveBot.bind(null, bot.id)} values={bot} agents={agents ?? []} submitLabel="Save" canQuote={user.can("quotes", "edit")} isAdmin={user.isAdmin} />
         </Card>
       ) : (
         <Card title="About this bot">
