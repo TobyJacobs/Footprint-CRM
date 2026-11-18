@@ -10,7 +10,7 @@ export type RailBot = { id: string; name: string; engine: string; description: s
 const stateLabel = { ready: "Ready", waiting: "Needs its key", off: "Switched off" };
 
 // The control room's side panel (like Team chat's chat list, in the dark).
-// On a phone it shows on the control room's front page only.
+// On a phone it shows on the control room's front page only, under the job box.
 export default function ControlRail({
   bots,
   chats,
@@ -33,7 +33,7 @@ export default function ControlRail({
   const heading = "px-2 pb-1.5 pt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-white/40";
 
   return (
-    <aside className={`${home ? "flex" : "hidden"} min-h-0 shrink-0 flex-col border-white/10 text-white lg:flex lg:w-72 lg:border-r`}>
+    <aside className={`${home ? "flex" : "hidden"} order-last min-h-0 shrink-0 flex-col lg:order-none border-white/10 text-white lg:flex lg:w-72 lg:border-r`}>
       <div className="bg-fp-gradient h-1" />
       <div className="flex items-center justify-between gap-2 px-4 py-4">
         <Link href="/ai/control-room" className="group">
