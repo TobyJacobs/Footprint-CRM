@@ -429,3 +429,6 @@ This refines the "Supabase, London region" part of the technical foundations dec
 - No AI keys in the database: company keys stay in Netlify (ANTHROPIC_API_KEY, XAI_API_KEY). Team members' Claude/Grok bots run on the company keys with their own instructions. Outside bots get a FootprintOS key (only its hash stored) and messages to them are signed with a secret derived from PORTAL_LINK_KEY.
 - Runs go one step per server call so no single request runs long on Netlify.
 - Group chats: bots only talk (no tools) in the first version.
+
+## 18 November 2026 - Connected AI agents: each bot can use its own key
+**Decision (owner):** a control room where the team's own agents (on Claude, Grok, Magnific and others) connect, each with their own skills, and work together. Agreed plan: (1) each bot can use its own AI key, (2) more skills, (3) bots handing work to each other in one job, (4) Magnific as an image tool. **Step 1 (Claude's design):** a bot names its key in Netlify (ANTHROPIC_API_KEY_… / XAI_API_KEY_…), never the key itself; only admins choose it so nobody spends someone else's credit; only AI key names are allowed so a bot can't reach other secrets. The owner then said the team uses the company Claude and Grok accounts, so the company keys stay the default. PR #169 (0.109.0).
