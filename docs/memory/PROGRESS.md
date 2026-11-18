@@ -913,3 +913,9 @@ The dev server runs from the Claude desktop preview (`.claude/launch.json` in `D
 - Note: a sign-in link clicked in the email signs in the browser it opens in, not Claude's browser pane; for checks, type the code in the pane.
 - Test customer deleted afterwards (customer and contact confirmed gone). Roadmap Wave 6: welcome-email task ticked; added and ticked "Portal redesign: side menu…".
 
+## 18 November 2026 - Customer portal: back button on quotes, orders, invoices and proofs (0.110.0, branch `feature/portal-back-link`, PR waiting for the owner)
+- Owner: nav in the customer portal, a back button when viewing quotes etc.
+- New `src/components/PortalBackBar.tsx`: a slim dark bar at the top of `/q/[token]`, `/d/[token]` and `/p/[token]`, shown only when the visitor has a portal session cookie. "Back to your quotes / orders / invoices / design work" (orders for sales orders, invoices for invoices and credit notes) plus a "Customer portal" link to the Overview. Hidden when printing. Nothing for visitors who aren't signed in.
+- Checked locally (temporary pretend sign-in, not committed): bar and correct link on all three pages; hidden when signed out. Type check, lint, build clean.
+- The build printed a Next.js security notice: this version of Next.js (16.4.2) has a known vulnerability and an upgrade is recommended. Not done here; raised with the owner.
+

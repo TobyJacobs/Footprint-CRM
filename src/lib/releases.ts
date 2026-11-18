@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.110.0",
+    date: "2026-11-18",
+    title: "Customer portal: back button on quotes, orders, invoices and proofs",
+    changes: [
+      "When a customer signed in to the portal opens a quote, order, invoice or design proof, a bar at the top takes them back (\"Back to your quotes\", \"…orders\", \"…invoices\" or \"…design work\"), with a link to the portal's Overview.",
+      "Customers who open those links straight from an email without being signed in see the page as before.",
+    ],
+  },
+  {
     version: "0.109.0",
     date: "2026-11-18",
     title: "Control room: each bot can use its own AI account",
