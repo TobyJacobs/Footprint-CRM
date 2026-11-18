@@ -11,6 +11,18 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.107.0",
+    date: "2026-11-18",
+    title: "AI control room",
+    changes: [
+      "FootprintAI has a new Control room tab. Choose a bot, type what you'd like in plain English (for example \"Quote Riverside Bakery for 1,000 A5 leaflets, same as last time\") and it gets on with it while you watch each step.",
+      "The first bot is the Quote bot. It finds the customer and products, looks at what they ordered before and makes a draft quote. Bots only make drafts: nothing goes to a customer until you've checked it and sent it yourself. Each run lists the drafts it made, with links.",
+      "Every run is logged, so you can see who asked what and exactly what the bot did. The customer's timeline also notes the draft.",
+      "Admins can add bots (Control room → Manage bots). A bot can run on Claude or Grok inside FootprintOS, with its own extra instructions, and be linked to its FootprintAI agent. Bots the team already use elsewhere can connect in as outside bots, each with its own key, and use the same tools.",
+      "Claude bots need an Anthropic key (ANTHROPIC_API_KEY) and Grok bots the xAI key in Netlify. Until a key is added, that bot shows \"Needs its key\".",
+    ],
+  },
+  {
     version: "0.106.0",
     date: "2026-11-18",
     title: "Customer portal: Ask a question assistant",
