@@ -1,0 +1,17 @@
+import { features } from "@/lib/features";
+
+// The actions a role can be granted on each feature.
+export const ACTIONS = ["view", "edit", "delete"] as const;
+
+export const actionLabels: Record<(typeof ACTIONS)[number], string> = {
+  view: "View",
+  edit: "Add & edit",
+  delete: "Delete",
+};
+
+// Admin access is controlled by the separate "admin" switch on each user,
+// not by roles, so it's left out of the permission grid.
+// FootprintAI is left out: access comes only from its invite list (Admin adds people there).
+// FootprintAI (agents and the transition tracker) is invite only, not role permissions.
+// Team chat is for every active member of staff, so it has no permissions either.
+export const permissionFeatures = features.filter((f) => !["admin", "ai", "chat"].includes(f.key));

@@ -1,0 +1,158 @@
+import "server-only";
+
+// Sends email through SendGrid (https://sendgrid.com).
+//
+// Settings (Netlify environment variables, and .env.local on your computer):
+//   SENDGRID_API_KEY  - secret; set in Netlify only (a key with "Mail Send"
+//                       permission).
+//   EMAIL_FROM        - e.g. "Footprint Group <accounts@footprintgroup.uk>".
+//                       Must be a verified sender (or on an authenticated
+//                       domain) in SendGrid.
+//   EMAIL_REPLY_TO    - optional reply-to address (used when a message doesn't
+//                       name its own, e.g. staff invites).
+//   EMAIL_TEST_MODE   - set to "true" to use SendGrid's sandbox: messages are
+//                       checked and accepted but never delivered.
+
+export const isEmailConfigured = () => Boolean(process.env.SENDGRID_API_KEY && process.env.EMAIL_FROM);
+export const isEmailTestMode = () => process.env.EMAIL_TEST_MODE === "true";
+
+export type SendResult = { ok: true; messageId: string | null } | { ok: false; error: string };
+
+// "Name <a@b.com>" or just "a@b.com" -> SendGrid's {email, name}.
+function parseAddress(v: string): { email: string; name?: string } {
+  const m = v.match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
+  if (m) return { email: m[2].trim(), name: m[1].replace(/^"|"$/g, "") || undefined };
+  return { email: v.trim() };
+}
+
+// "a@b.com, c@d.com" -> one SendGrid address per entry (callers join lists
+// with commas, and check each address before sending).
+function parseAddressList(v: string): { email: string; name?: string }[] {
+  return v.split(/[,;]+/).map((s) => s.trim()).filter(Boolean).map(parseAddress);
+}
+
+export async function sendEmail(msg: {
+  to: string;
+  cc?: string | null;
+  subject: string;
+  text: string;
+  html: string;
+  tag?: string;
+  // Who replies go to, e.g. the salesperson who sent a quote.
+  replyTo?: string | null;
+  // Files to attach, e.g. the quote as a PDF.
+  attachments?: { filename: string; content: Buffer; type: string }[];
+}): Promise<SendResult> {
+  const key = process.env.SENDGRID_API_KEY;
+  const from = process.env.EMAIL_FROM;
+  if (!key || !from) return { ok: false, error: "Email isn't set up yet (no SendGrid settings)." };
+
+  const to = parseAddressList(msg.to);
+  if (to.length === 0) return { ok: false, error: "No address to send to." };
+  // SendGrid rejects a message that lists the same address twice.
+  const toEmails = new Set(to.map((a) => a.email.toLowerCase()));
+  const cc = msg.cc ? parseAddressList(msg.cc).filter((a) => !toEmails.has(a.email.toLowerCase())) : [];
+  const replyTo = (msg.replyTo && /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(msg.replyTo) ? msg.replyTo : null) ?? process.env.EMAIL_REPLY_TO;
+
+  try {
+    const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        personalizations: [
+          {
+            to,
+            ...(cc.length ? { cc } : {}),
+          },
+        ],
+        from: parseAddress(from),
+        ...(replyTo ? { reply_to: parseAddress(replyTo) } : {}),
+        subject: msg.subject,
+        content: [
+          { type: "text/plain", value: msg.text },
+          // Every email gets the Footprint look (emailShell), unless it's
+          // already a full page (brandedHtml).
+          { type: "text/html", value: /^\s*<!doctype/i.test(msg.html) ? msg.html : emailShell(msg.html, "Footprint Group") },
+        ],
+        ...(msg.tag ? { categories: [msg.tag] } : {}),
+        ...(msg.attachments?.length
+          ? {
+              attachments: msg.attachments.map((a) => ({
+                content: a.content.toString("base64"),
+                filename: a.filename,
+                type: a.type,
+                disposition: "attachment",
+              })),
+            }
+          : {}),
+        // No tracking: SendGrid would otherwise swap links for tracking links
+        // on its own domain and add a tracking image, which spam filters
+        // distrust (and customers' "View your quote" links should be ours).
+        tracking_settings: {
+          click_tracking: { enable: false, enable_text: false },
+          open_tracking: { enable: false },
+          subscription_tracking: { enable: false },
+        },
+        ...(isEmailTestMode() ? { mail_settings: { sandbox_mode: { enable: true } } } : {}),
+      }),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { errors?: { message?: string }[] };
+      return { ok: false, error: body.errors?.[0]?.message ?? `SendGrid error (${res.status})` };
+    }
+    return { ok: true, messageId: res.headers.get("x-message-id") };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Couldn't reach SendGrid" };
+  }
+}
+
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+// A simple, branded HTML version of a plain-text message, with an optional
+// button and an optional table (e.g. the lines of a purchase order).
+export function brandedHtml(opts: {
+  text: string;
+  buttonLabel?: string;
+  buttonUrl?: string;
+  companyName: string;
+  table?: { head: string[]; rows: string[][]; foot?: string[][] };
+}) {
+  const paragraphs = escapeHtml(opts.text)
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 14px">${p.replace(/\n/g, "<br>")}</p>`)
+    .join("");
+  const cell = (v: string, i: number, tag = "td", bold = false) =>
+    `<${tag} style="padding:6px 8px;border-bottom:1px solid #eee;text-align:${i === 0 ? "left" : "right"};${bold ? "font-weight:700;" : ""}">${escapeHtml(v).replace(/\n/g, "<br>")}</${tag}>`;
+  const table = opts.table
+    ? `<p style="margin:18px 0 4px;font-weight:700">Order details</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;margin:0 0 18px;border-collapse:collapse">
+<tr style="color:#888;font-size:11px;text-transform:uppercase">${opts.table.head.map((h, i) => cell(h, i, "th")).join("")}</tr>
+${opts.table.rows.map((r) => `<tr>${r.map((v, i) => cell(v, i)).join("")}</tr>`).join("")}
+${(opts.table.foot ?? []).map((r) => `<tr>${r.map((v, i) => cell(v, i, "td", true)).join("")}</tr>`).join("")}
+</table>`
+    : "";
+  const button =
+    opts.buttonUrl && opts.buttonLabel
+      ? `<p style="margin:22px 0"><a href="${escapeHtml(opts.buttonUrl)}" style="background:#de2277;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:6px;display:inline-block">${escapeHtml(opts.buttonLabel)}</a></p>`
+      : "";
+  return emailShell(`${paragraphs}${table}${button}`, opts.companyName);
+}
+
+// The Footprint email look (DJ, 9 November 2026): logo, brand stripe, a white
+// card on light grey and a footer. The logo is the hosted PNG (email programs
+// block built-in images); the stripe falls back to pink where gradients
+// aren't supported.
+export function emailShell(bodyHtml: string, companyName: string) {
+  const site = process.env.SITE_URL || "https://footprintgroupos.netlify.app";
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;background:#f7f7f7;font-family:Montserrat,Arial,sans-serif;color:#000">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f7f7;padding:24px 0"><tr><td align="center">
+<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#fff;border-radius:8px;overflow:hidden">
+<tr><td style="padding:22px 28px 18px"><img src="${site}/brand/footprint-logo-dark.png" width="170" height="50" alt="Footprint Group" style="display:block;border:0;width:170px;height:auto"></td></tr>
+<tr><td style="height:4px;line-height:4px;font-size:0;background:#de2277;background:linear-gradient(90deg,#de2277,#e58207,#7bcbd1)">&nbsp;</td></tr>
+<tr><td style="padding:26px 28px 8px;font-size:15px;line-height:1.55">${bodyHtml}
+</td></tr>
+<tr><td style="padding:14px 28px 24px;font-size:12px;color:#888;border-top:1px solid #eee">${escapeHtml(companyName)} · <a href="https://footprintgroup.uk" style="color:#888">footprintgroup.uk</a></td></tr>
+</table></td></tr></table></body></html>`;
+}

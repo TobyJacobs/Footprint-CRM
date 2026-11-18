@@ -1,0 +1,650 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Mail, Pencil, Phone, Plus, Star } from "lucide-react";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
+import CopyButton from "@/components/CopyButton";
+import PageHeader from "@/components/PageHeader";
+import { Badge, Card, Notice, Select, inputClass, primaryButton, secondaryButton } from "@/components/ui";
+import { requirePermission } from "@/lib/auth";
+import { address, gbp, longDate, personName, shortDateTime, statusTone, toLocalInput } from "@/lib/customers/display";
+import { loadGlance } from "@/lib/customers/glance";
+import { activityKinds, activityLabel, isCreditWarning } from "@/lib/customers/options";
+import { projectStatusLabel, projectTone } from "@/lib/projects/options";
+import { quoteKinds } from "@/lib/sales/options";
+import { createClient } from "@/lib/supabase/server";
+import { addActivity, deleteActivity, markNotDuplicate } from "../actions";
+import EmailComposer from "../EmailComposer";
+import { sendCustomerEmail } from "../email-actions";
+import { isEmailConfigured, isEmailTestMode } from "@/lib/email/sendgrid";
+import DesignJobsPanel from "@/components/DesignJobsPanel";
+import CustomerActions from "./CustomerActions";
+import CustomerDocsCard, { type CustomerDoc } from "./CustomerDocsCard";
+import EmailStatus from "@/components/EmailStatus";
+import AccountManagers from "./AccountManagers";
+import CustomerGlance from "./CustomerGlance";
+import { contactDue } from "@/lib/dates";
+
+export async function generateMetadata(props: PageProps<"/customers/[id]">): Promise<Metadata> {
+  const { id } = await props.params;
+  const supabase = await createClient();
+  const { data } = await supabase.from("customers").select("name").eq("id", id).maybeSingle();
+  return { title: data?.name ?? "Customer" };
+}
+
+function Detail({ label, children }: { label: string; children: React.ReactNode }) {
+  if (
+    children === null ||
+    children === undefined ||
+    children === false ||
+    children === "" ||
+    (Array.isArray(children) && children.length === 0)
+  ) {
+    return null;
+  }
+  return (
+    <div>
+      <dt className="text-xs font-semibold uppercase tracking-wide text-fp-mid">{label}</dt>
+      <dd className="mt-0.5 text-sm">{children}</dd>
+    </div>
+  );
+}
+
+export default async function CustomerPage(props: PageProps<"/customers/[id]">) {
+  const user = await requirePermission("customers", "view");
+  const canEdit = user.can("customers", "edit");
+  const canDelete = user.can("customers", "delete");
+  const { id } = await props.params;
+  const searchParams = await props.searchParams;
+  const supabase = await createClient();
+
+  const [{ data: c }, { data: contacts }, { data: plans }, { data: retainers }, { data: activity }, { data: staff }, { data: duplicates }] =
+    await Promise.all([
+      supabase.from("customers").select("*, parent:parent_id(id, name)").eq("id", id).maybeSingle(),
+      supabase.from("contacts").select("*").eq("customer_id", id).order("is_primary", { ascending: false }).order("last_name"),
+      supabase.from("hosting_plans").select("*, hosting_items(*)").eq("customer_id", id).order("name"),
+      supabase.from("retainers").select("*, retainer_services(*)").eq("customer_id", id).order("name"),
+      supabase.from("customer_activity").select("*").eq("customer_id", id).order("occurred_at", { ascending: false }).limit(100),
+      supabase.from("profiles").select("id, full_name, email"),
+      supabase.from("customer_duplicate_pairs").select("other_id, other_name, other_city, reasons").eq("customer_id", id).limit(10),
+    ]);
+  if (!c) notFound();
+
+  const [{ data: templates }, { data: companySettings }, { data: sentEmails }] = await Promise.all([
+    supabase.from("email_templates").select("id, name, subject, body").eq("active", true).order("position").order("name"),
+    supabase.from("company_settings").select("company_name").single(),
+    supabase
+      .from("email_log")
+      .select("id, to_addresses, subject, status, error, sent_at, delivery_status, delivery_detail, delivery_at")
+      .eq("customer_id", id)
+      .is("sales_document_id", null)
+      .is("purchase_order_id", null)
+      .order("sent_at", { ascending: false })
+      .limit(5),
+  ]);
+  const emailed = typeof searchParams.emailed === "string" ? searchParams.emailed : null;
+  // "Log a call" opens the timeline form with Call chosen.
+  const logKind = activityKinds.some((k) => k.value === searchParams.log) ? (searchParams.log as string) : "note";
+
+  const canSeeProjects = user.can("projects", "view");
+  const { data: customerProjects } = canSeeProjects
+    ? await supabase.from("projects").select("id, number, name, status, due_date").eq("customer_id", id).order("created_at", { ascending: false }).limit(10)
+    : { data: null };
+
+  const canSeeSales = user.can("quotes", "view");
+  // Quotes, sales orders, and invoices with credit notes, each in its own box:
+  // the latest 10 of each, plus how many there are in all.
+  const docsOf = (types: string[]) =>
+    supabase
+      .from("sales_documents")
+      .select("id, doc_type, number, status, issue_date, total, title, quote_kind", { count: "exact" })
+      .eq("customer_id", id)
+      .in("doc_type", types)
+      .order("issue_date", { ascending: false })
+      .order("number", { ascending: false })
+      .limit(10);
+  const [quotes, orders, invoices] = canSeeSales
+    ? await Promise.all([docsOf(["quote"]), docsOf(["sales_order"]), docsOf(["invoice", "credit_note"])])
+    : [null, null, null];
+  const glance = canSeeSales ? await loadGlance(supabase, id) : null;
+  const { data: areaManagers } = await supabase.from("customer_account_managers").select("area, profile_id").eq("customer_id", id);
+  const byArea = Object.fromEntries((areaManagers ?? []).map((m) => [m.area, m.profile_id]));
+
+  const staffName = (pid: string | null) => {
+    const p = (staff ?? []).find((s) => s.id === pid);
+    return p ? (p.full_name ?? p.email) : null;
+  };
+  const contactName = (cid: string | null) => {
+    const p = (contacts ?? []).find((x) => x.id === cid);
+    return p ? personName(p) : null;
+  };
+  const parent = c.parent as { id: string; name: string } | null;
+
+  // Contact due (no timeline activity for over 3 months): show what they
+  // previously ordered, so whoever calls has something to talk about.
+  const due = !c.erased_at && contactDue(activity?.[0]?.occurred_at);
+  let lastOrder: { id: string; number: string; date: string; items: string[]; more: number } | null = null;
+  if (due) {
+    const { data: last, error: lastError } = await supabase
+      .from("sales_documents")
+      .select("id, number, issue_date, sales_document_lines!sales_document_lines_document_id_fkey(description, position)")
+      .eq("customer_id", id)
+      .in("doc_type", ["sales_order", "invoice"])
+      .not("status", "in", "(draft,cancelled,void)")
+      .order("issue_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (lastError) console.error("Contact due: last order", lastError.message);
+    if (last) {
+      const lines = ((last.sales_document_lines ?? []) as { description: string; position: number }[]).sort((a, b) => a.position - b.position);
+      const names = [...new Set(lines.map((l) => l.description.split("\n")[0].trim()).filter(Boolean))];
+      lastOrder = { id: last.id, number: last.number, date: last.issue_date, items: names.slice(0, 3), more: Math.max(0, names.length - 3) };
+    }
+  }
+
+  return (
+    <>
+      <PageHeader title={c.name} />
+      <div className="px-6 py-8 lg:px-10">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <Link href="/customers" className="text-sm font-semibold text-fp-teal-deep hover:underline">
+            ← All customers
+          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {c.erased_at && <Badge>Erased (GDPR)</Badge>}
+            {(c.services ?? []).map((s: string) => (
+              <Badge key={s}>{s}</Badge>
+            ))}
+            {canEdit && (
+              <Link href={`/customers/${id}/edit`} className={`${secondaryButton} inline-flex items-center gap-2`}>
+                <Pencil size={14} aria-hidden /> Edit
+              </Link>
+            )}
+          </div>
+        </div>
+
+        <Notice searchParams={searchParams} />
+
+        {!c.erased_at && (
+          <CustomerActions
+            customerId={id}
+            can={{
+              sales: user.can("quotes", "edit"),
+              projects: user.can("projects", "edit"),
+              marketing: user.can("marketing", "edit"),
+              customers: canEdit,
+            }}
+          />
+        )}
+
+        {(duplicates ?? []).length > 0 && (
+          <div className="mb-6 rounded-lg border border-fp-amber bg-fp-amber/10 p-4 text-sm">
+            <p className="font-bold">Possible duplicate customer</p>
+            <p className="mb-3 text-fp-dark/80">
+              This looks like the same company as the record{(duplicates ?? []).length > 1 ? "s" : ""} below. Check before
+              quoting or invoicing, so everything stays on one record.
+            </p>
+            <ul className="grid gap-2">
+              {(duplicates ?? []).map((d) => (
+                <li key={d.other_id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <Link href={`/customers/${d.other_id}`} className="font-semibold text-fp-teal-deep hover:underline">
+                    {d.other_name}
+                  </Link>
+                  {d.other_city && <span className="text-fp-dark/70">{d.other_city}</span>}
+                  <span className="text-xs text-fp-dark/70">({(d.reasons as string[]).join(", ")})</span>
+                  {canEdit && (
+                    <form action={markNotDuplicate.bind(null, id, d.other_id)}>
+                      <button type="submit" className="text-xs font-semibold text-fp-dark/70 underline hover:text-fp-black">
+                        Not a duplicate
+                      </button>
+                    </form>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="mb-6">
+          <CustomerGlance
+            g={glance}
+            customerName={c.name}
+            contactDue={due ? { lastAt: activity?.[0]?.occurred_at ?? null, logHref: `/customers/${id}?log=call#timeline`, lastOrder } : undefined}
+            managers={<AccountManagers customerId={id} ownerId={c.owner_id} byArea={byArea} staff={staff ?? []} canEdit={canEdit && !c.erased_at} />}
+          />
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+          <div className="grid content-start gap-6">
+            <Card title="Details">
+              <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Detail label="Phone">{c.phone && <a href={`tel:${c.phone}`} className="hover:text-fp-pink">{c.phone}</a>}</Detail>
+                <Detail label="Email">{c.email && <a href={`mailto:${c.email}`} className="hover:text-fp-pink">{c.email}</a>}</Detail>
+                <Detail label="Website">
+                  {c.website && (
+                    <a
+                      href={c.website.startsWith("http") ? c.website : `https://${c.website}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="hover:text-fp-pink"
+                    >
+                      {c.website}
+                    </a>
+                  )}
+                </Detail>
+                <Detail label="Type">{c.account_type}</Detail>
+                <Detail label="Main account manager">{staffName(c.owner_id)}</Detail>
+                {/* Last activity: the newest timeline entry, in place of the old
+                    "Last contacted" date (DJ, 11 November 2026). */}
+                <Detail label="Last activity">
+                  {activity?.[0] ? (
+                    <a href="#timeline" className="hover:text-fp-pink">
+                      {activityLabel(activity[0].kind)} · {shortDateTime(activity[0].occurred_at)}
+                      {staffName(activity[0].created_by) && ` · ${staffName(activity[0].created_by)}`}
+                    </a>
+                  ) : (
+                    <span className="text-fp-mid">None yet</span>
+                  )}
+                </Detail>
+                <Detail label="Parent company">
+                  {parent && <Link href={`/customers/${parent.id}`} className="hover:text-fp-pink">{parent.name}</Link>}
+                </Detail>
+                <Detail label="Industry">{c.industry}</Detail>
+                <Detail label="Billing address">
+                  {address([c.billing_street, c.billing_city, c.billing_county, c.billing_postcode, c.billing_country]) && (
+                    <span className="grid justify-items-start gap-1.5">
+                      {address([c.billing_street, c.billing_city, c.billing_county, c.billing_postcode, c.billing_country])}
+                      {/* Copies it as lines, ready to paste (DJ, 11 November 2026). */}
+                      <CopyButton
+                        text={[c.name, c.billing_street, c.billing_city, c.billing_county, c.billing_postcode, c.billing_country].filter(Boolean).join("\n")}
+                        label="Copy billing address"
+                      />
+                    </span>
+                  )}
+                </Detail>
+                <Detail label="Delivery address">
+                  {(["street", "city", "county", "postcode", "country"] as const).every((f) => (c[`shipping_${f}`] ?? "") === (c[`billing_${f}`] ?? ""))
+                    ? c.billing_street || c.billing_postcode
+                      ? "Same as billing address"
+                      : null
+                    : address([c.shipping_street, c.shipping_city, c.shipping_county, c.shipping_postcode, c.shipping_country])}
+                </Detail>
+              </dl>
+              {c.description && <p className="mt-4 whitespace-pre-line text-sm text-fp-dark/80">{c.description}</p>}
+            </Card>
+
+            <Card
+              title="Contacts"
+              action={
+                canEdit && (
+                  <Link href={`/customers/${id}/contacts/new`} className="inline-flex items-center gap-1 text-sm font-semibold text-fp-teal-deep hover:underline">
+                    <Plus size={14} aria-hidden /> Add contact
+                  </Link>
+                )
+              }
+            >
+              <div id="contacts" className="-mt-2" />
+              {(contacts ?? []).length === 0 ? (
+                <p className="text-sm text-fp-mid">No contacts yet.</p>
+              ) : (
+                <ul className="divide-y divide-fp-border">
+                  {(contacts ?? []).map((p) => (
+                    <li key={p.id} className="flex items-center justify-between gap-3 py-2">
+                      {/* One line per contact (DJ, 9 November 2026); wraps on a narrow screen. */}
+                      <p className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                        <span className="inline-flex items-center gap-1.5 font-semibold">
+                          {personName(p)}
+                          {p.is_primary && <Star size={14} className="fill-fp-amber text-fp-amber" aria-label="Primary contact" />}
+                        </span>
+                        {(p.job_title || p.department) && <span className="text-fp-mid">{[p.job_title, p.department].filter(Boolean).join(", ")}</span>}
+                        {p.email && (
+                          <a href={`mailto:${p.email}`} className="inline-flex items-center gap-1 hover:text-fp-pink">
+                            <Mail size={13} aria-hidden /> {p.email}
+                          </a>
+                        )}
+                        {(p.phone || p.mobile) && (
+                          <a href={`tel:${p.mobile ?? p.phone}`} className="inline-flex items-center gap-1 hover:text-fp-pink">
+                            <Phone size={13} aria-hidden /> {p.mobile ?? p.phone}
+                          </a>
+                        )}
+                        {p.financial_status === "ON STOP" && <Badge tone="red">On stop</Badge>}
+                        {p.erased_at ? <Badge>Erased (GDPR)</Badge> : p.email_opt_out && <Badge>No marketing</Badge>}
+                      </p>
+                      {canEdit && (
+                        <Link href={`/customers/${id}/contacts/${p.id}`} className="text-sm font-semibold text-fp-teal-deep hover:underline">
+                          Edit
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+
+            {canSeeSales && (
+              <>
+                {/* The lists search by customer name; see "Customer at a glance" for exact figures. */}
+                <CustomerDocsCard
+                  title="Quotes"
+                  docs={(quotes?.data ?? []) as CustomerDoc[]}
+                  total={quotes?.count ?? 0}
+                  newLinks={
+                    user.can("quotes", "edit") && !c.erased_at
+                      ? quoteKinds.map((k) => ({ href: `/sales/new?type=quote&kind=${k.value}&customer=${id}`, label: k.label }))
+                      : []
+                  }
+                  seeAllHref={`/sales/quotes?q=${encodeURIComponent(c.name)}`}
+                />
+                <CustomerDocsCard
+                  title="Sales orders"
+                  docs={(orders?.data ?? []) as CustomerDoc[]}
+                  total={orders?.count ?? 0}
+                  newLinks={user.can("quotes", "edit") && !c.erased_at ? [{ href: `/sales/new?type=sales_order&customer=${id}`, label: "New sales order" }] : []}
+                  seeAllHref={`/sales/orders?q=${encodeURIComponent(c.name)}`}
+                />
+                <CustomerDocsCard
+                  title="Invoices & credit notes"
+                  docs={(invoices?.data ?? []) as CustomerDoc[]}
+                  total={invoices?.count ?? 0}
+                  newLinks={user.can("quotes", "edit") && !c.erased_at ? [{ href: `/sales/new?type=invoice&customer=${id}`, label: "New invoice" }] : []}
+                  seeAllHref={`/sales/invoices?q=${encodeURIComponent(c.name)}`}
+                />
+              </>
+            )}
+
+            <Card
+              title="Hosting plans"
+              action={
+                canEdit && (
+                  <Link href={`/customers/${id}/hosting/new`} className="inline-flex items-center gap-1 text-sm font-semibold text-fp-teal-deep hover:underline">
+                    <Plus size={14} aria-hidden /> Add hosting plan
+                  </Link>
+                )
+              }
+            >
+              <div id="hosting" className="-mt-2" />
+              {(plans ?? []).length === 0 ? (
+                <p className="text-sm text-fp-mid">No hosting plans.</p>
+              ) : (
+                <ul className="divide-y divide-fp-border">
+                  {(plans ?? []).map((h) => {
+                    const items = (h.hosting_items ?? []) as { id: string; kind: string; plan: string | null; domain: string | null; mailbox_qty: number | null; email_platform: string | null }[];
+                    return (
+                      <li key={h.id} className="py-3">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="flex items-center gap-2 font-semibold">
+                              {h.name}
+                              {h.status && <Badge tone={statusTone(h.status)}>{h.status}</Badge>}
+                            </p>
+                            <p className="text-sm text-fp-dark/75">
+                              {[h.plan_type, gbp(h.price) && `${gbp(h.price)}${h.billing_frequency ? ` ${h.billing_frequency.toLowerCase()}` : ""}`, h.renewal_month && `renews ${h.renewal_month}`]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                            {items.length > 0 && (
+                              <p className="mt-1 text-xs text-fp-mid">
+                                {items
+                                  .map((i) => (i.kind === "web" ? [i.domain, i.plan].filter(Boolean).join(" – ") : `${i.mailbox_qty ?? "?"} mailbox(es) on ${i.email_platform ?? "?"}`))
+                                  .join(" · ")}
+                              </p>
+                            )}
+                          </div>
+                          <span className="flex flex-col items-end gap-1">
+                            {canEdit && (
+                              <Link href={`/customers/${id}/hosting/${h.id}`} className="text-sm font-semibold text-fp-teal-deep hover:underline">
+                                Edit
+                              </Link>
+                            )}
+                            {user.can("quotes", "edit") && h.status !== "Cancelled" && (
+                              <Link href={`/sales/recurring/new?hosting=${h.id}`} className="text-xs font-semibold text-fp-teal-deep hover:underline">
+                                Set up recurring billing
+                              </Link>
+                            )}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Card>
+
+            <Card
+              title="Digital retainers"
+              action={
+                canEdit && (
+                  <Link href={`/customers/${id}/retainers/new`} className="inline-flex items-center gap-1 text-sm font-semibold text-fp-teal-deep hover:underline">
+                    <Plus size={14} aria-hidden /> Add retainer
+                  </Link>
+                )
+              }
+            >
+              <div id="retainers" className="-mt-2" />
+              {(retainers ?? []).length === 0 ? (
+                <p className="text-sm text-fp-mid">No retainers.</p>
+              ) : (
+                <ul className="divide-y divide-fp-border">
+                  {(retainers ?? []).map((r) => {
+                    const svcs = (r.retainer_services ?? []) as { id: string; service: string; qty_per_month: number | null }[];
+                    return (
+                      <li key={r.id} className="py-3">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="flex items-center gap-2 font-semibold">
+                              {r.name}
+                              {r.status && <Badge tone={statusTone(r.status)}>{r.status}</Badge>}
+                            </p>
+                            <p className="text-sm text-fp-dark/75">
+                              {[
+                                gbp(r.monthly_fee) && `${gbp(r.monthly_fee)} a month`,
+                                r.budget_hours && `${r.budget_hours} hours`,
+                                staffName(r.digital_am_id) && `Digital AM: ${staffName(r.digital_am_id)}`,
+                                staffName(r.sales_am_id) && `Sales AM: ${staffName(r.sales_am_id)}`,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                            {svcs.length > 0 && (
+                              <p className="mt-1 text-xs text-fp-mid">
+                                {svcs.map((s) => (s.qty_per_month ? `${s.service} ×${s.qty_per_month}` : s.service)).join(" · ")}
+                              </p>
+                            )}
+                          </div>
+                          <span className="flex flex-col items-end gap-1">
+                            {canEdit && (
+                              <Link href={`/customers/${id}/retainers/${r.id}`} className="text-sm font-semibold text-fp-teal-deep hover:underline">
+                                Edit
+                              </Link>
+                            )}
+                            {user.can("quotes", "edit") && r.status !== "Cancelled" && (
+                              <Link href={`/sales/recurring/new?retainer=${r.id}`} className="text-xs font-semibold text-fp-teal-deep hover:underline">
+                                Set up recurring billing
+                              </Link>
+                            )}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Card>
+
+            {/* Timeline: in the main column, below Digital retainers (DJ, 9 November 2026). */}
+            <Card title="Timeline">
+              <div id="timeline" className="-mt-2" />
+              {canEdit && (
+                <form action={addActivity.bind(null, id)} className="mb-5 grid gap-2">
+                  <textarea name="body" rows={3} required placeholder="Add a note, call or meeting…" className={inputClass} />
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Keyed so "Log a call" picks Call even when moving within this page. */}
+                    <Select key={logKind} name="kind" options={activityKinds} defaultValue={logKind} blank={false} />
+                    <Select
+                      name="contact_id"
+                      options={(contacts ?? []).map((p) => ({ value: p.id, label: personName(p) }))}
+                      blank="No contact"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="datetime-local"
+                      name="occurred_at"
+                      defaultValue={toLocalInput(new Date().toISOString())}
+                      className={inputClass}
+                      aria-label="When"
+                    />
+                    <button type="submit" className={primaryButton}>
+                      Add
+                    </button>
+                  </div>
+                </form>
+              )}
+              {/* A fixed-height box that scrolls (DJ, 9 November 2026). */}
+              {(activity ?? []).length === 0 ? (
+                <p className="text-sm text-fp-mid">Nothing recorded yet.</p>
+              ) : (
+                <ol className="grid max-h-[32rem] gap-4 overflow-y-auto pr-2">
+                  {(activity ?? []).map((a) => (
+                    <li key={a.id} className="border-l-2 border-fp-pink/40 pl-3">
+                      <p className="text-xs text-fp-mid">
+                        {activityLabel(a.kind)} · {shortDateTime(a.occurred_at)}
+                        {staffName(a.created_by) && ` · ${staffName(a.created_by)}`}
+                        {contactName(a.contact_id) && ` · with ${contactName(a.contact_id)}`}
+                      </p>
+                      <p className="mt-1 whitespace-pre-line text-sm">{a.body}</p>
+                      {canDelete && (
+                        <form action={deleteActivity.bind(null, id, a.id)}>
+                          <ConfirmSubmit message="Delete this timeline entry?" className="mt-1 text-xs text-fp-mid hover:text-fp-error">
+                            Delete
+                          </ConfirmSubmit>
+                        </form>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </Card>
+          </div>
+
+          <div className="grid content-start gap-6">
+            <DesignJobsPanel customer={id} />
+            <Card title="Accounts & credit">
+              <dl className="grid gap-4">
+                <Detail label="Credit status">
+                  {c.credit_status && (
+                    <Badge tone={isCreditWarning(c.credit_status) ? "red" : "grey"}>{c.credit_status}</Badge>
+                  )}
+                </Detail>
+                <Detail label="Direct Debit">{c.direct_debit_status}</Detail>
+                <Detail label="Payment terms">
+                  {(c.invoice_due_days !== null || c.invoice_due_terms) && [c.invoice_due_days, c.invoice_due_terms].filter((x) => x !== null).join(" ")}
+                </Detail>
+                <Detail label="Sales discount">{c.sales_discount_percent !== null && `${c.sales_discount_percent}%`}</Detail>
+                <Detail label="Default sales account">{c.default_sales_account}</Detail>
+                <Detail label="Xero contact ID">{c.xero_contact_id}</Detail>
+                <Detail label="Date last ordered">{longDate(c.date_last_ordered)}</Detail>
+              </dl>
+            </Card>
+
+            <div id="email" className="-mt-4" />
+            <Card title="Email this customer">
+              {emailed && (
+                <p role="status" className="mb-3 rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-3 py-2 text-sm text-fp-teal-deep">
+                  {emailed === "test" ? "Email accepted in test mode (not actually delivered)." : "Email sent."}
+                </p>
+              )}
+              {!canEdit ? (
+                <p className="text-sm text-fp-dark/75">You can view this customer but not email them.</p>
+              ) : (templates ?? []).length === 0 ? (
+                <p className="text-sm text-fp-dark/75">No email templates yet. An admin can add some in Admin → Email templates.</p>
+              ) : (
+                <>
+                  {isEmailConfigured() && isEmailTestMode() && (
+                    <p className="mb-3 rounded-md bg-fp-amber/15 px-3 py-2 text-xs">
+                      Test mode: emails are accepted by SendGrid but <strong>not delivered</strong>.
+                    </p>
+                  )}
+                  <EmailComposer
+                    templates={templates ?? []}
+                    contacts={(contacts ?? []).map((p) => ({ id: p.id, first_name: p.first_name, last_name: p.last_name, email: p.email }))}
+                    companyName={c.name}
+                    ourCompany={companySettings?.company_name ?? "Footprint Group"}
+                    senderName={user.fullName ?? user.email}
+                    canSend={isEmailConfigured()}
+                    sendAction={sendCustomerEmail.bind(null, id)}
+                  />
+                  {!isEmailConfigured() && (
+                    <p className="mt-2 text-xs text-fp-dark/70">Sending from the platform isn&apos;t switched on yet; use &ldquo;Open in my email app&rdquo;.</p>
+                  )}
+                </>
+              )}
+              {(sentEmails ?? []).length > 0 && (
+                <ul className="mt-4 grid gap-1 border-t border-fp-border pt-3 text-xs text-fp-dark/75">
+                  {(sentEmails ?? []).map((e) => (
+                    <li key={e.id}>
+                      {shortDateTime(e.sent_at)} · to {e.to_addresses} · &ldquo;{e.subject}&rdquo;
+                      <span className="block">
+                        <EmailStatus e={e} />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+
+          </div>
+        </div>
+
+        {/* Projects: at the bottom, full width (owner, 26 October 2026). Shown by
+            number and a clean name, not as "Customer – Order SO-…". */}
+        {canSeeProjects && (
+          <div className="mt-6">
+            <Card
+              title={`Projects${(customerProjects ?? []).length ? ` (${(customerProjects ?? []).length})` : ""}`}
+              action={
+                user.can("projects", "edit") ? (
+                  <Link href={`/projects/new?customer=${id}`} className={`${secondaryButton} inline-flex items-center gap-1.5`}>
+                    <Plus size={14} aria-hidden /> New project
+                  </Link>
+                ) : undefined
+              }
+            >
+              {(customerProjects ?? []).length === 0 ? (
+                <p className="text-sm text-fp-dark/70">No projects for this customer yet.</p>
+              ) : (
+                <ul className="divide-y divide-fp-border text-sm">
+                  {(customerProjects ?? []).map((pr) => {
+                    const name = projectDisplayName(pr.name, c.name);
+                    return (
+                      <li key={pr.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
+                        <Link href={`/projects/${pr.id}`} className="font-semibold hover:text-fp-pink">
+                          {pr.number}
+                          {name && <span className="font-normal text-fp-dark/80"> · {name}</span>}
+                        </Link>
+                        <span className="flex items-center gap-3">
+                          {pr.due_date && <span className="text-fp-mid">Due {longDate(pr.due_date)}</span>}
+                          <Badge tone={projectTone(pr.status)}>{projectStatusLabel(pr.status)}</Badge>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Card>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// A project's name without the customer's name or "Order SO-…" (projects made
+// from an order are called "Customer – Order SO-010932"), e.g. "Spring leaflets".
+function projectDisplayName(name: string, customer: string) {
+  return name
+    .replace(new RegExp(`^${customer.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*[–-]\\s*`, "i"), "")
+    .replace(/\bOrder SO-\d+\b/i, "")
+    .replace(/^[\s–-]+|[\s–-]+$/g, "");
+}

@@ -1,0 +1,798 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { siteUrl } from "@/lib/site-url";
+import { notFound } from "next/navigation";
+import { Download, FileSignature, Pencil, Printer } from "lucide-react";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
+import CopyButton from "@/components/CopyButton";
+import { Badge, Card, Notice, dangerButton, inputClass, primaryButton, secondaryButton } from "@/components/ui";
+import { requirePermission } from "@/lib/auth";
+import { gbp, longDate, personName, shortDateTime } from "@/lib/customers/display";
+import { ukToday } from "@/lib/dates";
+import { balanceDueDate, depositAvailable } from "@/lib/magazine-deposit";
+import { getAdvertTiming } from "@/lib/magazines";
+import { getDocumentLines } from "@/lib/sales/data";
+import { purchasingSummary } from "@/lib/sales/purchasing";
+import { docTypes, gpOverrideReasons, isDocType, isLockedRecord, lossReasons, marginPercent, marginText, poStatusLabel, quoteKindLabel, splitGpOverrideReason, statusLabel, statusToneFor, type DocType } from "@/lib/sales/options";
+import { createClient } from "@/lib/supabase/server";
+import { clearLineGpOverride, convertDocument, createPartInvoice, deleteDocument, markQuoteDeclined, requestAdvertArtwork, setDocumentStatus, setLineGpOverride, setOrderShipped, setProjectNotNeeded } from "../actions";
+import { sendToXero } from "../xero-actions";
+import { createProjectForOrder } from "../../projects/actions";
+import EmailCard from "../EmailCard";
+import { orderStages, quoteStages } from "@/lib/sales/stages";
+import { AdvertArtworkSection, AdvertPaymentNote, AdvertPaymentSection, DesignSection, FinanceSummary, PartInvoiceForm, ProjectSection, PurchaseOrdersSection, PurchasingSummary, StageBar, type AdvertArtwork, type OrderPo, type OrderProject } from "./SalesOrderSections";
+import { isCreditWarning } from "@/lib/customers/options";
+
+export async function generateMetadata(props: PageProps<"/sales/[id]">): Promise<Metadata> {
+  const { id } = await props.params;
+  const supabase = await createClient();
+  const { data } = await supabase.from("sales_documents").select("number").eq("id", id).maybeSingle();
+  return { title: data?.number ?? "Document" };
+}
+
+function ActionButton({ action, children, tone = "secondary" }: { action: () => Promise<void>; children: React.ReactNode; tone?: "primary" | "secondary" }) {
+  return (
+    <form action={action}>
+      <button type="submit" className={tone === "primary" ? primaryButton : secondaryButton}>
+        {children}
+      </button>
+    </form>
+  );
+}
+
+export default async function DocumentPage(props: PageProps<"/sales/[id]">) {
+  const user = await requirePermission("quotes", "view");
+  const canEdit = user.can("quotes", "edit");
+  const { id } = await props.params;
+  const sp = await props.searchParams;
+  const supabase = await createClient();
+
+  const { data: doc, error: loadError } = await supabase
+    .from("sales_documents")
+    .select("*, customers!sales_documents_customer_id_fkey(id, name, credit_status, email), contacts(first_name, last_name, email), owner:owner_id(full_name, email)")
+    .eq("id", id)
+    .maybeSingle();
+  if (loadError) throw new Error(`Couldn't load document: ${loadError.message}`);
+  if (!doc || !isDocType(doc.doc_type)) notFound();
+  const type = doc.doc_type as DocType;
+
+  const [lines, { data: source }, { data: children }, { data: pos }, { data: emailLog }, { data: settings }, { data: canOverrideGp }, { data: project }] = await Promise.all([
+    getDocumentLines(id),
+    doc.source_document_id
+      ? supabase.from("sales_documents").select("id, number, doc_type, contract_enabled, contract_signed_at").eq("id", doc.source_document_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from("sales_documents").select("id, number, doc_type, status, subtotal, total").eq("source_document_id", id),
+    type === "sales_order"
+      ? supabase.from("purchase_orders").select("id, number, status, subtotal, total, suppliers(name)").eq("sales_document_id", id)
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from("email_log")
+      .select("id, to_addresses, subject, status, error, sent_at, delivery_status, delivery_detail, delivery_at")
+      .eq("sales_document_id", id)
+      .order("sent_at", { ascending: false })
+      .limit(10),
+    supabase.from("company_settings").select("company_name").single(),
+    supabase.rpc("can_override_gp"),
+    type === "sales_order"
+      ? supabase.from("projects").select("id, number, name, status, project_tasks(status)").eq("sales_document_id", id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  // For a sales order: its design jobs, for the stage bar and advert artwork.
+  const { data: designJobs } =
+    type === "sales_order"
+      ? await supabase.from("design_jobs").select("id, number, stage, advert_size_id, artwork_source").eq("sales_order_id", id)
+      : { data: [] as { id: string; number: number; stage: string; advert_size_id: string | null; artwork_source: string | null }[] };
+
+  // Forget Me Not adverts on an order: one artwork row per size.
+  const advertSizeIds = [...new Set(lines.map((l) => l.advert_size_id).filter((v): v is string => !!v))];
+  const { data: advertSizes } =
+    type === "sales_order" && advertSizeIds.length
+      ? await supabase.from("advert_sizes").select("id, name").in("id", advertSizeIds)
+      : { data: [] as { id: string; name: string }[] };
+  const advertArtwork: AdvertArtwork[] = (advertSizes ?? []).map((sz) => {
+    const job = (designJobs ?? []).find((j) => j.advert_size_id === sz.id);
+    return {
+      sizeId: sz.id,
+      sizeName: sz.name,
+      adverts: lines.filter((l) => l.advert_size_id === sz.id).length,
+      job: job ? { id: job.id, number: job.number, stage: job.stage, source: job.artwork_source } : null,
+    };
+  });
+
+  // Names for "overridden by" on any lines that have a GP override.
+  const overriderIds = [...new Set(lines.map((l) => l.gp_override_by).filter((v): v is string => !!v))];
+  const { data: overriders } = overriderIds.length
+    ? await supabase.from("profiles").select("id, full_name, email").in("id", overriderIds)
+    : { data: [] as { id: string; full_name: string | null; email: string }[] };
+  const overriderName = new Map((overriders ?? []).map((o) => [o.id, o.full_name ?? o.email]));
+
+  const customer = doc.customers as unknown as { id: string; name: string; credit_status: string | null; email: string | null };
+  const contact = doc.contacts as unknown as { first_name: string | null; last_name: string; email: string | null } | null;
+  const owner = doc.owner as unknown as { full_name: string | null; email: string } | null;
+  const finalised = ["accepted", "converted", "paid", "void", "invoiced"].includes(doc.status) || isLockedRecord(type, doc.status);
+
+  // For invoices: credit notes raised against it reduce what's owed.
+  const credits = (children ?? []).filter((c) => c.doc_type === "credit_note" && c.status === "issued");
+  const credited = credits.reduce((sum, c) => sum + Number(c.total), 0);
+  const balance = Number(doc.total) - credited;
+  const margin = marginPercent(Number(doc.subtotal), Number(doc.cost_total));
+
+  const origin = await siteUrl();
+  const approvalLink = `${origin}/q/${doc.public_token}`;
+  const viewLink = `${origin}/d/${doc.public_token}`;
+  const emailed = typeof sp.emailed === "string" ? sp.emailed : null;
+
+  // Sales orders get their own layout (stage bar, finance, POs, design, project, comms).
+  const isOrder = type === "sales_order";
+  // How far the order's cost has moved from the estimate now that real
+  // purchase costs are in (lines with a GP override aren't changed).
+  const costChange =
+    Math.round(
+      lines.reduce((sum, l) => (l.gp_override === null && l.estimated_unit_cost !== null ? sum + l.quantity * ((l.unit_cost ?? 0) - l.estimated_unit_cost) : sum), 0) * 100,
+    ) / 100;
+
+  // Purchasing summary (DJ, 11 November 2026): the order's items against its POs' lines.
+  let purchasing: ReturnType<typeof purchasingSummary> | null = null;
+  if (type === "sales_order") {
+    const productIds = [...new Set(lines.map((l) => l.product_id).filter((v): v is string => !!v))];
+    const [{ data: poLines }, { data: products }] = await Promise.all([
+      (pos ?? []).length
+        ? supabase
+            .from("purchase_order_lines")
+            .select("product_id, description, quantity, bought_quantity, unit_cost, line_net, actual_line_net, purchase_orders!inner(status)")
+            .in("purchase_order_id", (pos ?? []).map((p) => p.id))
+        : Promise.resolve({ data: [] }),
+      productIds.length ? supabase.from("products").select("id, supplier_id").in("id", productIds) : Promise.resolve({ data: [] }),
+    ]);
+    const withSupplier = new Set((products ?? []).filter((p) => p.supplier_id).map((p) => p.id as string));
+    purchasing = purchasingSummary(
+      lines.map((l) => ({ product_id: l.product_id, description: l.description, quantity: l.quantity, boughtIn: !!l.product_id && withSupplier.has(l.product_id) })),
+      (poLines ?? []).map((l) => ({
+        product_id: l.product_id,
+        description: l.description,
+        quantity: Number(l.quantity),
+        bought_quantity: l.bought_quantity === null ? null : Number(l.bought_quantity),
+        unit_cost: Number(l.unit_cost),
+        line_net: Number(l.line_net),
+        actual_line_net: l.actual_line_net === null ? null : Number(l.actual_line_net),
+        status: (l.purchase_orders as unknown as { status: string }).status,
+      })),
+    );
+  }
+  const orderPos: OrderPo[] = (pos ?? []).map((p) => ({
+    id: p.id,
+    number: p.number,
+    status: p.status,
+    subtotal: Number(p.subtotal),
+    supplier: (p.suppliers as unknown as { name: string } | null)?.name ?? null,
+  }));
+  const projectTasks = (project?.project_tasks ?? []) as { status: string }[];
+  const orderProject: OrderProject | null = project
+    ? {
+        id: project.id,
+        number: project.number,
+        name: project.name,
+        status: project.status,
+        tasksDone: projectTasks.filter((t) => t.status === "done").length,
+        tasksTotal: projectTasks.length,
+      }
+    : null;
+  const orderInvoices = (children ?? []).filter((c) => c.doc_type === "invoice" && c.status !== "void");
+  const invoicedNet = Math.round(orderInvoices.reduce((sum, i) => sum + Number(i.subtotal), 0) * 100) / 100;
+  // Forget Me Not adverts: deposit or full payment (lib/magazine-deposit). An
+  // order is judged from its order date; a quote from today, as on the website.
+  const advertTiming = ["quote", "sales_order"].includes(type) && lines.some((l) => l.magazine_issue_id) ? await getAdvertTiming(id) : null;
+  const { data: partInvoiced } = advertTiming && isOrder && invoicedNet > 0 ? await supabase.rpc("order_is_part_invoiced", { p_order: id }) : { data: false };
+  const depositOk = advertTiming ? depositAvailable(isOrder ? doc.issue_date : ukToday(), advertTiming.firstMonth) : false;
+  const advertNote = advertTiming && (
+    <AdvertPaymentNote
+      firstMonth={advertTiming.firstMonth}
+      available={depositOk}
+      total={Number(doc.total)}
+      balanceDue={balanceDueDate(advertTiming.firstMonth, advertTiming.deadlines)}
+    />
+  );
+  const emailCard = canEdit && !["void", "cancelled"].includes(doc.status) && (
+    <div id="email" className="mt-6 scroll-mt-24">
+      <EmailCard
+        documentId={id}
+        type={type}
+        number={doc.number}
+        total={gbp(Number(doc.total)) ?? ""}
+        dueDate={type === "invoice" ? longDate(doc.due_date) : null}
+        contactEmail={contact?.email?.trim() || customer.email?.trim() || null}
+        contactFirstName={contact?.first_name ?? null}
+        senderName={user.fullName ?? user.email}
+        companyName={settings?.company_name ?? "Footprint Group"}
+        kindLabel={type === "quote" && doc.quote_kind && doc.quote_kind !== "quote" ? quoteKindLabel(doc.quote_kind) : null}
+        log={emailLog ?? []}
+      />
+    </div>
+  );
+
+  return (
+    <>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <Link href={docTypes[type].path} className="text-sm font-semibold text-fp-teal-deep hover:underline">
+            ← {docTypes[type].plural}
+          </Link>
+          <h2 className="mt-2 flex flex-wrap items-center gap-3 text-2xl font-black">
+            {docTypes[type].label} {doc.number}
+            <Badge tone={statusToneFor(doc.status)}>{statusLabel(type, doc.status)}</Badge>
+          </h2>
+          <p className="mt-1 text-sm text-fp-dark/75">
+            <Link href={`/customers/${customer.id}`} className="font-semibold hover:text-fp-pink">
+              {customer.name}
+            </Link>
+            {contact && ` · FAO ${personName(contact)}`}
+            {doc.title && ` · ${doc.title}`}
+          </p>
+          {/* Xero (Admin → Xero): issued invoices and credit notes go there as drafts. */}
+          {(type === "invoice" || type === "credit_note") && ["issued", "paid"].includes(doc.status) && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+              {doc.xero_id ? (
+                <Badge tone="teal">In Xero{doc.xero_number && doc.xero_number !== doc.number ? ` as ${doc.xero_number}` : ""}</Badge>
+              ) : (
+                <>
+                  <Badge>Not in Xero yet</Badge>
+                  {canEdit && (
+                    <form action={sendToXero.bind(null, id)}>
+                      <button type="submit" className="text-xs font-semibold text-fp-teal-deep hover:underline">
+                        Send to Xero now
+                      </button>
+                    </form>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/sales/${id}/print`} className={`${secondaryButton} inline-flex items-center gap-2`}>
+            <Printer size={14} aria-hidden /> Print
+          </Link>
+          {/* The contract (DJ, 16 November 2026): on a proposal with one, or an
+              order made from a proposal whose contract was signed. */}
+          {(doc.contract_enabled || doc.contract_signed_at || source?.contract_signed_at) && (
+            <Link href={`/sales/${id}/contract`} className={`${secondaryButton} inline-flex items-center gap-2`}>
+              <FileSignature size={14} aria-hidden /> {doc.contract_signed_at || source?.contract_signed_at ? "Signed contract" : "Contract (not signed yet)"}
+            </Link>
+          )}
+          {/* A real file (a download, not a page), so a plain link rather than Link. */}
+          <a href={`/sales/${id}/pdf`} className={`${secondaryButton} inline-flex items-center gap-2`}>
+            <Download size={14} aria-hidden /> Download PDF
+          </a>
+          {/* The customer's private link: just a copy button, the address isn't shown. */}
+          {canEdit && doc.status !== "draft" && <CopyButton text={type === "quote" ? approvalLink : viewLink} label={type === "quote" ? "Copy approval link" : "Copy customer link"} />}
+          {canEdit && !finalised && (
+            <Link href={`/sales/${id}/edit`} className={`${secondaryButton} inline-flex items-center gap-2`}>
+              <Pencil size={14} aria-hidden /> Edit
+            </Link>
+          )}
+        </div>
+      </div>
+
+      <Notice searchParams={sp} />
+
+      {isCreditWarning(customer.credit_status) && (
+        <p className="mb-6 rounded-md border border-fp-error/30 bg-fp-error/5 px-4 py-3 text-sm text-fp-error">
+          Credit warning for this customer: {customer.credit_status}
+        </p>
+      )}
+
+      {isOrder && (
+        // The order's stage, lit up from what has happened so far.
+        <div className="mb-6">
+          <StageBar
+            {...orderStages({
+              status: doc.status,
+              project: orderProject,
+              projectNotNeeded: !!doc.project_not_needed,
+              shippedAt: doc.shipped_at,
+              designJobs: designJobs ?? [],
+              pos: orderPos,
+              invoices: orderInvoices,
+              invoicedNet,
+              orderNet: Number(doc.subtotal),
+            })}
+            cancelled={doc.status === "cancelled"}
+          />
+        </div>
+      )}
+
+      {type === "quote" && (
+        // The quote's stage: Draft → Sent → Accepted → Sales order.
+        <div className="mb-6">
+          <StageBar
+            label="Quote stage"
+            {...quoteStages({
+              status: doc.status,
+              orderNumber: (children ?? []).find((c) => c.doc_type === "sales_order")?.number ?? null,
+              orderId: (children ?? []).find((c) => c.doc_type === "sales_order")?.id ?? null,
+            })}
+          />
+        </div>
+      )}
+
+      {canEdit && (
+        <Card title={isOrder ? "Stage" : "Next steps"}>
+          <div className="flex flex-wrap items-center gap-3">
+            {type === "quote" && doc.status === "draft" && (
+              <ActionButton action={setDocumentStatus.bind(null, id, "sent")} tone="primary">
+                Mark as sent & get approval link
+              </ActionButton>
+            )}
+            {type === "quote" && ["sent", "accepted", "declined"].includes(doc.status) && (
+              <ActionButton action={convertDocument.bind(null, id, "sales_order")} tone={doc.status === "accepted" ? "primary" : "secondary"}>
+                Convert to sales order
+              </ActionButton>
+            )}
+            {type === "quote" && doc.status === "sent" && (
+              <>
+                <ActionButton action={setDocumentStatus.bind(null, id, "accepted")}>Mark accepted (by phone/email)</ActionButton>
+                {/* Declining asks why, so the reason is always recorded. */}
+                <details className="relative">
+                  <summary className={`${secondaryButton} cursor-pointer list-none`}>Mark declined…</summary>
+                  <form action={markQuoteDeclined.bind(null, id)} className="mt-2 flex flex-wrap items-end gap-2 rounded-md border border-fp-border bg-white p-3 text-sm">
+                    <label className="grid gap-1">
+                      <span className="font-semibold">Why was it lost?</span>
+                      <select name="reason_for_loss" required defaultValue="" className={inputClass}>
+                        <option value="" disabled>
+                          Choose a reason…
+                        </option>
+                        {lossReasons.map((r) => (
+                          <option key={r} value={r}>
+                            {r}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button type="submit" className={secondaryButton}>
+                      Mark declined
+                    </button>
+                  </form>
+                </details>
+              </>
+            )}
+            {/* The whole order at once; once part-invoiced, the part-billing box below finishes it. */}
+            {type === "sales_order" && ["open", "completed"].includes(doc.status) && invoicedNet === 0 && (
+              <ActionButton action={convertDocument.bind(null, id, "invoice")} tone="primary">
+                Create invoice
+              </ActionButton>
+            )}
+            {type === "sales_order" && doc.status === "open" && (
+              <>
+                <ActionButton action={setDocumentStatus.bind(null, id, "completed")}>Mark completed</ActionButton>
+                <ActionButton action={setDocumentStatus.bind(null, id, "cancelled")}>Cancel order</ActionButton>
+              </>
+            )}
+            {/* Shipped (DJ, 12 November 2026). */}
+            {type === "sales_order" && ["open", "completed", "invoiced"].includes(doc.status) && !doc.shipped_at && (
+              <ActionButton action={setOrderShipped.bind(null, id, true)}>Mark as shipped</ActionButton>
+            )}
+            {type === "sales_order" && doc.shipped_at && doc.status !== "cancelled" && (
+              <form action={setOrderShipped.bind(null, id, false)}>
+                <button type="submit" className="py-2 text-xs font-semibold text-fp-dark/70 underline hover:text-fp-black">
+                  Undo shipped
+                </button>
+              </form>
+            )}
+            {type === "invoice" && ["issued", "paid"].includes(doc.status) && (
+              <ActionButton action={convertDocument.bind(null, id, "credit_note")}>Raise credit note</ActionButton>
+            )}
+            {type === "credit_note" && doc.status === "draft" && (
+              <ActionButton action={setDocumentStatus.bind(null, id, "issued")} tone="primary">
+                Issue credit note
+              </ActionButton>
+            )}
+            {type === "credit_note" && doc.status === "issued" && (
+              <form action={setDocumentStatus.bind(null, id, "void")}>
+                <ConfirmSubmit className={secondaryButton} message={`Void credit note ${doc.number}?`}>
+                  Void credit note
+                </ConfirmSubmit>
+              </form>
+            )}
+            {type === "invoice" && doc.status === "draft" && (
+              <ActionButton action={setDocumentStatus.bind(null, id, "issued")} tone="primary">
+                Issue invoice
+              </ActionButton>
+            )}
+            {type === "invoice" && doc.status === "issued" && (
+              <>
+                <ActionButton action={setDocumentStatus.bind(null, id, "paid")} tone="primary">
+                  Mark as paid
+                </ActionButton>
+                <form action={setDocumentStatus.bind(null, id, "void")}>
+                  <ConfirmSubmit className={secondaryButton} message={`Void invoice ${doc.number}? It stays on record but no longer counts.`}>
+                    Void invoice
+                  </ConfirmSubmit>
+                </form>
+              </>
+            )}
+            {["paid", "void", "converted", "invoiced"].includes(doc.status) && (
+              <p className="text-sm text-fp-dark/75">This document is finalised and can no longer be changed.</p>
+            )}
+          </div>
+
+          {isOrder && advertNote && (
+            <AdvertPaymentSection
+              note={advertNote}
+              canDeposit={canEdit && ["open", "completed"].includes(doc.status) && invoicedNet === 0 && depositOk}
+              canBalance={canEdit && ["open", "completed"].includes(doc.status) && !!partInvoiced && Number(doc.subtotal) - invoicedNet > 0.005}
+              remainingNet={Math.round((Number(doc.subtotal) - invoicedNet) * 100) / 100}
+              partAction={createPartInvoice.bind(null, id)}
+            />
+          )}
+          {isOrder && ["open", "completed"].includes(doc.status) && (
+            <PartInvoiceForm orderNet={Number(doc.subtotal)} invoicedNet={invoicedNet} partAction={createPartInvoice.bind(null, id)} />
+          )}
+
+        </Card>
+      )}
+
+      {emailed && (
+        <p role="status" className="mt-6 rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-4 py-3 text-sm text-fp-teal-deep">
+          {emailed === "test" ? "Email accepted in test mode (not actually delivered)." : "Email sent."}
+        </p>
+      )}
+
+      {doc.responded_at && (
+        <div className="mt-6">
+          <Card title="Customer's response">
+            <p className="text-sm">
+              <Badge tone={doc.status === "declined" ? "red" : "teal"}>{doc.status === "declined" ? "Declined" : "Accepted"}</Badge>{" "}
+              by <strong>{doc.response_name}</strong> on {shortDateTime(doc.responded_at)}
+              {doc.response_po && <> · their PO: <strong>{doc.response_po}</strong></>}
+              {doc.response_ip && <span className="text-fp-mid"> · from {doc.response_ip}</span>}
+            </p>
+            {doc.response_note && <p className="mt-2 whitespace-pre-line text-sm">“{doc.response_note}”</p>}
+          </Card>
+        </div>
+      )}
+
+      {isOrder && (
+        <>
+          <div className="mt-6">
+            <Card title="Finance summary">
+              <FinanceSummary
+                net={Number(doc.subtotal)}
+                cost={Number(doc.cost_total)}
+                labour={doc.labour_cost === null ? null : Number(doc.labour_cost)}
+                poSubtotal={orderPos.reduce((sum, p) => sum + (p.status === "cancelled" ? 0 : p.subtotal), 0)}
+                costChange={costChange}
+                poPaid={purchasing && purchasing.boughtFor !== null ? { paid: Math.round((purchasing.shouldCost + (purchasing.difference ?? 0)) * 100) / 100, difference: purchasing.difference ?? 0 } : null}
+                total={Number(doc.total)}
+                invoiced={orderInvoices.reduce((sum, i) => sum + Number(i.total), 0)}
+                invoicedNet={invoicedNet}
+              />
+            </Card>
+          </div>
+          {advertArtwork.length > 0 && (
+            <div className="mt-6">
+              <AdvertArtworkSection
+                items={advertArtwork}
+                canRequest={canEdit && doc.status !== "cancelled"}
+                request={(sizeId) => requestAdvertArtwork.bind(null, id, sizeId)}
+              />
+            </div>
+          )}
+          {purchasing && (
+            <div className="mt-6">
+              <PurchasingSummary
+                summary={purchasing}
+                raiseHref={canEdit && ["open", "completed", "invoiced"].includes(doc.status) ? `/sales/purchase-orders/raise?order=${id}` : null}
+              />
+            </div>
+          )}
+          {/* Footprint's flow: sales order → POs, design work and project. */}
+          <div className="mt-6 grid gap-6 lg:grid-cols-3">
+            <PurchaseOrdersSection
+              pos={orderPos}
+              raise={
+                canEdit && ["open", "completed", "invoiced"].includes(doc.status) ? (
+                  <Link href={`/sales/purchase-orders/raise?order=${id}`} className={secondaryButton}>
+                    Raise POs
+                  </Link>
+                ) : undefined
+              }
+            />
+            <DesignSection orderId={id} />
+            <ProjectSection
+              project={orderProject}
+              canView={user.can("projects", "view")}
+              notNeeded={!!doc.project_not_needed}
+              setNotNeeded={canEdit && !["cancelled"].includes(doc.status) ? setProjectNotNeeded.bind(null, id) : undefined}
+              create={
+                ["open", "completed", "invoiced"].includes(doc.status) && user.can("projects", "edit") ? (
+                  <ActionButton action={createProjectForOrder.bind(null, id, "project")} tone="primary">
+                    Create project
+                  </ActionButton>
+                ) : (
+                  <p className="text-xs text-fp-mid">Someone who can create projects can start one here.</p>
+                )
+              }
+            />
+          </div>
+          {/* Comms: email the customer. */}
+          {sp.noemail && (
+            <p role="status" className="mt-6 rounded-md border border-fp-amber bg-fp-amber/10 px-4 py-3 text-sm">
+              Saved as a draft. Neither the contact nor the customer has an email address, so it hasn&apos;t been sent: enter an address below to send it.
+            </p>
+          )}
+          {emailCard}
+        </>
+      )}
+
+      {!isOrder && advertNote && (
+        <p className="mt-6 rounded-md border border-fp-pink/30 bg-fp-pink/5 px-4 py-3 text-sm">
+          <span className="font-semibold">Payment.</span> {advertNote}
+        </p>
+      )}
+      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
+        <Card title={isOrder ? "Order lines" : "Lines"}>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px] text-left text-sm">
+              <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
+                <tr>
+                  <th className="py-2 pr-3 font-semibold">Description</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Qty</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Cost</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Sell</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Disc</th>
+                  <th className="py-2 pr-3 text-right font-semibold">VAT</th>
+                  <th className="py-2 pr-3 text-right font-semibold" title="Before VAT">Total</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Margin %</th>
+                  <th className="py-2 text-right font-semibold">Margin £</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lines.map((l) => (
+                  <tr key={l.key} className="border-b border-fp-border align-top last:border-0">
+                    <td className="py-2 pr-3">
+                      <span className="whitespace-pre-line">{l.description}</span>
+                      {l.gp_override !== null && (
+                        <p className="mt-1 rounded-md bg-fp-amber/15 px-2 py-1 text-xs">
+                          <strong>GP overridden</strong> to {gbp(l.gp_override)} by {(l.gp_override_by && overriderName.get(l.gp_override_by)) || "someone"}
+                          {l.gp_override_at ? ` on ${shortDateTime(l.gp_override_at)}` : ""}. Reason: {l.gp_override_reason}
+                        </p>
+                      )}
+                      {canOverrideGp === true && canEdit && (
+                        <details className="mt-1 text-xs">
+                          <summary className="cursor-pointer font-semibold text-fp-teal-deep">
+                            {l.gp_override !== null ? "Change or remove GP override" : "Override GP"}
+                          </summary>
+                          <form action={setLineGpOverride.bind(null, id, l.key)} className="mt-2 grid max-w-sm gap-2">
+                            <label className="grid gap-1">
+                              <span className="font-semibold">Gross profit for this line (£, excluding VAT)</span>
+                              <input name="gp" type="number" step="0.01" required defaultValue={l.gp_override ?? ""} className={inputClass} />
+                            </label>
+                            {/* Reason from a list (owner, 11 November 2026); Other needs a note. */}
+                            <label className="grid gap-1">
+                              <span className="font-semibold">Reason</span>
+                              <select name="reason" required defaultValue={splitGpOverrideReason(l.gp_override_reason).reason} className={inputClass}>
+                                <option value="" disabled>
+                                  Choose a reason…
+                                </option>
+                                {gpOverrideReasons.map((r) => (
+                                  <option key={r} value={r}>
+                                    {r === "Other" ? "Other (please explain)" : r}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="grid gap-1">
+                              <span className="font-semibold">Note (needed for Other)</span>
+                              <input name="reason_note" maxLength={500} defaultValue={splitGpOverrideReason(l.gp_override_reason).note} className={inputClass} />
+                            </label>
+                            <div>
+                              <button type="submit" className={primaryButton}>Save override</button>
+                            </div>
+                          </form>
+                          {l.gp_override !== null && (
+                            <form action={clearLineGpOverride.bind(null, id, l.key)} className="mt-2">
+                              <button type="submit" className="font-semibold text-fp-dark/70 underline hover:text-fp-black">
+                                Remove the override (go back to the calculated figure)
+                              </button>
+                            </form>
+                          )}
+                        </details>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3 text-right">{l.quantity}</td>
+                    <td className="py-2 pr-3 text-right text-fp-dark/75">
+                      {/* With a GP override the cost is worked out from it, so show the per-unit figure that gives. */}
+                      {l.gp_override !== null ? (l.quantity ? gbp(l.line_cost / l.quantity) : "—") : l.unit_cost === null ? "—" : gbp(l.unit_cost)}
+                      {/* Cost from what we bought it for on the POs; the estimate underneath. */}
+                      {l.gp_override === null && l.estimated_unit_cost !== null && (
+                        <span className="block text-[10px] font-semibold uppercase text-fp-teal-deep" title="From what we bought it for on the purchase orders">
+                          actual · est. {gbp(l.estimated_unit_cost)}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3 text-right">{gbp(l.unit_price)}</td>
+                    <td className="py-2 pr-3 text-right">{l.discount_percent ? `${l.discount_percent}%` : ""}</td>
+                    <td className="py-2 pr-3 text-right">{l.tax_rate}%</td>
+                    <td className="py-2 pr-3 text-right font-semibold">{gbp(l.line_net)}</td>
+                    <td className="py-2 pr-3 text-right">{marginPercent(l.line_net, l.line_cost) === null ? "—" : `${marginPercent(l.line_net, l.line_cost)}%`}</td>
+                    <td className={`py-2 text-right ${l.line_net - l.line_cost < 0 ? "text-fp-error" : ""}`}>
+                      {gbp(l.line_net - l.line_cost)}
+                      {l.gp_override !== null && <span className="block text-[10px] font-semibold uppercase text-fp-amber">overridden</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <dl className="ml-auto mt-4 grid max-w-xs grid-cols-2 gap-x-6 gap-y-1 text-sm">
+            <dt className="text-fp-dark/75">Subtotal</dt>
+            <dd className="text-right">{gbp(Number(doc.subtotal))}</dd>
+            <dt className="text-fp-dark/75">VAT</dt>
+            <dd className="text-right">{gbp(Number(doc.vat_total))}</dd>
+            <dt className="font-bold">Total</dt>
+            <dd className="text-right font-bold">{gbp(Number(doc.total))}</dd>
+            {type === "invoice" && credited > 0 && (
+              <>
+                <dt className="text-fp-dark/75">Credited</dt>
+                <dd className="text-right">−{gbp(credited)}</dd>
+                <dt className="font-bold">Balance</dt>
+                <dd className="text-right font-bold">{gbp(balance)}</dd>
+              </>
+            )}
+          </dl>
+        </Card>
+
+        <div className="grid content-start gap-6">
+          {/* A sales order shows this in its Finance summary. */}
+          {!isOrder && (
+          <Card title="Margin">
+            <p className="text-3xl font-black text-fp-teal-deep">
+              {margin === null ? "—" : `${margin}%`}
+              <span className="ml-2 text-lg font-bold">{gbp(Number(doc.subtotal) - Number(doc.cost_total))}</span>
+            </p>
+            <p className="mb-3 text-xs text-fp-mid">Staff only — customers never see cost or margin.</p>
+            <dl className="grid grid-cols-2 gap-y-1 text-sm">
+              <dt className="text-fp-dark/75">Cost</dt>
+              <dd className="text-right">{gbp(Number(doc.cost_total))}</dd>
+              <dt className="font-semibold">Margin £</dt>
+              <dd className={`text-right font-semibold ${Number(doc.subtotal) - Number(doc.cost_total) < 0 ? "text-fp-error" : ""}`}>
+                {gbp(Number(doc.subtotal) - Number(doc.cost_total))}
+              </dd>
+              {doc.labour_cost !== null && (
+                <>
+                  <dt className="text-fp-dark/75">Labour cost</dt>
+                  <dd className="text-right">{gbp(Number(doc.labour_cost))}</dd>
+                  <dt className="font-semibold">Margin after labour</dt>
+                  <dd className={`text-right font-semibold ${Number(doc.subtotal) - Number(doc.cost_total) - Number(doc.labour_cost) < 0 ? "text-fp-error" : ""}`}>
+                    {marginText(Number(doc.subtotal), Number(doc.cost_total) + Number(doc.labour_cost), gbp)}
+                  </dd>
+                </>
+              )}
+            </dl>
+          </Card>
+          )}
+
+          {isOrder && (
+            <Card title="Addresses & delivery">
+              <dl className="grid gap-3 text-sm">
+                <div>
+                  <dt className="text-fp-dark/75">Billing address</dt>
+                  <dd className="whitespace-pre-line">{doc.billing_address || <span className="text-fp-mid">The customer&apos;s billing address</span>}</dd>
+                </div>
+                <div>
+                  <dt className="text-fp-dark/75">Deliver to</dt>
+                  <dd className="whitespace-pre-line font-semibold">{doc.delivery_address || <span className="font-normal text-fp-mid">Not set yet</span>}</dd>
+                </div>
+                <div>
+                  <dt className="text-fp-dark/75">Warehouse</dt>
+                  <dd>{doc.warehouse ?? <span className="text-fp-mid">Not chosen yet</span>}</dd>
+                </div>
+                {doc.delivery_notes && (
+                  <div>
+                    <dt className="text-fp-dark/75">Delivery notes</dt>
+                    <dd className="whitespace-pre-line">{doc.delivery_notes}</dd>
+                  </div>
+                )}
+              </dl>
+            </Card>
+          )}
+
+          <Card title="Details">
+            <dl className="grid gap-2 text-sm">
+              {[
+                ["Date", longDate(doc.issue_date)],
+                ["Valid until", type === "quote" ? longDate(doc.valid_until) : null],
+                ["Due", type === "invoice" ? longDate(doc.due_date) : null],
+                ["Deadline", type === "sales_order" ? longDate(doc.deadline_date) : null],
+                ["Customer reference", doc.customer_reference],
+                ["Billing address", type === "invoice" ? doc.billing_address : null],
+                ["Salesperson", owner ? (owner.full_name ?? owner.email) : null],
+                ["Type", type === "quote" ? quoteKindLabel(doc.quote_kind) : null],
+                ["Business unit", doc.business_unit],
+                ["Probability", doc.probability],
+                ["Expected", doc.expected_date],
+                ["Delivery", doc.delivery_type],
+                ["Reason for loss", doc.reason_for_loss],
+                ["Reason for credit", doc.credit_reason],
+                ["Copy shop job", doc.copy_shop_job ? (doc.consumer_copy_shop ? "Yes (consumer)" : "Yes") : null],
+                ["Collected", type === "invoice" ? (doc.collected ? "Yes" : "No") : null],
+                ["Sent", shortDateTime(doc.sent_at)],
+              ]
+                .filter(([, v]) => v)
+                .map(([k, v]) => (
+                  <div key={k as string} className="grid grid-cols-2 gap-2">
+                    <dt className="text-fp-dark/75">{k}</dt>
+                    <dd className="whitespace-pre-line">{v}</dd>
+                  </div>
+                ))}
+            </dl>
+          </Card>
+
+          {!isOrder && (pos ?? []).length > 0 && (
+            <Card title="Purchase orders">
+              <ul className="grid gap-1 text-sm">
+                {(pos ?? []).map((p) => (
+                  <li key={p.id} className="flex items-center justify-between gap-2">
+                    <Link href={`/sales/purchase-orders/${p.id}`} className="font-semibold text-fp-teal-deep hover:underline">
+                      {p.number}
+                    </Link>
+                    <span className="text-fp-dark/75">{(p.suppliers as unknown as { name: string } | null)?.name}</span>
+                    <Badge tone={statusToneFor(p.status)}>{poStatusLabel(p.status)}</Badge>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {(source || (children ?? []).length > 0) && (
+            <Card title="Linked documents">
+              <ul className="grid gap-1 text-sm">
+                {source && (
+                  <li>
+                    From{" "}
+                    <Link href={`/sales/${source.id}`} className="font-semibold text-fp-teal-deep hover:underline">
+                      {docTypes[source.doc_type as DocType]?.label} {source.number}
+                    </Link>
+                  </li>
+                )}
+                {(children ?? []).map((c) => (
+                  <li key={c.id}>
+                    Became{" "}
+                    <Link href={`/sales/${c.id}`} className="font-semibold text-fp-teal-deep hover:underline">
+                      {docTypes[c.doc_type as DocType]?.label} {c.number}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {doc.internal_notes && (
+            <Card title="Internal notes">
+              <p className="whitespace-pre-line text-sm">{doc.internal_notes}</p>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {/* Email to customer: below the document so the quote itself comes first
+          (a sales order has it in its Comms section above). */}
+      {!isOrder && sp.noemail && (
+        <p role="status" className="mt-6 rounded-md border border-fp-amber bg-fp-amber/10 px-4 py-3 text-sm">
+          Saved as a draft. Neither the contact nor the customer has an email address, so it hasn&apos;t been sent: enter an address below to send it.
+        </p>
+      )}
+
+      {!isOrder && emailCard}
+
+      {user.can("quotes", "delete") && !isLockedRecord(type, doc.status) && (
+        <form action={deleteDocument.bind(null, id)} className="mt-10 border-t border-fp-border pt-6">
+          <ConfirmSubmit className={dangerButton} message={`Delete ${docTypes[type].label.toLowerCase()} ${doc.number}? This can't be undone.`}>
+            Delete {docTypes[type].label.toLowerCase()}
+          </ConfirmSubmit>
+        </form>
+      )}
+    </>
+  );
+}

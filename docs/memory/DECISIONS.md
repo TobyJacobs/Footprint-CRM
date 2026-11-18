@@ -4,6 +4,10 @@ Every important decision, dated, with the reason. Never delete entries — if a 
 
 ---
 
+## 19 October 2026 — Claude updates the roadmap with a Supabase secret key
+**Decision:** The owner saved a Supabase secret key as `SUPABASE_SECRET_KEY` in `.env.local` on their laptop, so Claude can tick roadmap tasks itself instead of the owner pasting SQL.
+**Why:** Saves the owner a manual step every time. `.env.local` is ignored by Git, so the key never reaches GitHub. The app doesn't use this key. Claude still asks before changing any other live data. If it might have leaked, replace it in Supabase → Project Settings → API Keys.
+
 ## 29 September 2026 — Keep Claude's memory inside the repository
 **Decision:** Claude's memory lives in `docs/memory/` and is pushed to GitHub.
 **Why:** It's backed up automatically, has full history, and isn't lost if a computer or chat session is.
@@ -81,6 +85,338 @@ This replaces Claude's draft proposal of Design Workload as Wave 1.
 
 **Why:** It keeps the business's data, billing and access separate from the owner's other projects, and makes it easy to hand over or add colleagues.
 
+## 1 October 2026 — Wave 1 scope: customers, contacts, hosting plans, retainers
+**Decision:**
+- Customers get the core Zoho fields plus Footprint's own: credit status, Direct Debit statuses, services, payment terms, Xero ID, how they heard about us, and status.
+- Leftovers from old integrations are dropped: WorkflowMax, Zoom webinar stats, SalesIQ visit stats, and unused "Option 1/2" lists.
+- Wave 1 also includes **hosting plans** (with web and email hosting details) and **digital retainers** (with monthly services) on each customer.
+- **Zoho Billing subscriptions** move in **Wave 2**, together with billing.
+- Picklist options are kept as the same wording as Zoho, so the import is simple. They're checked in the app rather than locked into the database, so new options don't need a database change.
+
+**Why:** These are the owner's choices (29 September and 1 October 2026). See `docs/discovery/ZOHO-CRM.md`.
+
+## 1 October 2026 — Wave 2c order and email provider
+**Decision:**
+- **Order:**
+  1. recurring billing (no outside accounts needed)
+  2. emailing
+  3. card payments
+  4. Direct Debit
+  5. Xero sync
+- **Email goes through Postmark**, built first against Postmark's test mode. The owner signs up and adds the footprintgroup.uk DNS records before real sending.
+- The owner has a **Xero** account. They do **not** currently have Stripe or GoCardless accounts (see OPEN-QUESTIONS).
+- **Recurring invoices run inside the database** on a daily schedule (Supabase pg_cron), so no secret keys are needed. Admins can also run them on demand.
+
+**Why:** The owner's choices on 1 October 2026. Recurring billing replaces Zoho Billing / Zoho Books recurring invoices and works without any new accounts.
+
+## 1 October 2026 — Netlify visibility: live site public, previews private
+**Decision:** Netlify "Team protection" changed from "production and previews" to **previews only**. The live site (footprinthub.netlify.app) opens normally. Our own Microsoft sign-in protects every page except `/login` and customers' private quote links (`/q/…`). Deploy previews still need a Netlify team login.
+
+**Why:** The owner's director needs to see the demo without a Netlify account, and customers must be able to open quote approval links. The platform's own login and database rules are the real protection. Owner approved.
+
+## 1 October 2026 — Wave 2 approach
+**Decision:**
+- **Build order:**
+  - **2a:** products, quotes (with gross profit and online approval), sales orders, invoices, printable documents
+  - **2b:** purchase orders and credit notes
+  - **2c:** emailing (Postmark), payments (Stripe, GoCardless), Xero sync, subscription billing (these need test accounts)
+- **Quote approval** uses a private secure link. The customer types their name (and optional PO number) and clicks Accept or Decline. We record who, when and their IP address. No login needed.
+- **Custom fields kept and tidied:**
+  - kept: Probability, Business Unit, Expected Order/Invoice Date, Delivery Type, Reason for Loss, Labour Cost, GP, Deadline, Copy Shop flags, Collected, and the sales order production steps
+  - Zoho's multi-select "Quote Stage" is replaced by clear statuses: Draft → Sent → Accepted / Declined → Converted
+- Numbering continues Zoho's series (QT-, SO-, INV-, PO-, CN-) from the next numbers at cut-over.
+- Every line has a cost as well as a price, so gross profit is shown.
+
+**Why:** The owner's choices. See `docs/discovery/ZOHO-BOOKS.md`.
+
+## 1 October 2026 — Live database and real data on hold until the final wave
+**Decision:**
+- The live London Supabase project (Pro plan, about £20 a month) is **on hold** until the owner has shown the project to their director, and won't be created before the last wave.
+- Until then, everything is built and demonstrated on the **test** database with **made-up data only**.
+- The Zoho import tool is still built and tested, but against **made-up files in Zoho's export format**. The real import, the nightly Zoho copy, and switching off old tools all happen at the end.
+
+**Why:** The owner wants director sign-off before spending money or moving real customer data.
+
+**Consequence:** No old tool (Zoho, monday.com, Mag Manager) is switched off until the live database exists and real data has moved. The roadmap's "switch off" steps move to a final cut-over stage.
+
+## 1 October 2026 — How GDPR requests work in the platform
+**Decision:**
+- Exporting and erasing personal data are **admin-only**.
+- Erasure **anonymises rather than deletes**: the record stays as "Removed (GDPR)", so links and history still work.
+- The person's data is also **redacted from the audit log**. The log keeps only the record id and a "GDPR erasure" event (who and when).
+- Erased records carry `erased_at`, so imports and syncs skip them.
+- Records kept by law (e.g. invoices for 6 years, from Wave 2) are out of scope for erasure.
+
+**Why:** Meets UK GDPR rights of access and erasure without breaking history. An audit log that kept erased data would defeat the erasure. Process is in `docs/runbooks/GDPR-REQUESTS.md`.
+
+## 1 October 2026 — Third-party passwords are not migrated
+**Decision:** The plain-text "3rd Party Password" values in Zoho's Web Hosting Plans are **never** copied into the platform. They move to the password manager. Each hosting plan keeps the username and a note saying where the login is stored.
+
+**Why:** Storing passwords in a CRM is a security and GDPR risk. The password manager exists for this. Owner agreed.
+
+## 1 October 2026 — Sentry (EU region) for error alerts
+**Decision:**
+- Use Sentry's free plan in its **EU (Frankfurt) data region** to alert us when something breaks.
+- Errors only: no performance tracing and no session replay.
+- All personal-data collection is switched off (user info, cookies, headers, bodies, query strings, variable values).
+- It's switched on by setting `NEXT_PUBLIC_SENTRY_DSN` in Netlify. Source-map upload is off, so no secret Sentry token is needed.
+
+**Why:** It's the industry standard, free at our size, sends email alerts, and keeps EU data residency. The owner chose it over an in-house error log (no alerts until email arrives in Wave 2) and over relying on Netlify logs.
+
+## 1 October 2026 — Logo taken from the website until official files arrive
+**Decision:** With the owner's permission, the white logo from footprintgroup.uk is used in the sidebar and login page, and its infinity mark as the tab icon. See `docs/BRAND.md`.
+
+## 1 October 2026 — Supabase auto-deploys database changes from GitHub
+**Decision:** The Supabase GitHub integration's "Deploy to production" is switched on for branch `main`. Migrations in `supabase/migrations/` apply to the Supabase project automatically when merged into `main`. The first migration was applied by hand beforehand and recorded as applied.
+
+**Why:** The owner asked for it. It keeps the database in step with the code without manual SQL.
+
+**Note:** It currently points at the **test** project. When the live London project is created, decide which project follows `main`.
+
+## 1 October 2026 — Sign-in details
+**Decision:**
+- Staff sign in through a Microsoft Entra app, "Footprint Platform", that only accepts Footprint's own tenant (single tenant). New sign-ins get a profile automatically. The first ever sign-in becomes admin.
+- Access is controlled by an `is_active` switch, an `is_admin` switch, and roles made of (feature, action) permissions, where the actions are view, edit and delete.
+- The client secret lives only in Supabase and expires after 24 months.
+
+**Why:** Only Footprint staff can get in, using Microsoft's own two-step login. Nothing secret is kept in the code.
+
+## 30 September 2026 — Test database in Frankfurt, live database in London
+**Decision:**
+- The existing Supabase project in the "Footprint Group - CRM" organisation is the **test** database. It is in **Frankfurt (eu-central-1)** and was auto-created when GitHub was connected. It will be renamed "Footprint Platform – Test".
+- The **live** database will be a new project in **London (eu-west-2)** on the Pro plan, created before any real customer data goes in (before Wave 1), with the owner's approval.
+
+This refines the "Supabase, London region" part of the technical foundations decision.
+
+**Why:**
+- Test data is fake, and EU storage is within what the owner approved.
+- The free plan allows only 2 free projects per person, and the HED project already uses one.
+- A project's region can't be changed after it's created. Owner agreed.
+
 ## 29 September 2026 — Order of replacement
 **Decision:** Replace Zoho first, then monday.com, then Mag Manager, then GoHighLevel (internal use) last.
 **Why:** The owner's priority. The main driver is a bespoke, branded in-house platform, not a failing tool.
+
+## 1 October 2026 — GoCardless for customer payments; no card payments
+**Decision:**
+- Customers pay through **GoCardless** only.
+- Recurring invoices are collected by Direct Debit: the customer signs a mandate once, then each invoice is collected automatically.
+- One-off invoices can be paid through GoCardless from the invoice link.
+- No card payment provider (Stripe) for now.
+
+**Why:** The owner's choice. GoCardless is the UK standard for Direct Debit and works with Xero. It is built in GoCardless's sandbox first, and the real account is set up at go-live.
+
+## 2 October 2026 — Director's improvements: first answers
+**Decision:**
+- Margin is shown as a **percentage** instead of a £ gross-profit figure, on quotes, orders and invoices (staff only; customers never see cost, GP or margin).
+- Commission: show an **example** calculation for now; the real rules come later.
+- Monthly goal: **£300,000 per month** for the group, as a placeholder until real numbers are given.
+- Staff roles come from **job titles in Microsoft 365 (Entra)**. If titles turn out wrong, switch to Microsoft groups.
+- Everyone in Microsoft 365 is **listed in Admin → Users before they first sign in**, with their job title and suggested role, so the admin can sort them out in advance.
+
+**Order:** quick wins (3, 5, 8, 9) → automatic access from Microsoft (1, 2 plus pre-listing) → charts (4) → targets, commission, Staff hub and role home pages (6, 7, 10).
+
+**Why:** The owner's and director's answers, 2 October 2026.
+
+## 5 October 2026 — Real product list copied from Zoho now; product number on every line
+**Decision:**
+- The **real product list** (names, product numbers, prices, cost prices, suppliers, VAT) is copied from Zoho Books into the platform **now**, ahead of go-live, and copied again at go-live so it's current. This replaces the made-up products. It's an exception to "real data on hold until the final wave": products contain no personal data.
+- Quotes and invoices get a **searchable product dropdown** on each line, showing the **product name**.
+- Choosing a product puts its **Zoho product number** at the start of the line description, and also stores it on the line (`product_code`), because the product number is what Xero uses to match items.
+
+**Why:** The owner's request and answers, 5 October 2026.
+
+## 6 October 2026 - Product name: FootprintOS
+
+**Decision:** The platform is called **FootprintOS**, a sub-brand of Footprint Group. "Footprint Group" stays as the company name (logo, emails, legal text). Chosen by the owner, replacing the working title "Footprint Platform".
+**Manual follow-ups for the owner:** rename the Microsoft Entra app, the Supabase project and the Netlify site; if the Netlify address changes, update the Supabase redirect list first (see PROGRESS.md).
+
+## 7 October 2026 - Email provider: SendGrid instead of Postmark
+
+**Decision:** The platform sends email through **SendGrid**, not Postmark (the owner's choice). Postmark was never approved out of test mode, so nothing live depended on it.
+**What changed:** `src/lib/email/sendgrid.ts` replaces `postmark.ts`; same functions, so every email feature works as before. Netlify variables: `SENDGRID_API_KEY` (secret) replaces `POSTMARK_SERVER_TOKEN`; `EMAIL_FROM` and `EMAIL_REPLY_TO` stay; optional `EMAIL_TEST_MODE=true` uses SendGrid's sandbox (accepted, never delivered).
+**Owner steps:** create the SendGrid key (Mail Send permission) and add it to Netlify; verify a sender or authenticate the footprintgroup.uk domain in SendGrid (DNS records); remove the old POSTMARK variable afterwards.
+
+## 14–15 October 2026 - Every import, switch-off and the move to London sit in Go-live
+
+**Decision (the owner's request, recorded in `PROGRESS.md` on 14 and 15 October 2026; written here during the 15 October 2026 health check):** all Zoho, monday.com and Mag Manager imports, every "switch off" task (Zoho One, Vault, Cliq, the Zoho billing trial) and "Move the website to the London database" belong in the final **Go-live** stage of the roadmap.
+**Updates the 1 October 2026 entry "Live database and real data on hold":** the London "FootprintOS - Live" database now exists (creation date not recorded), but nothing uses it yet. The live website still runs on the test database until the Go-live move. Note: "made-up data only" no longer holds fully, because the daily Microsoft 365 sync puts real staff details into the test database (see `PROGRESS.md`, 14 October 2026). No real customers have been imported (the real product list was copied from Zoho on 5 October 2026).
+
+## 19 October 2026 - Customers see design proofs through a 30-day file link
+
+**Decision:** When a proof is sent for approval, FootprintOS makes a private link to that one file, valid for **30 days**, and stores it with the approval request. The customer's approval page shows the file through that link. After 30 days the page says the link has expired and asks the customer to get in touch.
+**Why:** Proof files are in private storage, and the website deliberately has no "master" database key. This keeps it that way: no new secret in Netlify, and the customer can only ever reach the one file they were sent. Sending a newer proof, or pressing Withdraw, stops the old approval page showing the file. (The file link itself keeps working until it expires, but nobody else has it.)
+**Alternative not chosen:** adding Supabase's master key to Netlify so the page could fetch files on demand. More flexible, but a much bigger risk if it ever leaked.
+
+## 19 October 2026 - FootprintAI is invite only, outside the role system
+
+**Decision (owner):** FootprintAI can be seen by admins and by people an admin adds to its invite list. Roles never give access. Updates are by hand and by Claude Code for now; a proper connector for the company's Claude comes later.
+**Why:** It holds the Footprint AI programme's plans and results before launch, so it should be visible only to named people. Keeping it off the role system means adding someone to a role (for example, Sales) can never accidentally reveal it.
+**How:** an `ai_members` list and an `is_ai_member()` check used by every FootprintAI data rule; the section is left out of Admin → Roles and the feedback page list.
+
+## 20 October 2026 - Design jobs are started from projects
+
+**Decision (owner):** every new design job is started from a project; not from a customer, a sales order on its own, or the Design board as an ad-hoc job. Customer and sales order pages still list their jobs. Updates the 19 October 2026 answer ("jobs come from sales orders, projects and ad-hoc requests").
+**Why:** the owner's way of working: design work belongs to a project, so time, tasks and the job sit together.
+**How:** the job's customer and sales order are taken from its project when it's created.
+
+## 21 October 2026 - Product numbers no longer shown on quotes
+
+**Decision (owner):** quote, order and invoice lines no longer start with the product number; they show the product name (and description). Updates the 5 October 2026 decision ("choosing a product puts its Zoho product number at the start of the line description").
+**Unchanged:** the product number is still saved on every line (`product_code`) for the Xero sync, and purchase orders to suppliers still show it in the line text.
+**Existing lines** (test data) keep their text; nothing in the database was changed.
+
+## 26 October 2026 - Design requests straight from the sales order
+**Decision (owner):** Footprint's flow is quote / proposal / advert → sales order → purchase orders, design request and project. A sales order gets a **Request design** button; the job is linked to the order **and** the order's project (every order gets a project automatically). Updates the 20 October 2026 rule ("every new design job is started from a project"): jobs still always belong to a project, but staff can start one from the order.
+**Why:** the sales order is where the team works after the sale, so the design request should be one click from there.
+
+## 26 October 2026 - The site's own address comes from Netlify, not from the request
+**Decision:** sign-in return addresses and every link we email or copy are built from the site address Netlify gives at build time (`siteUrl()` in `src/lib/site-url.ts`): the main address on the live site, the preview's address on a preview. Never from the request's Origin/Host header.
+**Why:** with skew protection on, a request can be answered by a release-specific address, which broke sign-in (people had to sign in twice) and could have put release-specific links in customer emails. This also means moving to os.footprintgroup.uk needs no code change.
+
+
+## 26 October 2026 - Projects made with "Create project"; drafts in the pipeline
+**Decision (owner):** Footprint's full flow is customer → new opportunity (in the pipeline) → sales order → Create project, Create design, Create PO. A sales order **no longer gets a project automatically**: the order has a **Create project** button (then **Open project**). Request design on an order without a project offers "Create project and continue". Orders that already have a project keep it. Replaces the automatic project from 9 October 2026.
+**Decision (owner):** draft opportunities appear in the pipeline, but **highlighted in their own area** ("Draft opportunities (not sent yet)"), never mixed into win rate, quoted or waiting-for-an-answer figures.
+**Why:** projects only for orders that need one; salespeople see new opportunities as soon as they start them.
+
+## 26 October 2026 - FootprintOS has version numbers and a What's new page
+**Decision (owner):** version shown at the bottom of the side menu ("FootprintOS 0.20.0 · What's new") and a What's new page listing each version and its changes in plain English. No GitHub release tags for now. Numbering starts at **0.20.0** (today) and stays 0.x until Go-live, which becomes **1.0**. New feature → middle number; fix only → last number. One list (`src/lib/releases.ts`) is the source; the rule is in CLAUDE.md.
+**Why:** staff can say which version they're on when reporting a problem, and everyone can see what changed.
+
+## 26 October 2026 - Part billing on sales orders
+**Decision (owner):** a sales order can be invoiced in parts. Staff enter a £ amount before VAT or a percentage; the part invoice has **one summary line** ("Part invoice 1 for order SO-…: £1,000.00 of £2,000.00 (50%)"), split by VAT rate if the order mixes rates. "Invoice the rest" bills what's left ("Final invoice … the remaining …"). The order becomes "Invoiced" only when fully billed; a part-invoiced order can't also be fully converted (no double billing). Costs and labour follow the same share so margins stay right.
+**Why:** e.g. a £2,000 order billed £1,000 now, showing £1,000 outstanding.
+
+## 26 October 2026 - Cleaner sales flow
+**Decision (owner):** "make the flow as clean as possible". Chosen: drop the old Zoho "Production step" (the automatic stage bar replaces it; Operations dashboard groups by stage); stage bar on quotes (Draft → Sent → Accepted → Sales order); reason for loss asked when marking declined (not on the form); probability and expected order under "More details". Not chosen (for now): removing the old Delivery dropdown, renaming design/PO wording, hiding copy-shop fields, one way to send quotes, removing the "Sell ads" placeholder.
+**Why:** fewer fields and buttons that say the same thing twice.
+
+## 27 October 2026 - GoCardless and Xero moved to Go-live
+**Decision (owner):** the last two Wave 2 tasks, "Payments by Direct Debit (GoCardless)" and "Xero sync", were moved on the Roadmap from Wave 2 to the Go-live stage (positions 17 and 18). Wave 2 now has nothing left to do.
+**Why:** the owner wanted GoCardless and Xero left for later (15 October 2026); they belong with switching off Zoho at Go-live.
+
+## 27 October 2026 - Wave 0+ removed from the Roadmap
+**Decision (owner):** removed the empty Roadmap wave "0+ Password manager and Teams chat". It had no tasks or requests left. The work lives in Go-live: "Choose a password manager and move passwords from Zoho Vault" and "Move team chat from Zoho Cliq to Microsoft Teams".
+**Why:** an empty wave was clutter; the moves happen at Go-live.
+
+## 27 October 2026 - Customer portal, first half
+**Decision (owner):** customers sign in at /portal with a **one-time emailed link** (no passwords). **Anyone listed as a contact with that email** can sign in (owner chose this over staff switching access on per contact; Claude flagged the GDPR risk of old contacts getting in, so removing a contact's email or the contact locks them out at once). First version shows **quotes** (sent/accepted/declined, accept or decline online) and **hosting plans**; invoices and paying online come later. Owner: "make it so customers can only see their info".
+**How:** customers never get staff accounts; their links and sessions are in their own locked tables (`portal_links`, `portal_sessions`), and all they see comes from `portal_overview`, which only returns companies where their email is a contact. Only FootprintOS can make links: secret `PORTAL_LINK_KEY` in Netlify, fingerprint in `portal_settings.link_key_hash` (must be set again on the London database at Go-live).
+**Why:** simplest safe sign-in for occasional visitors, with the database itself enforcing "own records only".
+
+## 27 October 2026 - Portal: marketing, customer support and a sign-in code
+**Decision (owner):** the portal also shows the customer's marketing (content calendar, ad campaigns, retainers; not invoices yet). A **Support** section lets customers send a change request or question. It lands in a staff **Customer support** tab (permission "support"; admins always), everyone with support access gets an **email alert**, and staff **reply in FootprintOS** (the customer sees replies in the portal and gets an email). Statuses: New, In progress, Done. A customer only sees conversations they started.
+**Then:** the owner found that the emailed link signs in only the device that opens it (phone, not laptop), so the email also carries a **6-digit code** for the sign-in screen (once, 30 minutes, locked after 5 wrong tries).
+**Why:** customers ask for changes in one tracked place instead of scattered emails; the code suits people who read email on their phone.
+
+## 27 October 2026 - Magazines (Wave 5) direction
+**Decision (owner and director):** Magazines will live inside FootprintOS (one database with customers, sales and Xero) to fix Mag Manager's problems: no connection to other systems, no live online booking from the website, poor management information, and no contracts for long-term bookings. Keep flipbooks on the website, the customer portal (merged into ours), pipelines (merged into ours), Stripe and GoCardless. The Articles library may be replaced. Switch over in **January** (year to confirm), between issues; Mag Manager is monthly rolling.
+**Why:** see `docs/WAVE-5-MAG-MANAGER-FEATURES.md`.
+
+## 27 October 2026 - How magazine adverts are booked (Wave 5, part 1)
+**Decision (owner):** an advert booking creates a sales order, but with a slightly different flow from other orders: **invoiced issue by issue**, needs **artwork (customer-supplied or a design request) instead of a project or POs**, and is **paid up front or by Direct Debit**. Not open-ended (fixed number of months).
+**How (Claude):** an advert is a quote / sales order line tagged with its magazine issue and advert size (one line per edition per month), so totals, margins, invoices and Xero work as for any sale. Editions, issues and sizes live in their own tables (`magazine_editions`, `magazine_issues`, `advert_sizes`); targets and page counts were copied from Mag Manager's November 2026 dashboard; sizes from Mag Manager's settings. No default prices until the rate card arrives. Part 1 = PR #75 (0.31.0). Next: invoicing issue by issue, artwork, renewals, flatplans.
+
+## 27 October 2026 - All artwork in one design queue (Wave 5, part 2)
+**Decision (owner):** advert artwork must use the same design pipeline as sales orders and projects, so all artwork (magazines, print orders, projects) flows into one design queue.
+**How (Claude):** advert artwork is a normal design job linked to the sales order (and advert size), on the Design board. Adverts don't need a project; the "design jobs start from a project" rule (20 October 2026) still applies to everything else. Choices per advert size: we design it / customer supplies it (designer checks) / same as last time (approved). Invoicing issue by issue: "Create invoices for [month]" makes draft invoices per order for that month's adverts; lines remember their invoice. PR #76 (0.32.0).
+
+## 27 October 2026 - Magazine renewals scoring
+**Decision (owner):** build a renewals list "like Mag Manager's". Scores copied from Mag Manager's settings: last month 20, 2 months ago 16, 3 months ago 12, 4–6 months 8, 7–12 months 4, minus 1 with future bookings. Themed-issue scores left out (no issue themes recorded). Marks per month: Contacted, Carried forward, Definitely out (stays off until they book again). PR #78 (0.33.0).
+
+## 27 October 2026 - Flipbooks hosted by FootprintOS
+**Decision (owner):** today the flipbooks are a Mag Manager link (forgetmenotonline.org shows none). FootprintOS now hosts them: upload the issue PDF on the flatplan page; public page-turning flipbook at /read/<edition>/<month>, and /read/<edition> always shows the latest (for a "Read online" button on the website). Embeddable only on forgetmenotonline.org and footprintgroup.uk; every other page still refuses to be framed. Libraries: PDF.js (pdfjs-dist) and StPageFlip (page-flip). PDFs public on purpose, up to 50 MB. PR #81 (0.37.0).
+
+## 28 October 2026 - FootprintAI transition tracker
+**Context (DJ's plan, 28 October 2026):** the FootprintAI transition runs in four workstreams (Platform; AI Workforce; FootprintAI Offer; People & Change), eight Wednesday meetings from 28 Oct to 16 Dec plus "After Christmas" (6 Jan 2027), in phases Foundations / Build and prove / Launch / Scale. Gates: Foundations signed off (11 Nov), agent scorecard decisions (25 Nov), launch go/no-go (9 Dec), **FootprintAI launches Tue 15 Dec 2026**. About 40 actions owned by Mitch, Jyron, Toby and DJ. FootprintOS is a parallel track: finish the build waves and fix a go-live date before Christmas; cutover from Zoho, monday.com and Mag Manager in the new year after one parallel billing cycle.
+**Decision:** a Transition section in FootprintOS (DJ's spec), using "weeks" (not "waves", which are FootprintOS build phases). Admins and Directors see everything; an invite list (from the Microsoft 365 staff list) sees all but board-only actions; owners update status and notes of their own. Board-only actions hidden by the database. **The plan data is never committed** (public repo, sensitive board-only items): it's loaded with `scripts/import-transition.mjs` from the owner's file. PR #82 (0.38.0).
+
+## 28 October 2026 - Reports tab (Wave 7), first set
+**Decision (owner):** start fresh rather than copy the old custom HTML reports. First four reports: Sales and profit, Magazine MI, Money owed (aged debt) and Customers. Each has a date range, same period last year and CSV download. Money counted as on the Dashboards (invoices issued or paid, before VAT, less issued credit notes); sales staff see only their own customers. Directors and Finance get Reports access. Part payments aren't recorded, so money owed counts an invoice in full until it's marked paid. PR #85 (0.41.0).
+
+## 30 October 2026 - Marketing (Wave 8): lead pipelines first
+**Decision (owner):** start Marketing with lead pipelines; email campaigns wait (the owner's Grok bot already sends email campaigns). What GoHighLevel is used for internally is still to be confirmed. One pipeline per business area (Print/Merch, Signage, Advertising (Forget Me Not), FootprintAI), stages editable; used by Marketing **and** Sales (own-records-only sales staff see own + unassigned leads). "Make customer and quote" links/creates the customer and opens a quote. PR #86 (0.42.0).
+
+## 30 October 2026 - No email or SMS campaigns in FootprintOS
+**Decision (owner):** email and SMS marketing are already done outside FootprintOS (the owner's Grok bot), so they won't be built. The Roadmap task "Email and SMS campaigns" is ticked with that note, so Wave 8 (Marketing) is complete. What GoHighLevel is still used for internally remains an open question before it's switched off.
+
+## 1 November 2026 - GoHighLevel: keep for customers, move Footprint's own marketing into FootprintOS
+**Context (owner):** Footprint is on GoHighLevel Agency Unlimited ($297 a month). It's used for Footprint's own marketing (website forms, chat widget, follow-up sequences, pipelines) and customers' marketing (their websites/landing pages, booking calendars, automated texts and emails, review requests). Customers don't pay for it separately.
+**Decision (owner):** keep GoHighLevel for customers' marketing (not rebuilt in FootprintOS). Move Footprint's **own** marketing into FootprintOS: lead pipelines (done, 0.42.0), website enquiry forms, website chat, automatic follow-ups for new leads, and moving existing leads across; then switch Footprint's own use off GoHighLevel. The GoHighLevel bill stays (one flat fee). Wave 8 reopened with these five tasks.
+
+## 1 November 2026 - Website enquiry forms
+**Decision (owner asked; Claude's design):** FootprintOS enquiry forms replace the GoHighLevel forms on Footprint's own websites (footprintgroup.uk's contact page used a GoHighLevel embed; both sites are custom HTML on Netlify). Each form feeds one lead pipeline (first open stage, source "Website form"), emails the lead owner and chosen staff, and is pasted into a website as a frame that grows to fit; only footprintgroup.uk and forgetmenotonline.org may show it. Only FootprintOS can save enquiries (database function needs the existing PORTAL_LINK_KEY). Repeat enquiries from an email with an open lead in the same pipeline are added to that lead. Spam: hidden trap, signed time stamp, 3/hour per email, 10/hour per connection, 100/hour per form; the log keeps a connection fingerprint only and is cleared after 30 days. No automatic reply to the enquirer (it could be abused to send email to anyone). PR #87 (0.43.0).
+
+## 1 November 2026 - Magazine reports in five groups
+**Context:** the director uses all of Mag Manager's report groups (about 60 reports).
+**Decision (owner):** rebuild them as about five flexible reports rather than 60 copies, added to the Reporting wave as five tasks: 1 bookings and financial, 2 commission (needs the rules), 3 artwork and production, 4 copies and labels, 5 customers. Missing data (advertiser categories, sections, premium positions, ongoing flag, complimentary/voucher copy recipients) is added with the group that needs it.
+
+## 2 November 2026 - Flatplan: a file per page, not one issue PDF
+**Decision (owner):** replace the whole-issue "Upload the issue PDF" with an upload button on each flatplan page (PDF, JPG or PNG). The flipbook is published only when every page has a file, and is built from the page files in order (PDF.js for PDF pages, images shown directly); replacing a page updates it live. No single-PDF download any more. Clicking an edition on the Magazines dashboard opens its flatplan. PR #89 (0.45.0).
+
+## 2 November 2026 - Flatplan layout to scale
+**Decision (owner asked; Claude's design):** flatplan pages are drawn to scale using the Full Page size (130 × 190 mm). Items store a top-left position in mm; adverts take their booked advert size (can't be changed on the flatplan, so it always matches what's billed); editorial takes a chosen size (Full, Double or any advert size) and can be resized. Dragging drops an item where it's let go, snapped to 5 mm and kept on the page; items without a position are laid out in rows. Overlaps show red. PRs #90 (0.46.0) and #91 (0.46.1 fix).
+
+## 3 November 2026 - Magazine rate card
+**Decision (owner, with Claude's assumptions to confirm with Huw):** advert prices come from a rate card stored in the database (not the public code): price per product × short (under 6 months) or long (6+ months) × area booked (1st–5th; 6th onwards = 5th) × year (latest year not after the issue's year). Areas are priced in the order ticked (A–K). Premium positions use their own prices (front, back, inside covers, first page, centre spread; facing editorial has none). A typed price overrides the card. Assumptions loaded on 3 November 2026: two-thirds 6+ months 4th area = £71.50 (sheet typo 212.3); covers cost the same for 6+ months; Three Quarter Page and the double small ad have no rate-card price (typed by hand). PR #92 (0.47.0).
+
+## 6 November 2026 - Magazine pricing follows the website calculator
+**Decision (Huw, via the owner):** the Forget Me Not website's cost calculator (forgetmenotonline.org/advertise/cost-calculator) is the reference for magazine pricing. Checked against it: all 140 prices matched except two thirds / 6+ months / 4th area, corrected to **£74** (replaces the £71.50 assumption of 3 November). Its rules, now followed by FootprintOS: each edition priced at its area tier (1st dearest; 5th onwards = 5th), 6+ months uses the long rates, **each area price rounded to whole pounds (half up)** and summed; front and back covers cost the same whatever the length. Also from the calculator, for later (contracts / online booking): **starting more than 2 months ahead → 25% deposit option, balance before the first print deadline; starting within 2 months → full payment on confirmation.** The website has no price for Three Quarter Page or the double small ad. PR #93 (0.47.1).
+
+## 6 November 2026 - No contracts for magazine adverts; deposit option instead
+**Decision (owner):** magazines will **not** have contracts. A customer buys a number of months of advert space. If it's **over 2 months**, they can choose to pay a **deposit** and pay the rest when their advert starts; otherwise they pay up front. Replaces the earlier plan (27 October 2026) for contracts tied to terms and accepted online. The roadmap task "Contracts for long-term advert bookings" became "Deposit option for advert bookings". The website calculator's version: a 25% deposit when the first advert is more than 2 months away, the balance before the first print deadline (to confirm with the owner whether "over 2 months" means how far ahead it starts or how many months are booked).
+
+## 6 November 2026 - Deposit rule: by months booked
+**Decision (owner):** the deposit option depends on **how many months are booked**: more than 2 months (3 or more) → the customer can pay a deposit and the rest when their advert starts; 1–2 months → pay in full. The deposit is 25% (from the website calculator; not separately confirmed). Note: the website calculator currently offers the deposit by how far ahead the advert **starts**, not by length, so it differs from this rule.
+
+## 6 November 2026 - Deposit rule: same as the website (replaces the entry above)
+**Decision (owner):** use the website calculator's deposit rule, not months booked. If the first advert month is **3 or more months after the current month** (the website's "more than 2 months ahead"), the customer can pay a **25% deposit** on confirmation and the balance **before the first print deadline**, or pay in full. If it starts within the next 2 months, they pay in full on confirmation. How many months are booked doesn't matter. No contracts.
+
+## 9 November 2026 - Magazine filler: puzzles made by FootprintOS, free articles only
+**Decision (owner):** FootprintOS makes its own word searches and sudoku (no crosswords for now; AI clues would need a paid key). Answers go at the back / on another page of the same issue. Articles must cost nothing: GOV.UK text under the Open Government Licence v3.0 (credit line printed; no pictures) or written by the team. Everything lives in Magazines → Content and can be reused across editions. Other free sources (charity press releases, NHS content API) left for later. PRs #95 (0.49.0) and #96 (0.50.0).
+
+## 9 November 2026 - Word search themes from built-in lists, not an outside service
+**Decision (owner asked; Claude's design):** typing a theme suggests words from 51 ready-made, family-friendly lists in FootprintOS (`src/lib/theme-words.ts`), added to any words already typed, which staff can then edit. The free Datamuse word service was tried but rejected: its suggestions weren't fit to print (e.g. "larry", "adam" for garden birds). Themes not covered show the list of themes, or staff type their own words. New themes are added in that file. PR #98 (0.51.0).
+
+## 9 November 2026 - Website chat: Grok bot, handover to a person, chats in Customer support
+**Decision (owner):** a Grok bot answers website chats on both sites; when it can't (quotes, bookings, complaints, account questions, anything not in its information, or the visitor asks for a person) the visitor leaves name, email and phone, a lead is made and the chat is emailed to the owner, who forwards it. Chats are read in Customer support → Website chat. **Claude's design:** the bot answers only from the editable "what the bot knows" text per website and can only write replies (no actions); without an xAI key, or if Grok fails, the chat goes straight to leave-your-details (nothing made up). Limits: 30 messages/hour per connection, 40 per chat, 2,000/day per box; chats deleted after 12 months. PRs #99 (0.52.0), #100 (0.52.1).
+
+## 9 November 2026 - Proposals mirror the quote builder (quotes.footprintgroup.uk)
+**Decision (DJ via owner):** FootprintOS proposals work like Footprint's quote builder: catalogue by group, one-off/monthly/included lines, separate one-off and monthly totals, payment plan for one-off costs (full or 3/6/9 months at 0%), deposit 0/25/50% on acceptance, payment schedule, and the builder's 8 standard terms. **Owner's choices:** the contract builder comes later; the schedule is shown only (no automatic deposit or instalment invoices). The catalogue is the products with a "Proposal catalogue group"; the 22 builder products were loaded through the data API. PR #110 (0.62.0).
+
+## 9 November 2026 - Margin % means profit ÷ cost (markup), everywhere
+**Decision (owner, for DJ):** "100% should equal 2 × cost". Every margin % in FootprintOS is profit as a % of the cost: quote/order lines and totals, lists, products, sales overview, dashboards, reports, projects and time dashboard, all through `marginPercent` in lib/sales/options.ts. The line margin box sets the price from it (up to 100,000%). No cost → blank (not 100%). Targets may be over 100%; the existing 45% example target was set on the old (sell) basis and should be re-entered (~82% on cost). PR #113 (0.64.0).
+
+- **11 November 2026: Credit status wording.** Options are ON STOP, Upfront payment, Net 7/14/30/60, See notes. Customers on "No Credit Available" became "Upfront payment"; "Direct Debit Service Available" was cleared, because Direct Debit has its own field (owner's choice).
+
+- **11 November 2026: Board-only FootprintAI actions are for the Directors role only.** Not admins (every user is an admin), not the invite list, not the action's owner unless they're a Director. Enforced in the database.
+
+- **11 November 2026: Design jobs can start from a sales order OR a project** (DJ). Replaces the 20 October 2026 rule that design jobs are always started from a project. An order without a project links the job straight to the order.
+
+## 11 November 2026 - Automatic follow-ups for new leads: taken off the roadmap for now
+**Decision (owner):** remove the Wave 8 task "Automatic follow-ups for new leads" from the roadmap for now. Its wording, to re-add later: "Automatic emails (and texts, if wanted) that follow up new leads on a set schedule, stopping when they reply. Replaces Footprint's own GoHighLevel sequences." Note for when it comes back: to avoid the form abuse risk (anyone typing someone else's email), start a sequence only once a salesperson marks the lead genuine, or automatically only for chat leads; include an unsubscribe link. Until then, Footprint's own follow-up sequences stay in GoHighLevel.
+
+## 16 November 2026 - Contract builder for proposals
+**Decision (DJ via owner):** (1) customers sign the same way they accept a quote: they see the proposal and contract on their link and sign by typing their name and accepting; (2) the contract wording (Footprint's nine clauses, copied from quotes.footprintgroup.uk/contract) can be changed by admins and Directors; (3) one step: accepting the proposal online signs the contract. A frozen copy of the signed contract is kept.
+
+## 16 November 2026 - Magazine reports 4 and 5
+**Decision (owner):** no posted complimentary or voucher copies and no address labels ("logistically it won't work"; the magazine is A5). Instead, email each advertiser in an issue a link to read the issue online (the flipbook) and the page their advert is on: a service email, so no marketing consent needed. Report 5's mailing-list export includes only contacts who've consented (include in emails, not opted out), as UK GDPR requires.
+
+## 16 November 2026 - Team chat inside FootprintOS (changes the 29 September 2026 decision)
+**Decision (owner):** build a simple Teams-like chat into FootprintOS; Microsoft Teams stays for calls and phone alerts. Private channels and direct messages can be read **only by the people in them, not admins** (owner's choice). Messages and files are **deleted after 2 years** (owner's choice). **Claude's design:** every active member of staff can use it (no role permission); open channels readable and joinable by all staff, private ones members-only (any member can add people); direct messages to up to 11 others, reopened when messaging the same people. Instant updates via Supabase Realtime (same database rules). Files in a private "team-chat" store (20 MB each, 10 per message); files of deleted messages are queued and removed by the next person to open Team chat (no extra secrets). Desktop alerts only while FootprintOS is open in a tab; no phone notifications. Called "Team chat" (team_chat_* tables) to keep it apart from the website chat. PR #155 (0.97.0).
+
+## 16 November 2026 - Commission is visible to Directors and Jack Burton only
+**Decision (owner):** the magazine commission report (report 2) can be seen only by people with the Directors role plus Jack Burton, not all admins (every user is an admin). Jack sent the commission rules; the rates go into the database, not the public code.
+
+## 16 November 2026 - Commission rules (Jack Burton's sheet)
+**Decision (owner):** targets are monthly; sales count when invoiced (credit notes take away); the band's percentage is paid on all of the figure (not just above target); Jack Burton's and Wendy's targets are on revenue (sales before VAT), the rest on GP. An extra bonus for hitting target exists but is ignored for now. Wendy's sheet lists 50% twice; the second was set to 60% to be confirmed with Jack. A "Digital" business area is added to quotes/orders so digital sales count. Business areas: Print = Print/Merch (+ old "Print"), Signage, Digital, FMN = Advertising. The figures live in the database (public repo), editable by Directors and Jack.
+
+## 16 November 2026 - Customer portal welcome email; orders and artwork in the portal
+**Decision (owner):** new accounts are sent a link to the customer portal automatically, with a button on each contact to send it by hand. "POs" in the portal means the customer's **own** purchase order numbers on their sales orders; Footprint's purchase orders to suppliers (costs, supplier names) are never shown to customers. The automatic email goes to any new contact with an email address, unless they've opted out of emails.
+**Why:** customers can follow their orders and artwork themselves, and approve proofs, without chasing the team.
+
+
+## 16 November 2026 - Xero sync started now, against the real Xero
+**Decision (owner):** connect FootprintOS to Footprint's **real** Xero now (not the Demo Company). Invoices and credit notes go to Xero as **drafts**; purchase orders go as **approved** (part 2); **FootprintOS invoice numbers**, switchable in Admin → Xero. Wanted: payments reconciled in Xero mark invoices paid in FootprintOS; POs closed in Xero close in FootprintOS; customers matched to their Xero contact (created if new).
+**Claude's safeguards (because FootprintOS still holds test data):** nothing is sent until an admin turns on "Send automatically", and then only invoices issued on or after a chosen start date; "Send to Xero now" sends one by hand. Connection by Xero's official sign-in (OAuth) with a free Starter-tier app; secrets only in Netlify (XERO_CLIENT_ID, XERO_CLIENT_SECRET); tokens stored encrypted, fetched only with a key derived from the secret. Granular scopes (Xero's rule for apps made after 2 March 2026). Queue filled by a database trigger on issue; a Netlify scheduled function sends every 5 minutes. **Go-live:** switch off Zoho's Xero connection at the same moment, or invoices arrive twice. Part 1 = PR #159 (0.101.0).

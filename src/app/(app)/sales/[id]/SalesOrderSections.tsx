@@ -1,0 +1,557 @@
+import Link from "next/link";
+import { Check, Clock, Minus, X } from "lucide-react";
+import DesignJobsPanel from "@/components/DesignJobsPanel";
+import { Badge, Card, inputClass, primaryButton, secondaryButton } from "@/components/ui";
+import { gbp, longDate } from "@/lib/customers/display";
+import { DEPOSIT_PERCENT, depositSplit } from "@/lib/magazine-deposit";
+import { designStageLabel, designStageTone, jobNumber } from "@/lib/design/options";
+import { projectStatusLabel, projectTone } from "@/lib/projects/options";
+import { marginPercent, poStatusLabel, statusToneFor } from "@/lib/sales/options";
+import type { Stages } from "@/lib/sales/stages";
+import type { purchasingSummary } from "@/lib/sales/purchasing";
+
+// The sales order page, in the owner's order (26 October 2026): a stage bar
+// that lights up by itself, then Stage, Finance summary, Purchase orders,
+// Design work, Project and Comms. Quotes and invoices keep their own layout.
+
+export type OrderPo = { id: string; number: string; status: string; subtotal: number; supplier: string | null };
+export type OrderProject = { id: string; number: string; name: string; status: string; tasksDone: number; tasksTotal: number };
+
+// The stage bar for a quote or a sales order (stages from lib/sales/stages).
+export function StageBar({ stages, states, cancelled, label = "Order stage" }: Stages & { cancelled?: boolean; label?: string }) {
+  return (
+    <div>
+      {cancelled && <p className="mb-3 text-sm font-semibold text-fp-error">This order was cancelled.</p>}
+      <ol aria-label={label} className={`grid gap-2 sm:grid-cols-3 ${stages.length > 6 ? "lg:grid-cols-7" : stages.length > 4 ? "lg:grid-cols-6" : "lg:grid-cols-4"}`}>
+        {stages.map((s, i) => {
+          const state = states[i];
+          // Amber: under way (pending acceptance, waiting for goods, not all
+          // paid); green: fully finished (goods received, paid).
+          const pending = s.tone === "pending" && state !== "skipped";
+          const complete = s.tone === "complete" && state === "done";
+          const body = (
+            <>
+              <span className="flex items-center gap-2 font-bold">
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${
+                    complete
+                      ? "bg-green-600 text-white"
+                      : pending
+                        ? "bg-fp-amber text-fp-dark"
+                        : state === "done"
+                      ? "bg-fp-teal-deep text-white"
+                      : state === "current"
+                        ? "bg-fp-pink text-white"
+                        : state === "stopped"
+                          ? "bg-fp-error text-white"
+                          : "border border-fp-border"
+                  }`}
+                >
+                  {pending ? (
+                    <Clock size={12} aria-hidden />
+                  ) : state === "done" ? (
+                    <Check size={12} aria-hidden />
+                  ) : state === "skipped" ? (
+                    <Minus size={12} aria-hidden />
+                  ) : state === "stopped" ? (
+                    <X size={12} aria-hidden />
+                  ) : (
+                    i + 1
+                  )}
+                </span>
+                {s.label}
+              </span>
+              <span className="mt-1 block text-xs">
+                {pending ? (
+                  <strong className="text-fp-dark">{s.note}</strong>
+                ) : state === "current" ? (
+                  <>
+                    <strong className="text-fp-pink">Now</strong>
+                    {s.note ? ` · ${s.note}` : ""}
+                  </>
+                ) : state === "stopped" ? (
+                  s.note ?? "Stopped"
+                ) : state === "skipped" ? (
+                  "Not needed"
+                ) : (
+                  s.note ?? (state === "done" ? "Done" : "")
+                )}
+                {s.href && <span className="ml-1 font-semibold text-fp-teal-deep underline">Open</span>}
+              </span>
+            </>
+          );
+          return (
+            <li
+              key={s.label}
+              aria-current={state === "current" ? "step" : undefined}
+              className={`rounded-md border-2 text-sm ${
+                complete
+                  ? "border-green-600/40 bg-green-50 text-green-900"
+                  : pending
+                    ? "border-fp-amber bg-fp-amber/15 shadow-sm"
+                    : state === "done"
+                  ? "border-fp-teal-deep/30 bg-fp-teal/10"
+                  : state === "current"
+                    ? "border-fp-pink bg-fp-pink/5 shadow-sm"
+                    : state === "stopped"
+                      ? "border-fp-error/40 bg-fp-error/5 text-fp-error"
+                      : "border-fp-border bg-white text-fp-mid"
+              } ${s.href ? "hover:border-fp-teal-deep" : "p-3"}`}
+            >
+              {s.href ? (
+                <Link href={s.href} className="block p-3">
+                  {body}
+                </Link>
+              ) : (
+                body
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+// Finance summary: simple bars, each drawn against the biggest figure.
+export function FinanceSummary({
+  net,
+  cost,
+  labour,
+  poSubtotal,
+  total,
+  invoiced,
+  invoicedNet,
+  costChange = 0,
+  poPaid = null,
+}: {
+  net: number;
+  cost: number;
+  labour: number | null;
+  poSubtotal: number;
+  // How much the cost has moved from the estimate now that real purchase
+  // costs are in (+ = cost more), and what's actually been paid on POs
+  // (DJ, 11 November 2026).
+  costChange?: number;
+  poPaid?: { paid: number; difference: number } | null;
+  total: number;
+  invoiced: number;
+  // Before VAT, for "still to invoice".
+  invoicedNet: number;
+}) {
+  const margin = net - cost - (labour ?? 0);
+  const scale = Math.max(net, cost + (labour ?? 0), poSubtotal, 1);
+  const share = (v: number) => (net ? `${Math.round((v / net) * 100)}%` : "");
+  const moved = (d: number, more: string, less: string) => (Math.abs(d) < 0.005 ? "" : `${gbp(Math.abs(d))} ${d > 0 ? more : less}`);
+  const costNote = [share(cost), moved(costChange, "more than estimated", "less than estimated")].filter(Boolean).join(" · ");
+  const marginMove = moved(-costChange, "up on the estimate", "down on the estimate");
+  const bars: { label: string; value: number; note: string; colour: string }[] = [
+    { label: "Order value (before VAT)", value: net, note: "", colour: "bg-fp-black" },
+    { label: "Cost of the job", value: cost, note: costNote, colour: "bg-fp-amber" },
+    ...(labour !== null ? [{ label: "Labour", value: labour, note: share(labour), colour: "bg-fp-amber/60" }] : []),
+    { label: labour !== null ? "Margin after labour" : "Margin", value: margin, note: [marginPercent(net, cost + (labour ?? 0)) === null ? "" : `${marginPercent(net, cost + (labour ?? 0))}% on cost`, marginMove].filter(Boolean).join(" · "), colour: margin < 0 ? "bg-fp-error" : "bg-fp-teal-deep" },
+    poPaid
+      ? {
+          label: "Paid to suppliers (POs, before VAT)",
+          value: poPaid.paid,
+          note: [cost ? `${Math.round((poPaid.paid / cost) * 100)}% of the cost` : "", moved(poPaid.difference, "more than it should have cost", "less than it should have cost")]
+            .filter(Boolean)
+            .join(" · "),
+          colour: "bg-fp-pink",
+        }
+      : {
+          label: "Ordered from suppliers (POs, before VAT)",
+          value: poSubtotal,
+          note: cost ? `${Math.round((poSubtotal / cost) * 100)}% of the cost` : "",
+          colour: "bg-fp-pink",
+        },
+  ];
+  return (
+    <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
+      <ul className="grid gap-3 text-sm">
+        {bars.map((b) => (
+          <li key={b.label}>
+            <div className="mb-1 flex justify-between gap-3">
+              <span>{b.label}</span>
+              <span className="font-semibold">
+                {gbp(b.value)}
+                {b.note && <span className="ml-2 text-xs font-normal text-fp-mid">{b.note}</span>}
+              </span>
+            </div>
+            <div className="h-3 rounded-full bg-fp-light" aria-hidden>
+              <div className={`h-3 rounded-full ${b.colour}`} style={{ width: `${Math.max(0, Math.min(100, (Math.abs(b.value) / scale) * 100))}%` }} />
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="grid content-start gap-3 rounded-md bg-fp-offwhite p-4 text-sm">
+        <p className="text-xs font-bold uppercase tracking-wide text-fp-mid">Invoiced</p>
+        <p className="text-2xl font-black">
+          {gbp(invoiced)} <span className="text-sm font-semibold text-fp-mid">of {gbp(total)}</span>
+        </p>
+        <div className="h-3 rounded-full bg-white" aria-hidden>
+          <div className="h-3 rounded-full bg-fp-teal-deep" style={{ width: `${total ? Math.min(100, (invoiced / total) * 100) : 0}%` }} />
+        </div>
+        <p className="text-sm">
+          <strong>Still to invoice:</strong> {gbp(Math.max(0, net - invoicedNet))} <span className="text-fp-mid">before VAT</span>
+        </p>
+        <p className="text-xs text-fp-mid">Invoiced figures include VAT. Staff only — customers never see cost or margin.</p>
+      </div>
+    </div>
+  );
+}
+
+export function PurchaseOrdersSection({ pos, raise }: { pos: OrderPo[]; raise: React.ReactNode }) {
+  return (
+    <Card title={`Purchase orders${pos.length ? ` (${pos.length})` : ""}`} action={raise}>
+      {pos.length === 0 ? (
+        <p className="text-sm text-fp-mid">Nothing ordered from suppliers yet.</p>
+      ) : (
+        <ul className="grid gap-2 text-sm">
+          {pos.map((p) => (
+            <li key={p.id} className="flex flex-wrap items-center justify-between gap-2">
+              <Link href={`/sales/purchase-orders/${p.id}`} className="font-semibold text-fp-teal-deep hover:underline">
+                {p.number}
+              </Link>
+              <span className="text-fp-dark/75">{p.supplier}</span>
+              <span>{gbp(p.subtotal)}</span>
+              <Badge tone={statusToneFor(p.status)}>{poStatusLabel(p.status)}</Badge>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+// Purchasing summary (DJ, 11 November 2026): per item, what's needed, ordered,
+// on draft POs and still to order, with what it should cost vs what we paid.
+export function PurchasingSummary({ summary, raiseHref }: { summary: ReturnType<typeof purchasingSummary>; raiseHref: string | null }) {
+  const bought = summary.rows.filter((r) => r.boughtIn);
+  const other = summary.rows.filter((r) => !r.boughtIn);
+  return (
+    <Card
+      title="Purchasing summary"
+      action={
+        summary.stillToOrder > 0 ? <Badge tone="amber">{summary.stillToOrder} still to order</Badge> : bought.length > 0 ? <Badge tone="teal">All ordered</Badge> : undefined
+      }
+    >
+      {bought.length === 0 ? (
+        <p className="text-sm text-fp-mid">Nothing on this order is bought in from a supplier yet.{raiseHref ? " Use Raise POs to pick suppliers." : ""}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-left text-sm">
+            <thead className="border-b border-fp-border text-xs uppercase tracking-wide text-fp-mid">
+              <tr>
+                <th className="py-2 pr-3 font-semibold">Item</th>
+                <th className="py-2 pr-3 text-right font-semibold">Needed</th>
+                <th className="py-2 pr-3 text-right font-semibold">Ordered</th>
+                <th className="py-2 pr-3 text-right font-semibold">On draft POs</th>
+                <th className="py-2 text-right font-semibold">Still to order</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bought.map((r, i) => (
+                <tr key={i} className="border-b border-fp-border last:border-0">
+                  <td className="py-2 pr-3">{r.item}</td>
+                  <td className="py-2 pr-3 text-right">{r.needed}</td>
+                  <td className="py-2 pr-3 text-right">{r.ordered || <span className="text-fp-mid">0</span>}</td>
+                  <td className="py-2 pr-3 text-right">{r.draft || <span className="text-fp-mid">0</span>}</td>
+                  <td className={`py-2 text-right font-semibold ${r.toOrder > 0 ? "text-fp-orange" : "text-fp-teal-deep"}`}>{r.toOrder > 0 ? r.toOrder : "Done"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {other.length > 0 && (
+        <p className="mt-3 text-xs text-fp-mid">Not bought in: {other.map((r) => r.item).join(", ")}.</p>
+      )}
+      {summary.totalLines > 0 && (
+        <dl className="mt-4 grid max-w-md grid-cols-2 gap-x-6 gap-y-1 border-t border-fp-border pt-3 text-sm">
+          <dt className="text-fp-dark/75">Should cost (on POs)</dt>
+          <dd className="text-right">{gbp(summary.shouldCost)}</dd>
+          {summary.boughtFor !== null && (
+            <>
+              <dt className="text-fp-dark/75">
+                Bought for{summary.pricedLines < summary.totalLines ? ` · ${summary.pricedLines} of ${summary.totalLines} lines` : ""}
+              </dt>
+              <dd className="text-right">{gbp(summary.boughtFor)}</dd>
+              <dt className="font-semibold">Difference</dt>
+              <dd className={`text-right font-semibold ${(summary.difference ?? 0) > 0 ? "text-fp-error" : (summary.difference ?? 0) < 0 ? "text-fp-teal-deep" : ""}`}>
+                {!summary.difference ? "None" : `${summary.difference > 0 ? "+" : "−"}${gbp(Math.abs(summary.difference))} ${summary.difference > 0 ? "over" : "under"}`}
+              </dd>
+            </>
+          )}
+        </dl>
+      )}
+      {raiseHref && summary.stillToOrder > 0 && (
+        <Link href={raiseHref} className={`${secondaryButton} mt-4 inline-flex`}>
+          Raise POs for what&apos;s left
+        </Link>
+      )}
+    </Card>
+  );
+}
+
+export function ProjectSection({
+  project,
+  create,
+  canView,
+  notNeeded = false,
+  setNotNeeded,
+}: {
+  project: OrderProject | null;
+  create: React.ReactNode;
+  canView: boolean;
+  // "No project needed" (DJ, 11 November 2026: most orders don't have one).
+  notNeeded?: boolean;
+  setNotNeeded?: (value: boolean) => Promise<void>;
+}) {
+  if (!project) {
+    return (
+      <Card title="Project">
+        <div className="grid gap-3 text-sm">
+          {notNeeded ? (
+            <>
+              <p>
+                <strong>No project needed</strong> for this order.
+              </p>
+              {setNotNeeded && (
+                <form action={setNotNeeded.bind(null, false)}>
+                  <button type="submit" className="text-xs font-semibold text-fp-teal-deep hover:underline">
+                    Undo: this order needs a project
+                  </button>
+                </form>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="text-fp-mid">No project yet.</p>
+              <div className="flex flex-wrap items-center gap-3">
+                {create}
+                {setNotNeeded && (
+                  <form action={setNotNeeded.bind(null, true)}>
+                    <button type="submit" className={secondaryButton}>
+                      No project needed
+                    </button>
+                  </form>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </Card>
+    );
+  }
+  const name = `${project.number} · ${project.name}`;
+  return (
+    <Card title="Project">
+      <div className="grid gap-3 text-sm">
+        <p>
+          {canView ? (
+            <Link href={`/projects/${project.id}`} className="font-semibold text-fp-teal-deep hover:underline">
+              {name}
+            </Link>
+          ) : (
+            <strong>{name}</strong>
+          )}
+        </p>
+        <p className="flex items-center gap-2">
+          <Badge tone={projectTone(project.status)}>{projectStatusLabel(project.status)}</Badge>
+          {project.tasksTotal > 0 && <span className="text-fp-dark/75">{project.tasksDone} of {project.tasksTotal} tasks done</span>}
+        </p>
+        {project.tasksTotal > 0 && (
+          <div className="h-2 rounded-full bg-fp-light" aria-hidden>
+            <div className="h-2 rounded-full bg-fp-teal-deep" style={{ width: `${(project.tasksDone / project.tasksTotal) * 100}%` }} />
+          </div>
+        )}
+        {canView && (
+          <Link href={`/projects/${project.id}`} className={`${secondaryButton} justify-self-start`}>
+            Open project
+          </Link>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+// Design work: the existing Design jobs card (hidden from people without Design access).
+export function DesignSection({ orderId }: { orderId: string }) {
+  return <DesignJobsPanel order={orderId} />;
+}
+
+// Advert deposits (owner, 6 November 2026), as the website: first advert 3+
+// months after the order → a 25% deposit now and the balance before the first
+// print deadline; otherwise payment in full. Shown on advert quotes and orders;
+// the buttons only on an order that can still be invoiced.
+export function AdvertPaymentNote({
+  firstMonth,
+  available,
+  total,
+  balanceDue,
+}: {
+  firstMonth: string;
+  available: boolean;
+  total: number;
+  balanceDue: string;
+}) {
+  const { deposit, balance } = depositSplit(total);
+  const month = new Date(`${firstMonth.slice(0, 7)}-01T12:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+  return available ? (
+    <>
+      First advert in <strong>{month}</strong>, 3 or more months away: the customer can pay a <strong>{DEPOSIT_PERCENT}% deposit</strong> ({gbp(deposit)} inc VAT) on
+      confirmation and the balance ({gbp(balance)}) by <strong>{longDate(balanceDue)}</strong>, or pay in full.
+    </>
+  ) : (
+    <>
+      First advert in <strong>{month}</strong>, within the next 2 months: <strong>full payment</strong> on confirmation.
+    </>
+  );
+}
+
+export function AdvertPaymentSection({
+  note,
+  canDeposit,
+  canBalance,
+  remainingNet,
+  partAction,
+}: {
+  note: React.ReactNode;
+  canDeposit: boolean;
+  canBalance: boolean;
+  remainingNet: number;
+  partAction: (fd: FormData) => Promise<void>;
+}) {
+  return (
+    <div className="mt-4 grid gap-3 rounded-md border border-fp-pink/30 bg-fp-pink/5 p-4 text-sm">
+      <p>
+        <span className="font-semibold">Payment.</span> {note}
+      </p>
+      {(canDeposit || canBalance) && (
+        <form action={partAction} className="flex flex-wrap items-center gap-3">
+          <input type="hidden" name="kind" value={canDeposit ? "deposit" : "balance"} />
+          <button type="submit" className={primaryButton}>
+            {canDeposit ? `Invoice the ${DEPOSIT_PERCENT}% deposit` : `Invoice the balance (${gbp(remainingNet)} + VAT)`}
+          </button>
+          {canDeposit && <span className="text-xs text-fp-mid">Or bill it in full with Create invoice.</span>}
+        </form>
+      )}
+    </div>
+  );
+}
+
+// Part billing (owner, 26 October 2026): bill part of the order as a £ amount
+// before VAT or a percentage, or bill whatever is left.
+export function PartInvoiceForm({
+  orderNet,
+  invoicedNet,
+  partAction,
+}: {
+  orderNet: number;
+  invoicedNet: number;
+  partAction: (fd: FormData) => Promise<void>;
+}) {
+  const remaining = Math.round((orderNet - invoicedNet) * 100) / 100;
+  if (remaining <= 0) return null;
+  return (
+    <div className="mt-4 grid gap-3 rounded-md border border-fp-border p-4 text-sm">
+      {invoicedNet > 0 && (
+        <p>
+          Invoiced so far <strong>{gbp(invoicedNet)}</strong> of {gbp(orderNet)} before VAT · <strong>{gbp(remaining)}</strong> still to invoice.
+        </p>
+      )}
+      <form action={partAction} className="flex flex-wrap items-end gap-2">
+        <label className="grid gap-1">
+          <span className="font-semibold">Part invoice</span>
+          <input name="amount" type="number" step="any" min="0" required placeholder="e.g. 1000 or 50" className={`${inputClass} w-40`} />
+        </label>
+        <select name="unit" aria-label="Pounds or percent" defaultValue="gbp" className={`${inputClass} w-auto`}>
+          <option value="gbp">£ before VAT</option>
+          <option value="percent">% of the order</option>
+        </select>
+        <button type="submit" className={secondaryButton}>
+          Create part invoice
+        </button>
+      </form>
+      {invoicedNet > 0 && (
+        <form action={partAction}>
+          <input type="hidden" name="rest" value="1" />
+          <button type="submit" className={primaryButton}>
+            Invoice the rest ({gbp(remaining)} + VAT)
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+// Advert artwork (Wave 5, part 2): one row per advert size on the order. Each
+// choice puts a job in the same design queue as all other artwork (the
+// owner's rule, 27 October 2026); adverts don't need a project.
+export type AdvertArtwork = {
+  sizeId: string;
+  sizeName: string;
+  adverts: number;
+  job: { id: string; number: number; stage: string; source: string | null } | null;
+};
+
+const artworkSourceLabel: Record<string, string> = {
+  design: "We're designing it",
+  customer: "Customer supplying it",
+  repeat: "Same as last time",
+};
+
+export function AdvertArtworkSection({
+  items,
+  request,
+  canRequest,
+}: {
+  items: AdvertArtwork[];
+  request: (sizeId: string) => (fd: FormData) => Promise<void>;
+  canRequest: boolean;
+}) {
+  return (
+    <Card title="Advert artwork">
+      <ul className="grid gap-4 text-sm">
+        {items.map((a) => (
+          <li key={a.sizeId} className="rounded-md border border-fp-border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-semibold">
+                {a.sizeName} <span className="font-normal text-fp-mid">· {a.adverts} advert{a.adverts === 1 ? "" : "s"}</span>
+              </p>
+              {a.job ? (
+                <span className="flex flex-wrap items-center gap-2">
+                  {a.job.source && <span className="text-xs text-fp-mid">{artworkSourceLabel[a.job.source]}</span>}
+                  <Link href={`/design/${a.job.id}`} className="font-semibold text-fp-teal-deep hover:underline">
+                    {jobNumber(a.job.number)}
+                  </Link>
+                  <Badge tone={designStageTone(a.job.stage)}>{designStageLabel(a.job.stage)}</Badge>
+                </span>
+              ) : (
+                <Badge tone="pink">Artwork needed</Badge>
+              )}
+            </div>
+            {!a.job && canRequest && (
+              <form action={request(a.sizeId)} className="mt-3 grid gap-2">
+                <textarea name="note" rows={2} maxLength={2000} placeholder="Notes for the designer (optional)" aria-label="Notes for the designer" className={inputClass} />
+                <div className="flex flex-wrap gap-2">
+                  <button type="submit" name="source" value="design" className={primaryButton}>
+                    We&apos;ll design it
+                  </button>
+                  <button type="submit" name="source" value="customer" className={secondaryButton}>
+                    Customer is supplying it
+                  </button>
+                  <button type="submit" name="source" value="repeat" className={secondaryButton}>
+                    Same as last time
+                  </button>
+                </div>
+                <p className="text-xs text-fp-mid">Each choice adds a job to the Design board, so all artwork is in one queue.</p>
+              </form>
+            )}
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}

@@ -4,6 +4,229 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 18 November 2026
+- Online advert booking (owner: request then team confirms; one booking page; availability = space + premium spots): live (0.103.0, #162). /book with live prices from the rate card and availability; requests become draft advertising quotes. After merge: set who booking quotes go to (Magazines → Setup → Online booking), paste the embed code on forgetmenotonline.org in place of the GoHighLevel Request a Space form. Build noted Next.js 16.4.2 has a known security vulnerability (owner to decide on an upgrade).
+
+## 16 November 2026: Live portal test
+- With the owner: test customer + contact on live, welcome email arrived, owner signed in to the portal (as tj holds), every page checked, test customer deleted, Roadmap ticked.
+
+## 16 November 2026: Customer portal side menu
+- Owner asked for OS-style side navigation in the portal, design work visible, clean look. Built 0.102.0: side menu with counts, Overview, a page per section, Design work page with progress and proof history. Checked locally with sample data; merged at the owner's request (#161) and live. Signed-in live test still to do.
+
+## 16 November 2026: Portal welcome email, orders and artwork
+- Owner asked for new accounts to get a customer portal link and to track POs, SOs and artwork there. Built 0.100.0: automatic welcome email for new contacts plus a Send portal link button; portal shows sales orders (their PO number) and artwork (approve proofs). Merged at the owner's request (#158); live checks done without changing data; full test with a test contact still to do.
+
+## 16 November 2026: Team chat
+- Owner asked for a simple Teams-like chat in FootprintOS. Explained upkeep (always-on, live connections, no phone alerts, storage, GDPR). Owner chose: DMs readable only by members; keep 2 years. Built Team chat (0.97.0, #155): 23 database checks, full build, merged, tested live (message, live delivery, file, delete, file tidy-up). A commit briefly landed on local main because another session switched branches in the same folder; moved to its branch before pushing.
+- Owner asked about browser alerts: they only worked for the open chat. Built alerts on every page and a live menu badge (0.98.0, #156); merged, live, needs a colleague to test.
+- Owner asked for a Xero sync (offered an API key; explained Xero uses an app and the secret goes in Netlify, never chat). Choices: real Xero now, invoices as drafts, POs approved, FootprintOS numbers switchable. Built part 1 (#159, 0.101.0): 16 database checks; merged and live; waiting on the owner's Xero app. Another session kept switching the shared folder's branch, so the work moved to a separate worktree; a merge clash (0.100.0 and migration 20261222 taken) was renumbered.
+
+## 16 November 2026
+- Contract builder for proposals live (0.93.0, #151) after DJ's decisions (sign by accepting online; admins + Directors edit wording; one step). Magazine reports 3, 4 (now: email advertisers their copy) and 5 built as stacked PRs #152 (0.94.0, Reports → Production), #153 (0.95.0, email advertisers their copy) and #154 (0.96.0, Reports → Advertisers + consented mailing list CSV); merged and live (0.96.0); empty until adverts are booked. Commission from Jack Burton's sheet: live (0.99.0, #157); figures loaded through the data API and Jack Burton added as a viewer; checked live (all £0 for now). The preview first failed at Netlify's "Initializing" step; an empty commit re-ran it fine. Only Jack Burton has a login; Jack Williams, Steve Knight, Wendy Wilson and Danny Cox need to sign in for their sales to count.
+
+## 12 November 2026
+- More DJ items: Download proofs live (0.90.0, #147), Purchasing step name (0.90.1, #148), PO Due box + list column (0.91.0, #149). Shipped step live (0.92.0, #150). Note: the app restarted overnight; the browser pane needed signing in again, and the scratchpad test database was cleared (rebuild scratchpad/pgtest if needed).
+
+## 11 November 2026 (end): DJ's improvements, part 3 done
+- Owner: "all done" for this batch. Live version 0.85.1. Built and checked live today: copy billing address, one Direct Debit field, credit status wording + auto invoice terms, Last activity, Contact due flag (+ past orders, list badge), Board actions Directors-only, quote Pending acceptance, order addresses on automatic orders, No project needed, GP override reason dropdown, customer-email fallback for confirmations, POs (supplier per line, ordered manually, should cost vs bought for, quantity bought + shortfall, Purchasing summary), progress colours, design jobs from order or project, thank-you wording. Automatic lead follow-ups taken off the roadmap. After that: quote box widths (0.85.2, #141) and amber for anything in progress (0.86.0, #142), both live. A separate session shipped #143 (0.87.0: PO bought-for cost flows into the sales order's GP, estimate kept). PO progress boxes + tracking link live (0.88.0, #144). In production rename live (0.88.1, #145). Owner saw Design "Not needed" with an open job: all 4 orders with open jobs show amber now (was the pre-0.86.0 behaviour). Finance summary real costs live (0.89.0, #146). Download proofs live (0.90.0, #147; checked 12 November 2026 after the owner signed the browser pane back in). Lesson: parallel sessions can pick the same version and migration date-stamp; check main before numbering.
+
+## 11 November 2026 (later)
+- DJ item 18: Copy billing address button live (0.70.0), ticked. Item 19: one Direct Debit field live (0.70.1, #120), ticked. Item 20: simpler credit status live (0.71.0, #121), ticked. Item 21: credit status fills invoice due terms live (0.72.0, #122), ticked. Item 22: Last activity on the customer page live (0.73.0, #123), ticked. FootprintAI Board actions Directors-only live (0.74.0, #124), ticked; automatic timeline entries say Automatic. DJ still to be added to the Directors role by the owner. Item 23: Contact due flag live (0.75.0, #125), ticked. Item 24: Contact due past orders + list badge/filter live (0.76.0/0.76.1, #126/#127), ticked. Lesson: sales_document_lines has two links to sales_documents, so embedded selects must name `!sales_document_lines_document_id_fkey`; test new queries against live data before merging. Quote stage Pending acceptance (amber) live, Accepted blue (0.77.0/0.77.1). Explained where order addresses come from; fix for automatic orders live (0.77.2, #130). No project needed on sales orders live (0.78.0, #131). GP override reason dropdown live (0.79.0, #132). Customer-email fallback live (0.79.1, #133); owner to test with a fresh quote. POs: supplier per line + ordered manually live (0.80.0, #134); should cost vs bought for live (0.81.0, #135); quantity bought + order the shortfall live (0.82.0, #136). Purchasing summary live (0.83.0, #137). Progress colours live (0.84.0, #138). Design jobs from order or project live (0.85.0, #139). Thank-you wording live (0.85.1, #140). Automatic lead follow-ups taken off the roadmap (owner).
+
+## 9 November 2026 (evening): DJ's improvements, part 1
+- Went through DJ's list one item at a time: built and checked live items 1–6 (#101–#106, 0.53.0–0.58.0). Owner then asked for email delivery confirmation ("some emails don't send"): email_log showed "sent" only means SendGrid accepted it; built SendGrid Event Webhook handling with signature checks and bounce alerts (#107, 0.59.0, 13 checks). Couldn't test saving an account manager on a real customer (permission declined, rightly); covered by database tests.
+- Then items 7 (Copy email, #108), 8 (timeline, #109) and 9 (proposals like the quote builder, #110: read quotes.footprintgroup.uk read-only; 18 schedule checks, 7 database checks, sample PDF; 22 products loaded; checked live without saving). All ticked.
+
+## 9 November 2026 (afternoon): Website chat
+- Owner's choices: Grok bot answers, complex chats emailed to the owner to forward; both websites; alerts in OS + email; name/email/phone at handover; chats in Customer support. Owner isn't sure they have an xAI API key, so it works without one.
+- Built website chat (0.52.0, #99): 18 database checks, 8 bot checks. Live test found the chat window crashing after the first reply (an effect returning a value); fixed in 0.52.1 (#100), reproduced and confirmed locally, then the full flow tested live. Test chats and lead deleted. Roadmap ticked.
+
+## 9 November 2026: Puzzles and the magazine content library
+- Filler content: crosswords/puzzles and copyright-free articles came from Mag Manager's library (Bishops Printers only prints). Researched suppliers (saved in OPEN-QUESTIONS).
+- Built word searches and sudoku (0.49.0, #95): 10 puzzle checks, 10 database checks, sample PDFs checked; merged and tested live.
+- Owner asked for word search themes that suggest words: built 51 ready-made theme lists (0.51.0, #98); 612 test puzzles from suggestions all worked; checked live with Christmas.
+- Owner asked for a free-articles box (no cost) and a section with drafts of everything: built Magazines → Content (0.50.0, #96): 13 database checks, real GOV.UK pages fetched; merged and tested live. Roadmap ticked.
+
+## 6 November 2026: No contracts; advert deposits built
+- Owner: magazines have no contracts; customers buy months of space with a deposit option. Chose the website's rule (start 3+ months away → 25% deposit, balance before the first print deadline).
+- Built advert deposits (0.48.0, #94): 14 database checks and 10 rule checks passed; merged, checked live (pages load, version 0.48.0). Roadmap task ticked.
+
+## 6 November 2026: Rate card checked against Huw's calculator
+- Huw pointed us to his "Forget Me Not Website Dev" Claude project (shared with the owner). It has no calculator files; its notes say the calculator lives on forgetmenotonline.org. Read the calculator's code (read only): one price differed (two thirds 6+ months 4th area, now £74) and it rounds each area to whole pounds. Corrected the price in the database and opened PR #93 (0.47.1) for the rounding; 616 totals match the website exactly.
+
+## 3 November 2026: Magazine rate card
+- Answered the director's questions, drafted an email to Huw (19 questions on the rate card, contracts, commission, timetable, switch-over year) and compared the rate card with forgetmenotonline.org (website out of date: "from £18", "up to 39%").
+- Built the rate card (0.47.0, #92): 7 pricing checks passed; merged, 2026 prices loaded (140), checked live. Roadmap: rate card ticked; commission left as its own task.
+
+## 2 November 2026: Flatplan page uploads
+- Owner asked for an upload button on each flatplan page (instead of one issue PDF) and for edition names to open the flatplan. Built (0.45.0, #89): 6 database checks, full build, merged and checked live.
+- Owner asked for different advert sizes on each page and dragging them around: built flatplan layout to scale (0.46.0, #90). Live test found items had no size (constants imported from a browser-only file); fixed (0.46.1, #91). Tested live: add, resize, drag; test items deleted.
+
+## 1 November 2026: T-002 seats and costs; GoHighLevel stays in use
+- Made the T-002 AI and software seats-and-costs page for Teams (kept outside the repo). Owner confirmed GoHighLevel is used for Footprint's own marketing and its customers' marketing, so it was added to the costs (Unlimited plan, confirmed).
+- Owner chose to keep GoHighLevel for customers and move Footprint's own marketing into FootprintOS; Wave 8 reopened with five tasks.
+- Built Website enquiry forms (0.43.0, #87): 20 database checks, previewed, merged and tested live (test form and lead). Roadmap task ticked.
+- Director uses all Mag Manager reports: planned five groups. Built group 1 (0.44.0, #88): Bookings, Invoices, VAT (cash), Direct Debits, plus categories, sections and premium positions. A full build caught a server-only import in the advert form (fixed before merge). Merged, checked live, roadmap ticked.
+- Added 9 read-only browser tools to the project permission allowlist.
+
+## 27 October 2026: Drag design jobs on the board
+- Built drag and drop between stages on the Design Workload board (0.33.0, #77). Merged at the owner's request and checked live (job moved and moved back).
+
+## 30 October 2026: Marketing (Wave 8) starts with lead pipelines
+- Owner asked to start Marketing; chose lead pipelines first (email campaigns wait: their Grok bot sends them; GoHighLevel's internal use to be confirmed). One pipeline per business area, used by Marketing and Sales.
+- Built Lead pipelines (0.42.0, #86): boards, drag between stages, lead panel, Make customer and quote, Stages settings, tabs in Marketing and Sales. 9 database checks. Merged and checked live (no test lead added).
+- Email and SMS campaigns marked not needed (owner's Grok bot does them); Marketing wave complete. Split the portal invoices task: seeing invoices done, paying online (Stripe/GoCardless) still to do.
+- Tested customer support end to end with the owner: SUP-0001 sent from the portal, arrived in Customer support, Claude replied ("Reply sent… emailed"), status moved to In progress. Owner confirmed the alert email, the reply email and the reply in the portal all arrived. Roadmap task ticked.
+
+## 28 October 2026: FootprintAI transition tracker
+- Read DJ's three files (roadmap reference page, actions JSON, TRANSITION-SPEC.md) and built the Transition section (0.38.0, #82): This week (by owner, overdue in red, inline status, side panel, gate banners), All actions (filters remembered, Add action), Timeline (swimlanes, gates, launch line, Christmas hatching), Invite list, home-page card. Board-only actions hidden in the database. 17 access checks.
+- Merged at the owner's request; imported the plan (counts exactly as the spec); re-run added nothing. Checked live, including Preview as a non-director role (board-only action hidden).
+- Owner asked to drag actions between people to reassign: built (0.39.0, #83), merged and checked live (rows draggable; not dragged, to avoid changing a real owner).
+- Owner asked to combine FootprintAI and Transition into one tab: one menu item and shared tabs (0.40.0, #84). Merged and checked live.
+- Started **Reports** (Wave 7) at the owner's request; they chose to start fresh. Built Sales and profit, Magazine MI, Money owed and Customers with CSV (0.41.0, #85). 14 database checks. Merged and checked live (£153,466 last 12 months at 59.8% margin; £43,975.50 owed on 29 invoices).
+
+## 27 October 2026 (evening): Mag Manager review with the director
+- Claude looked through Mag Manager (read only, in the owner's Chrome) with Toby and the director: dashboard, publications, bookings, renewals, actions, artwork, production, articles, reports, settings, flatplan. Invoicing opens Xero. Nothing changed; no customer details recorded.
+- Wrote `docs/WAVE-5-MAG-MANAGER-FEATURES.md` and added the director's answers: rate card exists, commission per salesperson, ~50,000 homes, flipbooks/portal/pipelines/Stripe/GoCardless used, pain points (no API, no live online booking, two databases, no contracts for long-term bookings), monthly rolling, switch in January.
+- Added 7 Magazines tasks to the Roadmap (Wave 5).
+- Built **Magazines part 1** (0.31.0, #75): the owner chose to start without the rate card; adverts create sales orders with a different flow (invoiced issue by issue, artwork not a project, paid up front or by DD). Tested on a temporary database (found and fixed a hidden bug: order lines failed for customers with no services ticked). Merged at the owner's request and checked live: 11 editions, £78,500 November target, 13 sizes on the advertising quote.
+- Built **Magazines part 2** (0.32.0, #76): the owner wanted all artwork in the same design queue as other work, so advert artwork is a normal design job linked to the order (no project). Invoicing issue by issue from the dashboard. 14 database checks. Merged at the owner's request and checked live (pages load; flow not yet tried on a real advert order).
+- Built **magazine renewals** (#78): Mag Manager scoring, marks, salesperson filter. Clashed with PR #77 (drag-and-drop Design board, another session, 0.33.0), so renumbered renewals to 0.34.0. Both merged and checked live.
+- Built **flatplans** (0.35.0, #79): page grid per issue, drag adverts and editorial onto pages (same drag pattern as the Design board), colour-coded fullness. 12 database checks. Merged and checked live (Fareham November: 88 pages).
+- Built **portal part 2** (0.36.0, #80): adverts with artwork progress and invoices with what's owed. 7 database checks. Merged; live sign-in page checked; owner then checked the signed-in view: correct.
+- Built **flipbooks** (0.37.0, #81): FootprintOS hosts them (today they're a Mag Manager link). PDF.js + StPageFlip; tested with a throwaway PDF locally and in a local production build. Merged and checked live: embed headers right, /read/fareham shows "not available yet" until a PDF is uploaded, flatplan shows the Digital edition box.
+
+## 27 October 2026: Roadmap tidy, Wave 5 prep, Customer portal
+- At the owner's request, moved the two remaining Wave 2 roadmap tasks (GoCardless Direct Debit, Xero sync) to the Go-live stage. Wave 2 is now complete.
+- Removed the empty Wave 0+ (Password manager and Teams chat) from the Roadmap at the owner's request; its Vault and Cliq tasks were already in Go-live.
+- Started Wave 5 (Magazines). Plan: the owner signs in to Mag Manager in Claude's browser pane, Claude looks through it read only and writes the feature list. Paused: the owner will do the sign-in later with the director. Nothing built yet.
+- Prepared `docs/WAVE-5-MEETING-QUESTIONS.md` (13 questions) for the Mag Manager meeting with the director.
+- Started Wave 6 (Customer portal) at the owner's request, as Wave 5 waits for the director:
+  - **0.28.0 (#72):** customers sign in at /portal with a one-time emailed link; any contact with that email; they see their own quotes (accept/decline) and hosting plans. 17 database checks. Owner added `PORTAL_LINK_KEY` in Netlify (value kept in `.env.local`; fingerprint stored in `portal_settings`).
+  - **0.29.0 (#73):** portal shows marketing (retainers, ad campaigns, content calendar) and a Support section; new staff **Customer support** tab (permission "support"), email alerts to admins, replies in FootprintOS. 20 more checks.
+  - **0.30.0 (#74):** the owner found the link signs in the device that opens it (phone, not laptop), so the email now also has a 6-digit code to type on the sign-in screen.
+  - All merged by Claude at the owner's request and checked live. The owner signed in to the portal successfully using a test contact on "tj holds" (their iCloud email).
+- **Not yet tested:** a real support message and reply (the owner will test later). Customer support roadmap task left unticked until then.
+
+## 26 October 2026: Sign-in lands on the release address
+- Found why sign-in sometimes returned to `<release id>--footprintgroupos.netlify.app` (skew protection + address taken from the request). Fixed: sign-in and emailed links now use the site's main address fixed at build time (#60). Merged at the owner's request and checked live.
+
+## 26 October 2026: Order flow and Request design
+- Owner gave Footprint's flow: quote / proposal / advert → SO → PO, design request, project (saved in GLOSSARY).
+- Built Request design on the sales order (#59): job linked to the order and its project. Clicked through locally, merged and checked live.
+- Noticed sign-in sometimes lands on a release-specific Netlify address; suggested as a follow-up.
+- Sign-in fix (#60) done in a separate session: live and checked.
+- Owner's full flow: customer → opportunity (pipeline) → SO → Create project / design / PO. Built Create project button (no automatic project) and a separate Draft opportunities area in the pipeline (#61): tested on a temporary database, merged and checked live.
+- Customer page: New quote / New advertising quote / New proposal straight from the customer (#62): merged and checked live.
+- New quote "What kind of quote?" dropdown that switches the screen (#63), plus Claude's read-only permission rules committed: merged and checked live.
+- Versions: FootprintOS 0.20.0 in the side menu and a What's new page (#64); rule in CLAUDE.md. Merged and checked live.
+- Sales order stage bar and sections (0.21.0, #65): merged and checked live.
+- Order billing address, deliver-to and delivery notes (0.22.0, #66): merged and checked live (not saved on a real order).
+- Warehouse (Swanwick / Swindon) on sales orders (0.23.0, #67): merged and checked live.
+- Part billing on sales orders (0.24.0, #68): sums tested, merged and checked live (no real part invoice made yet).
+- Cleaner sales flow (0.25.0, #69): quote stage bar, decline asks why, quote extras folded, production step removed (dashboard by stage). Merged and checked live.
+- Customer links as a single copy button at the top, no link boxes (0.26.0, #70): merged and checked live.
+- Customer page: Projects at the bottom without "Order SO-…" wording (0.27.0, #71): merged and checked live.
+- Owner confirmed on 26 October 2026: **all improvements on this list are done.** Still to try on a real order: saving order addresses and a real part invoice.
+
+## 21 October 2026: Improvement list items 10-13
+- Customer quotes/orders/invoices split (#51), no product number on quotes (#52), margin as £ and % everywhere (#53): all merged by Claude at the owner's request and checked live.
+- Urgent fix #54: the margin box blocked saving quotes with a no-cost line. Merged and checked live.
+- "Send quote" + PDFs (#55): live after Claude retried a failed Netlify build (GitHub fetch glitch) with the owner's permission; checked live.
+- Customer links as Copy buttons only, no address shown (#56): merged and checked live.
+- Email to customer box moved below the document (#57): merged and checked live.
+- Sales & Operations split into Sales (overview, quotes, pipeline) and Operations (#58): clicked through locally, merged and checked live.
+
+## 19 October 2026: Friendly message after a new release
+- Staff with a page open during a release got "Something went wrong" on their next click (an old page calling a button the new release no longer knows). Seen on /login after #36.
+- Fix on branch `fix/friendly-update-message`: switched on Netlify's skew protection in `netlify.toml` (old open pages keep talking to the old release, so most clicks just work), and the error page now says "FootprintOS has just been updated" with a Refresh button for any that slip through (not sent to Sentry). Build, types and lint clean. Pull request #37 merged by the owner on 19 October 2026 (`be428c9`). Owner then added a Supabase secret key to `.env.local`; Claude used it to add the ticked task to Roadmap Wave 4.
+- To check after merging: open a page, wait for the next release, then click a button. It should work, or show the new message.
+
+## 19 October 2026: Wave 4 Part 4b, online proof approval
+- Part 4a (#35) had been merged by the owner.
+- Built Part 4b: the design team emails a proof (or makes a link), and the customer approves it or asks for changes on a private page. The answer moves the job and is noted on the job and the customer.
+- Tested the database rules on a temporary PGlite database (all 21 checks passed). Build, types and lint clean. Pull request #36 opened and, at the owner's request, merged by Claude (`d740a7f`).
+- Click-through found the Design tables missing live: Supabase's automatic update had failed since 15 October 2026 because seven hand-applied migrations weren't recorded. Recorded them (owner approved), the update then applied 4a and 4b. Full click-through passed (email, request changes, link only, approve). Roadmap Wave 4 ticked. The owner checked the test email; test job DJ-1001 then deleted.
+- Later: moved the backup-restore test to Go-live only, and did the health-check leftovers in one PR (UK dates, customer payment terms, sync key check, package updates, Design page access checks). Merged and checked live.
+- Built the invite-only FootprintAI section from Mitch's Footprint AI brief: agents and systems with progress, live scorecard, test log and updates; admin-managed invite list. Merged (#39), clicked through live, fixed the scorecard save and lost error messages (#40), added a FootprintAI stage to the roadmap, deleted the test project.
+
+## 16–19 October 2026: New laptop, merges and invoice safety (cloud session)
+- The owner merged #32 and #33 and tested the quote flow live: works well.
+- Owner moved to a new laptop; checked GitHub has everything and explained what must be set up again (`.env.local`, Claude settings, Chrome extension). Flagged that the GitHub repository is public.
+- Built invoice safety (fixed status rules, no double conversion, failed email leaves a draft) and the UK summer-time fix for follow-up times, in one pull request.
+- The owner merged it (#34). Owner chose to leave the 100% margin display as it is.
+- Started Wave 4 (Design Workload). Owner's answers recorded in PROGRESS. Built Part 4a (job board, list, my jobs, files with proof versions, notes, links from orders/projects/customers) and tested the database rules on a temporary local database.
+
+## 15 October 2026: Repository health check (cloud session)
+- Checked build, type-check, lint and package security on `main`: all clean, no known vulnerabilities.
+- Reviewed the code for obvious bugs and the memory files for out-of-date notes.
+- Fixed small, safe problems only, in one pull request (branch `claude/charming-lovelace-5i9y13`): emails to two or more addresses failed; the after-login redirect could be steered to another website; four places ignored database errors (GDPR export logging, template steps on new projects, deleting a target, marking a request as a query); memory files brought up to date. Bigger issues are listed in that pull request for the owner to choose from. Nothing merged, deployed or changed in any database.
+- Note: sessions between 2 and 13 October 2026 have no entry here; their work is recorded, dated, in `PROGRESS.md`.
+
+## 15 October 2026: Marketing, Dashboards, speed and health-check fixes
+- Built the Marketing team workspace (overview, content calendar, ad campaigns, templates) on `feature/marketing-workspace`, PR #24. Database part applied to the test database. The safety check blocked Claude from merging; the owner merged it, so it's live. Roadmap ticked.
+- Marketing home page for the Marketing team role (like Directors, Sales, Finance, Operations), PR #25, merged by the owner. Roadmap ticked. The safety check still blocks Claude's final merge click in every mode, so the owner presses merge.
+- At the owner's request, moved every import and switch-off task (Zoho Projects, Zoho One, monday.com, Mag Manager, Vault, Cliq, the Zoho billing trial) into Go-live.
+- Built the Wave 3 Dashboards section (Revenue, Pipeline, Renewals, Time), PR #26, merged by the owner. Roadmap ticked.
+- Profit after time with hourly costs per role (made-up example rates; Zoho check postponed by the owner), PR #27, live. Wave 3 building work complete.
+- Smoother feel (hover lift, button press, page fade-in, reduced-motion respected), PR #28, live and checked in the live stylesheet.
+- Owner said clicks feel slow. Found: no loading states, Netlify functions in Ohio while the database is in Frankfurt (region change needs a paid Netlify plan — owner to decide), and an extra login check per page. Built loading screens, a top progress bar and busy buttons (PR #29, live).
+- Click-through test signed in as the owner: every page loads, figures agree. Health-check fixes: database tune-up (#30), polish batch with readable Audit log, view-only marketing items, phone calendar list view, preview as role (#31), and a one-pass Staff hub fix (#32). Junk test requests removed.
+
+## 14 October 2026: Roadmap check
+- The Claude app is now on a different Claude account. Checked that the project itself (code, GitHub, commit identity) is unchanged.
+- Read the roadmap on both Supabase projects (read only). Found that the live London database exists, and that the live roadmap was out of date.
+- The owner confirmed SendGrid works (a real invite reached a colleague).
+- Auto mode blocked writing to Live. The owner switched to Ask permissions, and Claude then tidied the live roadmap: 7 tasks ticked, Postmark renamed to SendGrid, Wave 3 off hold. Verified.
+- Found that the live website still uses the test database, and that the daily Microsoft 365 sync has run every day since 7 October. Tidied the roadmap on the test database too (the one the app shows) and ticked off the daily sync.
+- Set up "fewer prompts" (local permission settings). At the owner's request, moved the Zoho customer import into the Go-live stage and added "Move the website to the London database" there.
+- Job titles for automatic roles: matching was already built; only 3 of 43 staff have titles. Added a Marketing team role (owner approved its access). Owner to fill in titles in Microsoft 365.
+
+## 1 October 2026 — Session 3 (continued): Wave 2a
+- Read Zoho Books settings (numbering, VAT, custom fields; no records) and wrote `docs/discovery/ZOHO-BOOKS.md`.
+- The owner chose: core flow first (2a/2b/2c), secure-link approval, and keep-and-tidy custom fields.
+- Built the products, quotes, orders, invoices, approval link, print layout and company settings, and tested the full flow end to end.
+- Found that Netlify "Team protection" also covered the live site. With the owner's approval it's now previews only. Merged PR #4, so Wave 2a is live for the demo.
+
+## 1 October 2026 — Session 3: Wave 1 begins
+- Read Zoho CRM's module and field definitions through the owner's signed-in Chrome (no customer records) and wrote `docs/discovery/ZOHO-CRM.md`.
+- Found plain-text third-party passwords in Zoho Web Hosting Plans. Decision: these move to the password manager and are never migrated.
+- The owner chose core + Footprint fields, with hosting plans and retainers in Wave 1 and Zoho Billing in Wave 2.
+- Built the Customers section, its database tables and the made-up test data, and tested it end to end in the browser. Fixed a line-saving bug.
+- Microsoft sign-in now also brings people's names through.
+- Built and tested the GDPR tools: admin-only export and erasure, with audit-log redaction.
+- The owner put the live database and real data **on hold until the final wave**, pending a director demo. The roadmap now has a final "Go-live cut-over" stage.
+- The owner checked the preview. Claude merged PR #3, so Wave 1 is live on footprinthub.netlify.app with made-up data. Supabase correctly skipped the already-applied migrations.
+
+## 30 September 2026 — Session 2: Wave 0 begins
+- Merged the planning work into `main`. Created branch `wave-0/foundations`.
+- Confirmed the Supabase organisation. Its auto-created project (Frankfurt) becomes the test database; live will be in London (see DECISIONS).
+- Installed Node.js 24. The automatic install got stuck on a hidden Windows permission prompt, so the owner installed it manually.
+- Built the app shell: Next.js 16, Footprint branding, one navigation section per feature with placeholders, and a mobile menu. Build and lint pass, and it was checked in the browser.
+- Built Wave 0 part 2:
+  - the database migration: roles, permissions, audit log, row-level security
+  - Sign in with Microsoft
+  - admin screens
+- 1 October 2026 setup, done by Claude in the owner's Chrome with approval:
+  - renamed the Supabase project
+  - applied the migration
+  - turned on GitHub auto-deploy (at the owner's request)
+  - set the redirect URLs
+  - registered the Entra app with email claims
+  - filled in the Azure provider (the owner pasted the secret)
+  - saved `.env.local`
+- Checked that the local sign-in button reaches Footprint's Microsoft login.
+- The owner signed in and became admin. Added the Netlify environment variables.
+- Fixed the 404 on the Netlify preview by adding `@netlify/plugin-nextjs`.
+- The owner tested the preview. Claude merged PR #1 into `main`, and it's live at footprinthub.netlify.app.
+- Wave 0 finishing (PR #2):
+  - logo and icon (from the website, with permission)
+  - security headers
+  - Sentry (the owner made the account; Claude created the project; the owner pasted the DSN into Netlify)
+  - Admin → System test-error button
+  - backup runbook
+- The owner tested it and Claude merged it. **Wave 0 complete.**
+
 ## 29 September 2026 — Session 1: Kickoff
 - Created the memory files in `docs/memory/`.
 - Read footprintgroup.uk and forgetmenotonline.org for context.

@@ -1,4 +1,4 @@
-# Footprint Platform — Standing Instructions for Claude
+# FootprintOS — Standing Instructions for Claude
 
 Claude reads this file automatically at the start of every session. Keep it short and up to date.
 
@@ -51,3 +51,20 @@ Rules:
 - Small steps. Commit often with plain-English commit messages.
 - Test changes on a Netlify preview link before they go live, and give the owner the link to check.
 - Prefer well-known, well-supported tools over clever or obscure ones — this platform must be maintainable for years.
+
+## Keeping the roadmap up to date (owner's rule, 5 October 2026)
+The platform has a live **Roadmap** (Admin → Roadmap; tables `roadmap_waves`, `roadmap_tasks`, `feedback_requests`). It must always match reality, with no one having to remind you.
+- **At the start of a session:** read the roadmap: un-ticked tasks (`roadmap_tasks where not done`) and approved requests (`feedback_requests where status = 'approved'`, whose tasks have `request_id` set). Approved requests are work the owner wants done.
+- **When you finish something:** tick it off (`update public.roadmap_tasks set done = true where ...`) in the same piece of work, once it's built and tested. A task from a request also marks that request done automatically. Do this yourself through the Supabase data API using `SUPABASE_SECRET_KEY` from `.env.local` (on the owner's laptop only; never print it). Use the Supabase SQL editor only for anything the API can't do.
+- **When you build something that isn't on the list:** add it to the right wave as a ticked task. **New work the owner asks for:** add it as an un-ticked task first.
+- A wave put on hold stays "On hold" until the owner says otherwise.
+- Mention what you ticked off in your plain-English summary.
+
+## Versions and What's new (owner's rule, 26 October 2026)
+FootprintOS has a version number (bottom of the side menu) and a **What's new** page, both from `src/lib/releases.ts`.
+- Every pull request that changes what people see or do adds an entry at the top of `releases.ts`, in plain English, with the date it goes live, and sets the same number in `package.json` (and the top of `package-lock.json`).
+- Numbering: 0.x until Go-live, then 1.0. A new feature or visible change → next middle number (0.20.0 → 0.21.0); a fix only → next last number (0.21.0 → 0.21.1). Several changes released the same day can share one version.
+- Mention the new version number in your plain-English summary.
+
+## Technical notes for Claude
+@AGENTS.md

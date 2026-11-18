@@ -1,0 +1,235 @@
+import "server-only";
+import { cookies } from "next/headers";
+import { connection } from "next/server";
+import { cache } from "react";
+import { ukToday } from "@/lib/dates";
+import { createClient } from "@/lib/supabase/server";
+
+// The customer portal (/portal). Customers never get a staff account: they
+// sign in with a one-time emailed link and get a session token, kept in this
+// cookie. Everything they see comes from the database's portal_overview,
+// which only returns their own companies' records (see the
+// 20261106120000_customer_portal migration).
+export const PORTAL_COOKIE = "fp_portal";
+export const PORTAL_SESSION_DAYS = 14;
+// Who asked for the last sign-in email, so the code box knows whose code it is.
+export const PORTAL_EMAIL_COOKIE = "fp_portal_email";
+
+export type PortalQuote = {
+  number: string;
+  title: string | null;
+  kind: string | null;
+  status: string;
+  issue_date: string;
+  valid_until: string | null;
+  total: number;
+  customer_name: string;
+  token: string;
+};
+
+export type PortalHostingPlan = {
+  name: string;
+  plan_type: string | null;
+  status: string | null;
+  price: number | null;
+  billing_frequency: string | null;
+  renewal_month: string | null;
+  customer_name: string;
+  items: { kind: "web" | "email"; plan: string | null; domain: string | null; mailbox_qty: number | null; email_platform: string | null }[];
+};
+
+export type PortalContent = {
+  title: string;
+  channel: string;
+  publish_date: string | null;
+  status: "drafting" | "client_approval" | "scheduled" | "published";
+  link: string | null;
+  customer_name: string;
+};
+
+export type PortalCampaign = {
+  name: string;
+  platform: string;
+  status: "planned" | "live" | "paused" | "ended";
+  start_date: string | null;
+  end_date: string | null;
+  budget: number | null;
+  spend: number;
+  leads: number | null;
+  results: string | null;
+  customer_name: string;
+};
+
+export type PortalRetainer = {
+  name: string;
+  status: string | null;
+  monthly_fee: number | null;
+  budget_hours: number | null;
+  customer_name: string;
+};
+
+export type TicketStatus = "new" | "in_progress" | "done";
+
+export type PortalTicketSummary = {
+  id: string;
+  number: number;
+  kind: "change" | "question";
+  subject: string;
+  status: TicketStatus;
+  last_message_at: string;
+  customer_name: string;
+};
+
+export type PortalTicket = Omit<PortalTicketSummary, "last_message_at"> & {
+  created_at: string;
+  messages: { from_customer: boolean; author: string | null; body: string; created_at: string }[];
+};
+
+export type PortalOverview = {
+  email: string;
+  first_name: string | null;
+  customers: { id: string; name: string }[];
+  quotes: PortalQuote[];
+  hosting: PortalHostingPlan[];
+  content: PortalContent[];
+  campaigns: PortalCampaign[];
+  retainers: PortalRetainer[];
+  tickets: PortalTicketSummary[];
+  adverts: PortalAdvert[];
+  invoices: PortalInvoice[];
+  orders: PortalOrder[];
+  artwork: PortalArtwork[];
+};
+
+// A sales order, with the customer's own PO number (never Footprint's
+// purchase orders to suppliers).
+export type PortalOrder = {
+  number: string;
+  title: string | null;
+  po: string | null;
+  status: "open" | "completed" | "invoiced";
+  issue_date: string;
+  total: number;
+  shipped_at: string | null;
+  customer_name: string;
+  token: string;
+  // The stage of each design job on the order.
+  artwork: string[];
+};
+
+// A design job, including magazine advert artwork (is_advert).
+export type PortalArtwork = {
+  number: number;
+  title: string;
+  stage: string;
+  artwork_source: "design" | "customer" | "repeat" | null;
+  order_number: string | null;
+  customer_name: string;
+  is_advert?: boolean;
+  stage_changed_at?: string;
+  // The proof waiting for their approval, if there is one.
+  proof_token: string | null;
+  // Every proof sent to them, newest first (each opens on its own page).
+  proofs?: PortalProof[];
+};
+
+export type PortalProof = {
+  version: number | null;
+  status: "waiting" | "approved" | "changes";
+  sent_at: string;
+  responded_at: string | null;
+  token: string;
+};
+
+export type PortalAdvert = {
+  month: string;
+  edition: string;
+  size: string | null;
+  order_number: string;
+  customer_name: string;
+  artwork_stage: string | null;
+  artwork_source: "design" | "customer" | "repeat" | null;
+};
+
+export type PortalInvoice = {
+  number: string;
+  title: string | null;
+  status: "issued" | "paid";
+  issue_date: string;
+  due_date: string | null;
+  total: number;
+  owed: number;
+  customer_name: string;
+  token: string;
+};
+
+// How an advert's artwork is getting on, in the customer's words.
+export function advertArtworkLabel(stage: string | null, source: string | null): string {
+  if (!stage) return "Artwork to arrange";
+  if (["approved", "production", "done"].includes(stage)) return "Artwork approved";
+  if (stage === "with_customer") return "Waiting for your approval";
+  if (stage === "amends") return "Making your changes";
+  return source === "customer" ? "Checking your artwork" : "Being designed";
+}
+
+// Where a sales order is up to, in the customer's words.
+export function orderProgressLabel(o: Pick<PortalOrder, "status" | "shipped_at" | "artwork">): {
+  label: string;
+  tone: "grey" | "teal" | "pink" | "amber";
+} {
+  if (o.status !== "open") return { label: "Completed", tone: "teal" };
+  if (o.shipped_at) return { label: "Shipped", tone: "teal" };
+  if (o.artwork.includes("with_customer")) return { label: "Artwork waiting for your approval", tone: "pink" };
+  if (o.artwork.some((s) => !["approved", "production", "done"].includes(s))) return { label: "Artwork in progress", tone: "amber" };
+  return { label: "In progress", tone: "amber" };
+}
+
+// Customer support wording, shared by the portal and the staff tab.
+export const ticketKindLabel = (k: string) => (k === "change" ? "Change request" : "Question");
+export const ticketStatusLabel = (s: string) => (s === "in_progress" ? "In progress" : s === "done" ? "Done" : "New");
+export const ticketTone = (s: string) => (s === "done" ? "grey" : s === "in_progress" ? "amber" : "pink") as "grey" | "amber" | "pink";
+export const ticketNumber = (n: number) => `SUP-${String(n).padStart(4, "0")}`;
+
+export async function getPortalSession(): Promise<string | null> {
+  await connection();
+  return (await cookies()).get(PORTAL_COOKIE)?.value ?? null;
+}
+
+// The signed-in customer's portal, or null if they aren't signed in (or no
+// longer a contact anywhere). Loaded once per page view (the menu and the
+// page share it).
+export const getPortal = cache(async (): Promise<PortalOverview | null> => {
+  const session = await getPortalSession();
+  if (!session) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("portal_overview", { p_session: session });
+  const portal = data as PortalOverview | null;
+  // Orders and artwork arrived later (16 November 2026): empty until the
+  // database has them, so the page never breaks while an update rolls out.
+  return portal ? { ...portal, orders: portal.orders ?? [], artwork: portal.artwork ?? [] } : null;
+});
+
+// A quote still waiting for the customer's answer (not accepted, declined or expired).
+export const quoteWaiting = (q: PortalQuote) =>
+  q.status === "sent" && !(q.valid_until && q.valid_until < ukToday());
+
+// Everything waiting for the customer: quotes to answer, proofs to approve,
+// invoices to pay and content to approve. Drives the menu counts and the
+// Overview's "Needs your attention".
+export function portalAttention(p: PortalOverview) {
+  return {
+    quotes: p.quotes.filter(quoteWaiting),
+    proofs: p.artwork.filter((a) => a.proof_token),
+    invoices: p.invoices.filter((v) => Number(v.owed) > 0),
+    content: p.content.filter((c) => c.status === "client_approval"),
+  };
+}
+
+// One of the customer's own support conversations, or null.
+export async function getPortalTicket(id: string): Promise<PortalTicket | null> {
+  const session = await getPortalSession();
+  if (!session || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("portal_ticket", { p_session: session, p_ticket_id: id });
+  return (data as PortalTicket | null) ?? null;
+}

@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+/* Footprint brand colours and font — see docs/BRAND.md */
+@theme {
+  --color-fp-black: #000000;
+  --color-fp-dark: #222222;
+  --color-fp-mid: #888888;
+  --color-fp-border: #e8e8e8;
+  --color-fp-light: #f2f2f2;
+  --color-fp-offwhite: #f7f7f7;
+
+  --color-fp-pink: #de2277;
+  --color-fp-pink-light: #eb5cb8;
+  --color-fp-orange: #e58207;
+  --color-fp-amber: #fab200;
+  --color-fp-teal: #7bcbd1;
+  --color-fp-teal-deep: #0092a3;
+
+  /* Errors get their own red so they are never confused with brand pink. */
+  --color-fp-error: #c81e1e;
+
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+}
+
+@utility bg-fp-gradient {
+  background-image: linear-gradient(90deg, #de2277 0%, #e58207 50%, #7bcbd1 100%);
+}
+
+body {
+  background: var(--color-fp-offwhite);
+  color: var(--color-fp-black);
+}
+
+/* Small screens: keep every page exactly as wide as the screen. */
+@layer base {
+  /* Grid boxes may shrink below their content's width, so wide tables
+     scroll inside their own box instead of stretching the page. */
+  .grid > * {
+    min-width: 0;
+  }
+
+  /* Long words, codes, email addresses and links wrap instead of overflowing. */
+  body {
+    overflow-wrap: break-word;
+  }
+  code {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* ─── Motion: smooth, quick and subtle ───────────────────────────────────────
+   Kept outside the Tailwind layers on purpose, so these win over a page's own
+   transition classes. Everything is switched off for people who ask their
+   computer to reduce motion (see the end of this section). */
+
+:root {
+  --fp-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* Colour, border and shadow changes glide instead of snapping. */
+a,
+button,
+input,
+select,
+textarea,
+summary,
+tr {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 180ms;
+  transition-timing-function: var(--fp-ease);
+}
+
+/* Buttons (and links styled as buttons) press in slightly when clicked. */
+button:not(:disabled):active,
+a[class*="rounded-md"][class*="px-"]:active {
+  transform: scale(0.97);
+}
+
+/* Clickable boxes lift a little, with a soft shadow and a hint of pink. */
+a[class*="rounded-lg"][class*="border"] {
+  transition-duration: 220ms;
+}
+a[class*="rounded-lg"][class*="border"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -14px rgb(0 0 0 / 0.25);
+  border-color: color-mix(in srgb, var(--color-fp-pink) 35%, var(--color-fp-border));
+}
+a[class*="rounded-lg"][class*="border"]:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* Board cards (retainers, pipeline) get a gentle shadow on hover. */
+li[class*="rounded-lg"][class*="border"],
+li[class*="rounded-md"][class*="border"] {
+  transition: box-shadow 220ms var(--fp-ease), border-color 220ms var(--fp-ease);
+}
+li[class*="rounded-lg"][class*="border"]:hover,
+li[class*="rounded-md"][class*="border"]:hover {
+  box-shadow: 0 8px 20px -14px rgb(0 0 0 / 0.22);
+}
+
+/* Menu items slide a touch to the right on hover. */
+nav[aria-label="Main"] a:hover {
+  transform: translateX(3px);
+}
+
+/* Keyboard users get a clear, smooth pink focus ring. */
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--color-fp-pink);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Progress bars fill up from empty when a page opens. */
+.rounded-full > [style*="width"],
+.overflow-hidden > [style*="width"] {
+  animation: fp-grow 700ms var(--fp-ease) both;
+  transition: width 400ms var(--fp-ease);
+}
+@keyframes fp-grow {
+  from {
+    width: 0;
+  }
+}
+
+/* Each page fades and slides in softly (see app/(app)/template.tsx). */
+.fp-page-enter {
+  animation: fp-enter 280ms var(--fp-ease) both;
+}
+@keyframes fp-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Loading outlines: soft grey blocks with a gentle shimmer. */
+.fp-skeleton {
+  background: linear-gradient(90deg, var(--color-fp-light) 25%, #fafafa 50%, var(--color-fp-light) 75%);
+  background-size: 200% 100%;
+  animation: fp-shimmer 1.2s ease-in-out infinite;
+}
+@keyframes fp-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+/* Only show the outline if loading takes a moment, so fast pages don't flash. */
+.fp-skeleton-fade {
+  animation: fp-enter 200ms var(--fp-ease) 120ms both;
+}
+
+/* Thin brand-coloured bar along the top while a page or save is on its way. */
+.fp-activity-bar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  height: 3px;
+  pointer-events: none;
+  background-image: linear-gradient(90deg, #de2277 0%, #e58207 50%, #7bcbd1 100%);
+  transform-origin: left;
+  transform: scaleX(0);
+  opacity: 0;
+  transition: transform 300ms var(--fp-ease), opacity 400ms ease 150ms;
+}
+.fp-activity-bar.is-busy {
+  opacity: 1;
+  transition: opacity 120ms ease;
+  animation: fp-progress 8s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+}
+@keyframes fp-progress {
+  0% {
+    transform: scaleX(0.05);
+  }
+  20% {
+    transform: scaleX(0.45);
+  }
+  100% {
+    transform: scaleX(0.92);
+  }
+}
+
+/* The button that sent a form dims and shows a small spinner. */
+button[data-pending] {
+  position: relative;
+  opacity: 0.75;
+  cursor: progress;
+  padding-right: 2.25rem;
+}
+button[data-pending]::after {
+  content: "";
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-top: -0.45rem;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: fp-spin 700ms linear infinite;
+}
+@keyframes fp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  a[class*="rounded-lg"][class*="border"]:hover,
+  a[class*="rounded-lg"][class*="border"]:active,
+  nav[aria-label="Main"] a:hover,
+  button:not(:disabled):active,
+  a[class*="rounded-md"][class*="px-"]:active {
+    transform: none;
+  }
+}
+
+/* Tab strips scroll sideways on small screens without showing a scrollbar. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

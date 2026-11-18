@@ -1,0 +1,190 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Suspense, createContext, useCallback, useContext, useState } from "react";
+import { LogOut, Menu, X } from "lucide-react";
+import ActivityBar from "./ActivityBar";
+import ChatAlerts from "./ChatAlerts";
+import { features, home, type Feature } from "@/lib/features";
+import { currentVersion } from "@/lib/releases";
+
+// Which of Sales / Operations is open, set by their tabs (both share /sales).
+const SectionContext = createContext<(section: string) => void>(() => {});
+export const useSetSection = () => useContext(SectionContext);
+
+function Wordmark() {
+  // Logo taken from footprintgroup.uk until the official files arrive (see docs/BRAND.md).
+  return (
+    <Link href="/" className="block">
+      <Image
+        src="/brand/footprint-logo-white.png"
+        alt="Footprint Group"
+        width={150}
+        height={44}
+        priority
+      />
+      <span className="mt-1 block text-sm font-bold tracking-wide text-white">
+        Footprint<span className="text-fp-pink-light">OS</span>
+      </span>
+    </Link>
+  );
+}
+
+function NavLink({ feature, active, badge = 0 }: { feature: Feature; active: boolean; badge?: number }) {
+  const Icon = feature.icon;
+  return (
+    <Link
+      href={feature.href}
+      aria-current={active ? "page" : undefined}
+      className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+        active
+          ? "bg-white/10 text-white"
+          : "text-white/65 hover:bg-white/5 hover:text-white"
+      }`}
+    >
+      <Icon
+        size={18}
+        className={active ? "text-fp-pink-light" : "text-white/50"}
+        aria-hidden
+      />
+      {feature.label}
+      {badge > 0 && (
+        <span className="ml-auto rounded-full bg-fp-pink px-1.5 text-xs font-bold text-white" aria-label={`${badge} unread`}>
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+function Nav({ pathname, visible, section, chatUnread }: { pathname: string; visible: Feature[]; section: string | null; chatUnread: number }) {
+  const isActive = (f: Feature) =>
+    f.href === "/" ? pathname === "/" : [f.href, ...(f.alsoActive ?? [])].some((h) => pathname.startsWith(h));
+  return (
+    <nav aria-label="Main" className="flex flex-col gap-1">
+      <NavLink feature={home} active={isActive(home)} />
+      {visible.length > 0 && <div className="my-2 h-px bg-white/10" />}
+      {visible.map((f) =>
+        f.menuLinks ? (
+          f.menuLinks.map((l) => (
+            <NavLink
+              key={l.href}
+              feature={{ ...f, label: l.label, href: l.href, icon: l.icon }}
+              active={isActive(f) && section === l.section}
+            />
+          ))
+        ) : (
+          <NavLink key={f.key} feature={f} active={isActive(f)} badge={f.key === "chat" ? chatUnread : 0} />
+        ),
+      )}
+    </nav>
+  );
+}
+
+function UserBox({ name, email }: { name: string; email: string }) {
+  return (
+    <div className="border-t border-white/10 px-5 py-4">
+      <p className="truncate text-sm font-semibold text-white">{name}</p>
+      {name !== email && <p className="truncate text-xs text-white/50">{email}</p>}
+      <form action="/auth/signout" method="post" className="mt-3">
+        <button
+          type="submit"
+          className="flex items-center gap-2 text-xs font-medium text-white/65 hover:text-white"
+        >
+          <LogOut size={14} aria-hidden />
+          Sign out
+        </button>
+      </form>
+      {/* The version, so a problem report can say which one; links to what changed. */}
+      <Link href="/whats-new" className="mt-3 block text-xs text-white/40 hover:text-white">
+        FootprintOS {currentVersion} · What&apos;s new
+      </Link>
+    </div>
+  );
+}
+
+export default function AppShell({
+  children,
+  visibleFeatureKeys,
+  userName,
+  userEmail,
+  chatUnread = 0,
+  userId,
+}: {
+  children: React.ReactNode;
+  visibleFeatureKeys: string[];
+  userName: string;
+  userEmail: string;
+  chatUnread?: number;
+  userId: string;
+}) {
+  const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [section, setSection] = useState<string | null>(null);
+  const visible = features.filter((f) => visibleFeatureKeys.includes(f.key));
+  // Messages that arrived since the page loaded; starts again from the
+  // server's count whenever that changes (e.g. after moving to another page).
+  const [live, setLive] = useState({ base: chatUnread, extra: 0 });
+  const extra = live.base === chatUnread ? live.extra : 0;
+  const addUnread = useCallback(() => setLive((l) => ({ base: chatUnread, extra: (l.base === chatUnread ? l.extra : 0) + 1 })), [chatUnread]);
+  const unread = chatUnread + extra;
+
+  return (
+    <div className="min-h-screen lg:flex">
+      <Suspense fallback={null}>
+        <ActivityBar />
+      </Suspense>
+      <ChatAlerts userId={userId} onUnread={addUnread} />
+      {/* Desktop sidebar */}
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-fp-black print:hidden lg:flex">
+        <div className="bg-fp-gradient h-1" />
+        <div className="px-5 py-6">
+          <Wordmark />
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 pb-6">
+          <Nav pathname={pathname} visible={visible} section={section} chatUnread={unread} />
+        </div>
+        <UserBox name={userName} email={userEmail} />
+      </aside>
+
+      {/* Mobile top bar */}
+      <header className="sticky top-0 z-20 bg-fp-black print:hidden lg:hidden">
+        <div className="flex items-center justify-between px-4 py-3">
+          <Wordmark />
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav"
+            className="rounded-md p-2 text-white hover:bg-white/10"
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+            <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
+          </button>
+        </div>
+        <div className="bg-fp-gradient h-1" />
+        {menuOpen && (
+          // Close the menu once a link inside it is clicked.
+          <div
+            id="mobile-nav"
+            className="max-h-[80vh] overflow-y-auto pt-2"
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest("a")) setMenuOpen(false);
+            }}
+          >
+            <div className="px-3 pb-4">
+              <Nav pathname={pathname} visible={visible} section={section} chatUnread={unread} />
+            </div>
+            <UserBox name={userName} email={userEmail} />
+          </div>
+        )}
+      </header>
+
+      <main className="min-w-0 flex-1">
+        <SectionContext.Provider value={setSection}>{children}</SectionContext.Provider>
+      </main>
+    </div>
+  );
+}

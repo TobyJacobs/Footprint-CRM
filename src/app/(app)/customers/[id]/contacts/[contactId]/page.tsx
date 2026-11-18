@@ -1,0 +1,78 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
+import PageHeader from "@/components/PageHeader";
+import { Card, Notice, dangerButton, secondaryButton } from "@/components/ui";
+import { requirePermission } from "@/lib/auth";
+import { personName, shortDateTime } from "@/lib/customers/display";
+import { createClient } from "@/lib/supabase/server";
+import { deleteContact, eraseContact, saveContact, sendPortalInvite } from "../../../actions";
+import DataProtectionCard from "../../../DataProtectionCard";
+import ContactForm from "../ContactForm";
+
+export const metadata: Metadata = { title: "Edit contact" };
+
+export default async function EditContactPage(props: PageProps<"/customers/[id]/contacts/[contactId]">) {
+  const user = await requirePermission("customers", "edit");
+  const { id, contactId } = await props.params;
+  const searchParams = await props.searchParams;
+  const supabase = await createClient();
+  const [{ data: customer }, { data: contact }] = await Promise.all([
+    supabase.from("customers").select("name, billing_street, billing_city, billing_county, billing_postcode, billing_country, shipping_street, shipping_city, shipping_county, shipping_postcode, shipping_country").eq("id", id).maybeSingle(),
+    supabase.from("contacts").select("*").eq("id", contactId).eq("customer_id", id).maybeSingle(),
+  ]);
+  if (!customer || !contact) notFound();
+
+  return (
+    <>
+      <PageHeader title={personName(contact)} intro={customer.name} />
+      <div className="px-6 py-8 lg:px-10">
+        <Link href={`/customers/${id}`} className="text-sm font-semibold text-fp-teal-deep hover:underline">
+          ← Back to {customer.name}
+        </Link>
+        <div className="mt-4">
+          <Notice searchParams={searchParams} />
+          <ContactForm contact={contact} customer={customer} action={saveContact.bind(null, id, contactId)} cancelHref={`/customers/${id}`} />
+        </div>
+        <div className="mt-10 max-w-3xl">
+          <Card title="Customer portal">
+            <p className="text-sm">
+              {contact.email
+                ? `${personName(contact)} can sign in to the customer portal with ${contact.email} to follow their quotes, orders, artwork and invoices.`
+                : "Add an email address to give this contact access to the customer portal."}
+            </p>
+            <p className="mt-1 text-xs text-fp-mid">
+              {contact.portal_invited_at ? `Welcome email last sent ${shortDateTime(contact.portal_invited_at)}.` : "Welcome email not sent yet."}
+            </p>
+            {contact.email && (
+              <form action={sendPortalInvite.bind(null, id, contactId)} className="mt-3">
+                <button type="submit" className={secondaryButton}>
+                  {contact.portal_invited_at ? "Send portal link again" : "Send portal link"}
+                </button>
+              </form>
+            )}
+          </Card>
+        </div>
+        {user.isAdmin && (
+          <div className="mt-10 max-w-3xl">
+            <DataProtectionCard
+              subject={personName(contact)}
+              kind="contact"
+              exportHref={`/customers/${id}/contacts/${contactId}/export`}
+              eraseAction={eraseContact.bind(null, id, contactId)}
+              erasedAt={contact.erased_at}
+            />
+          </div>
+        )}
+        {user.can("customers", "delete") && (
+          <form action={deleteContact.bind(null, id, contactId)} className="mt-10 max-w-3xl border-t border-fp-border pt-6">
+            <ConfirmSubmit className={dangerButton} message={`Delete ${personName(contact)}? This can't be undone.`}>
+              Delete contact
+            </ConfirmSubmit>
+          </form>
+        )}
+      </div>
+    </>
+  );
+}
