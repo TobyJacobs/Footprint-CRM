@@ -5,7 +5,7 @@ One short entry per session. Newest at the top.
 ---
 
 ## 18 November 2026: Next.js security update
-- Owner approved the Next.js security upgrade: 16.4.2 → 16.4.6 (0.111.1). Build/type check/lint clean, security notice gone, production build smoke-tested locally. PR waiting for the owner.
+- Owner approved the Next.js security upgrade: 16.4.2 → 16.4.6 (0.111.1). Build/type check/lint clean, security notice gone, production build smoke-tested locally. Merged and live. Found sign-in broken: site address switched to os.footprintgroup.uk but Supabase redirect URLs don't include it (falls back to localhost). Waiting for the owner.
 
 ## 18 November 2026: Portal back button
 - Owner asked for a back button in the portal when viewing quotes etc. Built 0.110.0: a back bar on quote, order/invoice and proof pages for signed-in portal customers. Merged at the owner's request (#170) and checked live. Raised Next.js security upgrade notice.
