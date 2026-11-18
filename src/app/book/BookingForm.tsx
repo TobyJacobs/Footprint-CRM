@@ -24,11 +24,15 @@ export default function BookingForm({
   today,
   action,
   stamp,
+  known,
 }: {
   setup: BookingSetup;
   today: string;
   action: (fd: FormData) => Promise<void>;
   stamp: string;
+  // A signed-in portal customer (owner, 18 November 2026): no details to
+  // type, just which of their companies it's for.
+  known?: { customers: { id: string; name: string }[] };
 }) {
   const options = useMemo(() => bookingOptions(setup), [setup]);
   const starts = useMemo(() => startMonths(setup), [setup]);
@@ -172,7 +176,23 @@ export default function BookingForm({
       </section>
 
       <section className="grid gap-3">
-        <h2 className="text-base font-bold">5. Your details</h2>
+        <h2 className="text-base font-bold">5. {known ? "Your advert" : "Your details"}</h2>
+        {known ? (
+          known.customers.length > 1 ? (
+            <label className="grid gap-1">
+              <span className="font-semibold">Which company is this for?</span>
+              <select name="customer_id" required className={input}>
+                {known.customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <input type="hidden" name="customer_id" value={known.customers[0]?.id ?? ""} />
+          )
+        ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1">
             <span className="font-semibold">Business name</span>
@@ -205,6 +225,7 @@ export default function BookingForm({
             </label>
           </div>
         </div>
+        )}
         <label className="grid gap-1">
           <span className="font-semibold">Your advert artwork</span>
           <select name="artwork" className={input} defaultValue="Please design it for me">
@@ -218,8 +239,8 @@ export default function BookingForm({
           <textarea name="message" rows={3} maxLength={2000} className={input} />
         </label>
         <p className="text-xs text-fp-dark/75">
-          This is a request, not a confirmed booking. We&apos;ll check availability and confirm your space and final price by email within one working day.
-          We use your details only to deal with your booking.
+          This is a request, not a confirmed booking. We&apos;ll check availability and confirm your space and final price by email within one working day
+          {known ? "; the quote will then appear under Quotes for you to accept." : ". We use your details only to deal with your booking."}
         </p>
         <div>
           <button
@@ -227,7 +248,7 @@ export default function BookingForm({
             disabled={!plan.ok}
             className="rounded-md bg-fp-pink px-5 py-2.5 text-sm font-bold text-white hover:bg-fp-pink/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Request my space
+            {known ? "Request these adverts" : "Request my space"}
           </button>
         </div>
       </section>
