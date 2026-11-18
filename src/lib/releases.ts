@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.105.0",
+    date: "2026-11-18",
+    title: "Order again from the portal",
+    changes: ["Customers can reorder print and other products from their portal: Your orders → Order again shows that order's items at today's prices, where they can change quantities, leave items out and add a note. It arrives as a draft quote for the team to check and send (their account manager is emailed), and then appears under Quotes in their portal to accept. Adverts are booked with Book more adverts instead."],
+  },
+  {
     version: "0.104.0",
     date: "2026-11-18",
     title: "Book more adverts from the portal",
