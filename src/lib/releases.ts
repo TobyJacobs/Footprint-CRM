@@ -11,12 +11,79 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
-    version: "0.102.1",
+    version: "0.109.1",
     date: "2026-11-18",
     title: "Customer portal sign-in: clearer while you wait",
     changes: [
       "Customer portal: the Sign in and \"Email me a sign-in link\" buttons now say \"Signing in…\" or \"Sending…\" while they work, so a slow moment doesn't look like nothing happened.",
       "The \"check your inbox\" screen now says the email can take a few minutes to arrive, so customers wait before asking for another.",
+    ],
+  },
+  {
+    version: "0.109.0",
+    date: "2026-11-18",
+    title: "Control room: each bot can use its own AI account",
+    changes: [
+      "A Claude or Grok bot can now use its own AI key instead of the company one, so each team member's bot runs on (and is paid for by) their own Claude or Grok account. Put the key in Netlify with a name like XAI_API_KEY_JACK or ANTHROPIC_API_KEY_JACK and an admin types that name in the bot's settings.",
+      "Each bot shows which key it uses (its own or the company key) and whether that key is in Netlify yet. Bots without their own key carry on using the company key.",
+      "Only admins can choose a bot's key, so nobody can spend someone else's credit, and only AI keys can be used, so a bot can never reach FootprintOS's other secrets.",
+    ],
+  },
+  {
+    version: "0.108.0",
+    date: "2026-11-18",
+    title: "Control room: group chats and everyone's bots",
+    changes: [
+      "Control room now has its own link in the side menu, under FootprintAI.",
+      "Group chats: choose two or more bots (for example an account manager and a design bot), write the first message and let them talk it through in turns. Join in whenever you like, ask one bot on its own, or let them go for up to 3 rounds. Bots in a group chat only talk; they don't make quotes or send anything.",
+      "Everyone on the FootprintAI list can now connect their own bots (Control room → Connect or manage bots), not just admins. A Claude or Grok bot runs here with your own instructions: to bring over a bot you already use, paste its instructions in. Each bot shows who owns it, and only its owner or an admin can change it.",
+      "Bots that live somewhere else can have their own web address: FootprintOS then sends them requests and group chats, so everyone can ask them in the control room. Each message is signed so the bot knows it came from FootprintOS.",
+      "Only people who can make quotes can give a bot the Quotes skill, and an outside bot can only make a draft quote when the person who asked could make one themselves.",
+    ],
+  },
+  {
+    version: "0.107.0",
+    date: "2026-11-18",
+    title: "AI control room",
+    changes: [
+      "FootprintAI has a new Control room tab. Choose a bot, type what you'd like in plain English (for example \"Quote Riverside Bakery for 1,000 A5 leaflets, same as last time\") and it gets on with it while you watch each step.",
+      "The first bot is the Quote bot. It finds the customer and products, looks at what they ordered before and makes a draft quote. Bots only make drafts: nothing goes to a customer until you've checked it and sent it yourself. Each run lists the drafts it made, with links.",
+      "Every run is logged, so you can see who asked what and exactly what the bot did. The customer's timeline also notes the draft.",
+      "Admins can add bots (Control room → Manage bots). A bot can run on Claude or Grok inside FootprintOS, with its own extra instructions, and be linked to its FootprintAI agent. Bots the team already use elsewhere can connect in as outside bots, each with its own key, and use the same tools.",
+      "Claude bots need an Anthropic key (ANTHROPIC_API_KEY) and Grok bots the xAI key in Netlify. Until a key is added, that bot shows \"Needs its key\".",
+    ],
+  },
+  {
+    version: "0.106.0",
+    date: "2026-11-18",
+    title: "Customer portal: Ask a question assistant",
+    changes: [
+      "Customers signed in to the portal have an \"Ask a question\" bubble in the corner of every page. An AI assistant answers straight away from their own records: where an order is up to, whether a proof is waiting, what's still to pay, when an advert is going in.",
+      "It only sees that customer's own records (the same things the portal shows them) and can't change anything. When it can't help, or they'd rather talk to a person, \"Send to the team\" puts the whole chat into Customer support and emails the support team.",
+      "Lead pipelines → Website chat has a new Customer portal assistant box: switch it on or off, change the greeting and write what it knows about Footprint (opening hours, how proofs and payments work and so on).",
+      "It needs the same xAI (Grok) key as the website chat. Until that's added in Netlify, every question offers \"Send to the team\" instead.",
+    ],
+  },
+  {
+    version: "0.105.0",
+    date: "2026-11-18",
+    title: "Order again from the portal",
+    changes: ["Customers can reorder print and other products from their portal: Your orders → Order again shows that order's items at today's prices, where they can change quantities, leave items out and add a note. It arrives as a draft quote for the team to check and send (their account manager is emailed), and then appears under Quotes in their portal to accept. Adverts are booked with Book more adverts instead."],
+  },
+  {
+    version: "0.104.0",
+    date: "2026-11-18",
+    title: "Book more adverts from the portal",
+    changes: ["Customers signed in to their portal can now book more Forget Me Not adverts: Your adverts → Book more adverts opens the booking page with live prices and availability, without typing their details. Like a website booking, it arrives as a draft advertising quote for the team to check and send, and then appears under Quotes in their portal to accept."],
+  },
+  {
+    version: "0.103.0",
+    date: "2026-11-18",
+    title: "Online advert booking",
+    changes: [
+      "Advertisers can book Forget Me Not adverts online at /book (to be shown on forgetmenotonline.org in place of the Request a Space form): choose editions, an advert size or premium position, how many months and the start month, and see live prices from the rate card and live availability (Taken for premium positions, Limited or Full when an issue is nearly sold).",
+      "Each request arrives as a draft advertising quote (adding the customer if they're new), logged on their timeline, and the team is emailed; the customer gets a we've-received-it email. Check it and send it: the customer accepts on their link, which makes the order and the deposit or full invoice as usual.",
+      "Magazines → Setup has an Online booking box: switch it on or off, choose who booking quotes go to and who's emailed, and copy the code for the website.",
     ],
   },
   {

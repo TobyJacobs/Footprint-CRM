@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { getPortal, portalAttention } from "@/lib/portal";
+import PortalAssistant from "./PortalAssistant";
 import PortalShell from "./PortalShell";
 
 // Signed-in customers: the portal's side menu (laid out like FootprintOS),
-// with a count by anything waiting for them.
+// with a count by anything waiting for them, and the assistant's chat bubble.
 export default async function PortalAccountLayout({ children }: { children: React.ReactNode }) {
   const portal = await getPortal();
   if (!portal) redirect("/portal/login");
@@ -16,6 +17,7 @@ export default async function PortalAccountLayout({ children }: { children: Reac
       badges={{ quotes: waiting.quotes.length, design: waiting.proofs.length, invoices: waiting.invoices.length, marketing: waiting.content.length }}
     >
       {children}
+      <PortalAssistant companies={portal.customers} />
     </PortalShell>
   );
 }
