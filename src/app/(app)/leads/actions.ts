@@ -304,3 +304,21 @@ export async function setChatDealtWith(conversationId: string, dealtWith: boolea
   revalidatePath("/support", "layout");
   redirect(back);
 }
+
+// The customer portal assistant's set-up (Marketing edit, or Customer support
+// edit in the database).
+export async function savePortalAssistant(fd: FormData) {
+  const back = "/leads/chat";
+  await needMarketingEdit(back);
+  const greeting = str(fd, "greeting");
+  if (!greeting) fail(back, "Give the assistant a greeting");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("portal_bot_save_settings", {
+    p_enabled: bool(fd, "enabled"),
+    p_greeting: greeting.slice(0, 500),
+    p_knowledge: (str(fd, "knowledge") ?? "").slice(0, 12000),
+  });
+  if (error) fail(back, error.message);
+  revalidatePath("/leads/chat");
+  redirect("/leads/chat?saved=1");
+}

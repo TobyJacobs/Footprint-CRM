@@ -11,6 +11,17 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.106.0",
+    date: "2026-11-18",
+    title: "Customer portal: Ask a question assistant",
+    changes: [
+      "Customers signed in to the portal have an \"Ask a question\" bubble in the corner of every page. An AI assistant answers straight away from their own records: where an order is up to, whether a proof is waiting, what's still to pay, when an advert is going in.",
+      "It only sees that customer's own records (the same things the portal shows them) and can't change anything. When it can't help, or they'd rather talk to a person, \"Send to the team\" puts the whole chat into Customer support and emails the support team.",
+      "Lead pipelines → Website chat has a new Customer portal assistant box: switch it on or off, change the greeting and write what it knows about Footprint (opening hours, how proofs and payments work and so on).",
+      "It needs the same xAI (Grok) key as the website chat. Until that's added in Netlify, every question offers \"Send to the team\" instead.",
+    ],
+  },
+  {
     version: "0.105.0",
     date: "2026-11-18",
     title: "Order again from the portal",
