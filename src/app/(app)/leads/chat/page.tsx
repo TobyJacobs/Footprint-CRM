@@ -9,7 +9,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { botConfigured } from "@/lib/chat-bot";
 import { siteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
-import { deleteChatWidget, saveChatWidget } from "../actions";
+import { deleteChatWidget, saveChatWidget, savePortalAssistant } from "../actions";
 
 export const metadata: Metadata = { title: "Website chat" };
 
@@ -37,11 +37,13 @@ export default async function WebsiteChatSetupPage(props: PageProps<"/leads/chat
   const canEdit = true;
   const sp = await props.searchParams;
   const supabase = await createClient();
-  const [{ data: widgetRows }, { data: pipelines }, { data: people }] = await Promise.all([
+  const [{ data: widgetRows }, { data: pipelines }, { data: people }, { data: assistantRow }] = await Promise.all([
     supabase.from("chat_widgets").select("*").order("created_at"),
     supabase.from("lead_pipelines").select("id, name").eq("active", true).order("position"),
     supabase.from("profiles").select("id, full_name, email").eq("is_active", true).order("full_name"),
+    supabase.rpc("portal_bot_settings"),
   ]);
+  const assistant = assistantRow as { enabled: boolean; greeting: string; knowledge: string } | null;
   const widgets = (widgetRows ?? []) as Widget[];
   const site = await siteUrl();
   const bot = botConfigured();
@@ -225,6 +227,41 @@ export default async function WebsiteChatSetupPage(props: PageProps<"/leads/chat
               </Link>
             </div>
           ))}
+        {assistant && (
+          <Card
+            title="Customer portal assistant"
+            action={assistant.enabled && bot ? <Badge tone="teal">Grok bot</Badge> : assistant.enabled ? <Badge tone="amber">Waiting for the xAI key</Badge> : <Badge>Switched off</Badge>}
+          >
+            <p className="text-sm text-fp-dark/80">
+              The &ldquo;Ask a question&rdquo; bubble in the customer portal. It answers from what you write below <strong>and</strong> from that customer&apos;s own
+              records (quotes, orders, design work, adverts, invoices, hosting, support). It can&apos;t change anything. &ldquo;Send to the team&rdquo; turns the chat into a
+              conversation in Customer support.
+            </p>
+            <form action={savePortalAssistant} className="mt-4 grid gap-3 text-sm">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" name="enabled" defaultChecked={assistant.enabled} />
+                <span className="font-semibold">Show the assistant in the portal</span>
+              </label>
+              <label className="grid gap-1">
+                <span className="font-semibold">Greeting</span>
+                <input name="greeting" required maxLength={500} defaultValue={assistant.greeting} className={inputClass} />
+              </label>
+              <label className="grid gap-1">
+                <span className="font-semibold">What the assistant knows about Footprint</span>
+                <span className="text-fp-mid">Opening hours, how proofs and payments work, delivery times, who to talk to. It only says what&apos;s here or in the customer&apos;s records.</span>
+                <textarea name="knowledge" rows={8} maxLength={12000} defaultValue={assistant.knowledge} className={inputClass} />
+              </label>
+              <div>
+                <button type="submit" className={primaryButton}>
+                  Save
+                </button>
+              </div>
+            </form>
+            <p className="mt-3 text-xs text-fp-mid">
+              Limits: 20 messages an hour and 60 a day per customer, 3,000 a day in all. Chats are deleted after 90 days (anything sent to the team stays in Customer support).
+            </p>
+          </Card>
+        )}
         <p className="text-xs text-fp-mid">
           Limits keep costs and spam down: 30 messages an hour from one connection, 40 per chat and 2,000 a day per chat box. Chats are deleted after 12 months. The bot only
           writes replies: it can&apos;t book, change or look anything up.

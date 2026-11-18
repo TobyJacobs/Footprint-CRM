@@ -3,8 +3,10 @@
 import { createHash, randomBytes, randomInt } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { askPortalBot, botConfigured, type PortalTurn } from "@/lib/chat-bot";
 import { sendEmail } from "@/lib/email/sendgrid";
-import { PORTAL_COOKIE, PORTAL_EMAIL_COOKIE, PORTAL_SESSION_DAYS, getPortalSession, getPortalTicket, ticketKindLabel, ticketNumber } from "@/lib/portal";
+import { PORTAL_COOKIE, PORTAL_EMAIL_COOKIE, PORTAL_SESSION_DAYS, getPortal, getPortalSession, getPortalTicket, ticketKindLabel, ticketNumber } from "@/lib/portal";
+import { accountSummary } from "@/lib/portal-bot";
 import { siteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
@@ -170,4 +172,89 @@ export async function signOutOfPortal() {
   }
   jar.delete(PORTAL_COOKIE);
   redirect("/portal/login?signedout=1");
+}
+
+// ─── The portal assistant (chat bot) ─────────────────────────────────────────
+// See the portal_chat_bot migration. Only FootprintOS writes the chat (it
+// passes the secret key), so a chat sent to the team is what was really said.
+
+export type BotChat = {
+  enabled: boolean;
+  greeting: string;
+  messages: PortalTurn[];
+  // The bot suggested (or couldn't answer, so) the chat should go to the team.
+  suggestHandover: boolean;
+  error?: string;
+};
+
+const BOT_SORRY = "Sorry, the assistant isn't working right now. You can still send us a message in Support.";
+const BOT_HANDOVER = "I can't answer that one myself, but I can send this chat to the team and they'll get back to you. Just press \"Send to the team\" below.";
+
+async function botHistory(key: string, session: string, extra: Partial<BotChat> = {}): Promise<BotChat> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("portal_bot_history", { p_key: key, p_session: session });
+  if (error || !data) return { enabled: false, greeting: "", messages: [], suggestHandover: false, error: BOT_SORRY };
+  const d = data as { enabled: boolean; greeting: string; messages: PortalTurn[] };
+  return { enabled: d.enabled, greeting: d.greeting, messages: d.messages, suggestHandover: false, ...extra };
+}
+
+export async function loadPortalBot(): Promise<BotChat> {
+  const key = process.env.PORTAL_LINK_KEY;
+  const session = await getPortalSession();
+  if (!key || !session) return { enabled: false, greeting: "", messages: [], suggestHandover: false, error: BOT_SORRY };
+  return botHistory(key, session);
+}
+
+export async function sendPortalBot(text: string): Promise<BotChat> {
+  const key = process.env.PORTAL_LINK_KEY;
+  const session = await getPortalSession();
+  if (!key || !session) return { enabled: false, greeting: "", messages: [], suggestHandover: false, error: BOT_SORRY };
+  const body = String(text ?? "").trim().slice(0, 1000);
+  if (!body) return botHistory(key, session);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("portal_bot_message", { p_key: key, p_session: session, p_body: body });
+  if (error || !data) {
+    const shown: Record<string, string> = {
+      "Too many messages": "That's a lot of messages! Please send this chat to the team, or try again a bit later.",
+      "The assistant is switched off": "The assistant is switched off at the moment. You can still send us a message in Support.",
+      "Please sign in again": "Please sign in again.",
+    };
+    if (!shown[error?.message ?? ""]) console.error("Portal assistant refused:", error?.message);
+    return botHistory(key, session, { error: shown[error?.message ?? ""] ?? BOT_SORRY });
+  }
+  const m = data as { knowledge: string; history: PortalTurn[] };
+  const portal = await getPortal();
+  const answer = botConfigured() && portal ? await askPortalBot(m.knowledge, accountSummary(portal), m.history) : null;
+  const reply = answer?.reply ?? BOT_HANDOVER;
+  await supabase.rpc("portal_bot_reply", { p_key: key, p_session: session, p_body: reply });
+  return botHistory(key, session, { suggestHandover: !answer || answer.handover });
+}
+
+export async function clearPortalBot(): Promise<BotChat> {
+  const key = process.env.PORTAL_LINK_KEY;
+  const session = await getPortalSession();
+  if (!key || !session) return { enabled: false, greeting: "", messages: [], suggestHandover: false, error: BOT_SORRY };
+  const supabase = await createClient();
+  await supabase.rpc("portal_bot_clear", { p_key: key, p_session: session });
+  return botHistory(key, session);
+}
+
+// Send the chat to the team as a Customer support conversation. Returns its
+// id (to link to), or an error to show.
+export async function handOverPortalBot(customerId: string): Promise<{ ticketId?: string; error?: string }> {
+  const key = process.env.PORTAL_LINK_KEY;
+  const session = await getPortalSession();
+  if (!key || !session) return { error: BOT_SORRY };
+  const supabase = await createClient();
+  const { data: id, error } = await supabase.rpc("portal_bot_handover", { p_key: key, p_session: session, p_customer_id: customerId });
+  if (error || typeof id !== "string") {
+    const known = ["Please type a message first", "Not allowed", "Please sign in again"];
+    if (error?.message?.startsWith("You've sent a lot")) return { error: error.message };
+    if (!known.includes(error?.message ?? "")) console.error("Portal assistant handover refused:", error?.message);
+    return { error: known.includes(error?.message ?? "") ? error!.message : BOT_SORRY };
+  }
+  const ticket = await getPortalTicket(id);
+  await alertSupportTeam(id, "A customer has sent a chat from the portal assistant.", ticket?.messages[0]?.body ?? "");
+  return { ticketId: id };
 }
