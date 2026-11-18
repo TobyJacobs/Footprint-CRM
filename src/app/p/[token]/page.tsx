@@ -3,6 +3,7 @@ import { CheckCircle2, ExternalLink, PencilLine } from "lucide-react";
 import { inputClass } from "@/components/ui";
 import { longDate } from "@/lib/customers/display";
 import { createClient } from "@/lib/supabase/server";
+import PortalBackBar from "@/components/PortalBackBar";
 import { respondToProof } from "./actions";
 
 export const metadata: Metadata = { title: "Your design proof", robots: { index: false, follow: false } };
@@ -30,6 +31,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-fp-offwhite">
       <div className="bg-fp-gradient h-1" />
+      <PortalBackBar section="design" />
       <main className="mx-auto max-w-4xl px-4 py-8">{children}</main>
     </div>
   );

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PrintButton from "@/components/PrintButton";
 import PrintableDocument, { type PrintableData } from "@/components/PrintableDocument";
 import { createClient } from "@/lib/supabase/server";
+import PortalBackBar from "@/components/PortalBackBar";
 
 export const metadata: Metadata = { title: "Your document", robots: { index: false, follow: false } };
 
@@ -45,6 +46,7 @@ export default async function PublicDocumentPage(props: PageProps<"/d/[token]">)
   return (
     <div className="min-h-screen bg-fp-offwhite print:bg-white">
       <div className="bg-fp-gradient h-1 print:hidden" />
+      <PortalBackBar section={doc?.doc_type === "sales_order" ? "orders" : "invoices"} />
       <main className="mx-auto max-w-4xl px-4 py-8 print:p-0">
         {!doc ? (
           <div className="rounded-lg bg-white p-8 text-center shadow-sm">

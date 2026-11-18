@@ -4,6 +4,12 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 18 November 2026: Portal back button
+- Owner asked for a back button in the portal when viewing quotes etc. Built 0.110.0: a back bar on quote, order/invoice and proof pages for signed-in portal customers. Merged at the owner's request (#170) and checked live. Raised Next.js security upgrade notice.
+
+## 18 November 2026 - Connected agents, step 1
+- Owner wants a control room where the 4 members' own agents (Claude, Grok, Magnific…) connect and work together. Proposed 4 steps; built step 1, each bot's own AI key (0.109.0, #169): database checks, type check, lint, build; merged, checked live, Roadmap ticked. Grok error was the xAI team's credit/spending limit (402). Owner: everyone is on the company Claude and Grok accounts; asked for the Control room to look like Team chat.
+
 ## 18 November 2026 - AI control room
 - Owner asked for a control room to run the team's bots (e.g. "get the quote bot to do this"); answers: Claude and Grok bots, Quote bot first, drafts only, outside bots too. Built 0.107.0 (#167): control room, Quote bot, run log, outside-bot keys and API. Then owner asked for a side-menu link, group chats where bots talk to each other, and for every AI team member to connect their own bots usable by everyone: 0.108.0 (#168). Local database checks and fake-AI engine checks passed; build needed the usual retry (Next.js security check). Both live; database checked by API; roadmap tasks added and ticked.
 
