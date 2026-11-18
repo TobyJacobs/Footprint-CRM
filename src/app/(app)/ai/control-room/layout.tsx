@@ -22,7 +22,7 @@ export default async function ControlRoomLayout({ children }: LayoutProps<"/ai/c
     state: !b.active ? "off" : (b.engine === "outside" ? !!b.webhook_url : botReady(b)) ? "ready" : "waiting",
   }));
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl bg-fp-black shadow-2xl ring-1 ring-black/10 lg:h-[calc(100dvh-14rem)] lg:min-h-[600px] lg:flex-row">
+    <div className="flex flex-col overflow-hidden rounded-2xl bg-fp-black shadow-2xl ring-1 ring-black/10 lg:h-[calc(100dvh-17rem)] lg:min-h-[600px] lg:flex-row">
       <ControlRail
         bots={railBots}
         chats={(chats ?? []).map((c) => ({ id: c.id, title: c.title }))}

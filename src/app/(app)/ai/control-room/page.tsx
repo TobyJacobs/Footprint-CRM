@@ -44,7 +44,7 @@ export default async function ControlRoomPage(props: PageProps<"/ai/control-room
   const stats = [
     { label: "Bots online", value: `${all.filter((b) => b.active && ready(b)).length}/${all.length}`, icon: Bot },
     { label: "Runs today", value: String(runsToday), icon: Zap },
-    { label: "Drafts made (last 30 runs)", value: String(drafts), icon: FileText },
+    { label: "Drafts made", value: String(drafts), icon: FileText },
     { label: "Group chats", value: String(chatCount ?? 0), icon: MessagesSquare },
   ];
 
@@ -143,8 +143,8 @@ export default async function ControlRoomPage(props: PageProps<"/ai/control-room
                 >
                   <BotAvatar name={b.name} engine={b.engine} size="lg" />
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2">
-                      <span className="truncate font-bold group-hover:text-fp-pink">{b.name}</span>
+                    <span className="flex items-start gap-2">
+                      <span className="break-words font-bold group-hover:text-fp-pink">{b.name}</span>
                       <StatusLight status={state} />
                     </span>
                     {b.description && <span className="mt-0.5 line-clamp-2 block text-xs text-fp-dark/80">{b.description}</span>}
