@@ -23,14 +23,17 @@ const footprintSites = [
   "https://*.footprintgroup.uk",
 ];
 
+// FootprintOS's live address (owner, 18 November 2026; was footprintgroupos.netlify.app).
+const LIVE_SITE = "https://os.footprintgroup.uk";
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   env: {
-    // The site's own address (used by src/lib/site-url.ts). Netlify provides
-    // these while building: URL is the main address, DEPLOY_PRIME_URL a
-    // preview's. Empty when running on a computer.
-    SITE_URL:
-      (process.env.CONTEXT === "production" ? process.env.URL : process.env.DEPLOY_PRIME_URL) ?? "",
+    // The site's own address (used by src/lib/site-url.ts): the live site is
+    // always https://os.footprintgroup.uk (owner, 18 November 2026), whichever
+    // address someone used to reach it. A preview uses its own address
+    // (DEPLOY_PRIME_URL, from Netlify while building). Empty on a computer.
+    SITE_URL: process.env.CONTEXT === "production" ? LIVE_SITE : (process.env.DEPLOY_PRIME_URL ?? ""),
   },
   headers() {
     return [
