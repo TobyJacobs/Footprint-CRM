@@ -11,12 +11,20 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
-    version: "0.111.1",
+    version: "0.111.2",
     date: "2026-11-18",
     title: "Control room: tidy-ups to the new look",
     changes: [
       "On phones the \"What needs doing?\" box now comes first, with the bots, group chats and runs underneath.",
       "The control room now fits the screen without the page scrolling, long bot names wrap instead of being cut off, and the drafts number has a shorter label.",
+    ],
+  },
+  {
+    version: "0.111.1",
+    date: "2026-11-18",
+    title: "Security update",
+    changes: [
+      "Behind the scenes: updated Next.js (the framework FootprintOS is built on) from 16.4.2 to 16.4.6 to fix a known security problem. Nothing looks or works differently.",
     ],
   },
   {
