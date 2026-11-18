@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 18 November 2026 - AI control room
+- Owner asked for a control room to run the team's bots (e.g. "get the quote bot to do this"); answers: Claude and Grok bots, Quote bot first, drafts only, outside bots too. Built 0.107.0 (#167): control room, Quote bot, run log, outside-bot keys and API. Then owner asked for a side-menu link, group chats where bots talk to each other, and for every AI team member to connect their own bots usable by everyone: 0.108.0 (#168). Local database checks and fake-AI engine checks passed; build needed the usual retry (Next.js security check). Both live; database checked by API; roadmap tasks added and ticked.
+
 ## 18 November 2026 - Portal assistant
 - Owner asked for a chat bot in the customer portal; chose "their own account" (it can read the customer's own records). Built the Ask a question assistant: 14 database checks, type check, lint, build; live as 0.106.0 (#165). Renumbered twice (other sessions took 0.103.0–0.105.0 and migrations 20261226/27). Mistake: first PR (#163) targeted the old setup/claude-brief-and-memory branch and merged there; redone into main. Tested live with the owner's OK (in the owner's tj holds portal, as the browser was already signed in there): send, fallback, Send to the team → SUP-0003 with the full chat; test ticket, chat and a throwaway test customer deleted; Roadmap ticked. Xero connect still waiting on the owner fixing the app's Redirect URI.
 

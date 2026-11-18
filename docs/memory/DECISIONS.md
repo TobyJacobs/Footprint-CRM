@@ -423,3 +423,9 @@ This refines the "Supabase, London region" part of the technical foundations dec
 
 ## 18 November 2026 - Customer portal assistant (chat bot)
 **Decision (owner):** a chat bot in the customer portal that can answer from the signed-in customer's **own account** (chosen over general questions only, or a live chat with staff). **Claude's design:** same Grok engine as the website chat; it gets only what portal_overview already shows that customer (no links or codes) and can't change anything; "Send to the team" turns the chat into a Customer support ticket (only FootprintOS writes chats, via PORTAL_LINK_KEY, so the transcript is genuine). Set-up sits next to the website chat boxes (Marketing edit; Customer support edit allowed in the database). Chats deleted after 90 days; 20 messages an hour and 60 a day per customer, 3,000 a day in all. UK GDPR: customer account details go to xAI to write answers; the privacy notice needs a line saying so. PR #165 (0.106.0).
+
+## 18 November 2026 - AI control room
+- Bots only make drafts; a person checks and sends. Bots do work only through database functions that check the bot's skills and the asker's permissions, and log every step.
+- No AI keys in the database: company keys stay in Netlify (ANTHROPIC_API_KEY, XAI_API_KEY). Team members' Claude/Grok bots run on the company keys with their own instructions. Outside bots get a FootprintOS key (only its hash stored) and messages to them are signed with a secret derived from PORTAL_LINK_KEY.
+- Runs go one step per server call so no single request runs long on Netlify.
+- Group chats: bots only talk (no tools) in the first version.
