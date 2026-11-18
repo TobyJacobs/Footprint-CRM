@@ -11,12 +11,49 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
-    version: "0.109.1",
+    version: "0.111.3",
     date: "2026-11-18",
     title: "Customer portal sign-in: clearer while you wait",
     changes: [
       "Customer portal: the Sign in and \"Email me a sign-in link\" buttons now say \"Signing in…\" or \"Sending…\" while they work, so a slow moment doesn't look like nothing happened.",
       "The \"check your inbox\" screen now says the email can take a few minutes to arrive, so customers wait before asking for another.",
+    ],
+  },
+  {
+    version: "0.111.2",
+    date: "2026-11-18",
+    title: "Control room: tidy-ups to the new look",
+    changes: [
+      "On phones the \"What needs doing?\" box now comes first, with the bots, group chats and runs underneath.",
+      "The control room now fits the screen without the page scrolling, long bot names wrap instead of being cut off, and the drafts number has a shorter label.",
+    ],
+  },
+  {
+    version: "0.111.1",
+    date: "2026-11-18",
+    title: "Security update",
+    changes: [
+      "Behind the scenes: updated Next.js (the framework FootprintOS is built on) from 16.4.2 to 16.4.6 to fix a known security problem. Nothing looks or works differently.",
+    ],
+  },
+  {
+    version: "0.111.0",
+    date: "2026-11-18",
+    title: "Control room: new look",
+    changes: [
+      "The Control room has a new look, laid out like Team chat: a dark panel down the side with every bot (a green light when it's ready), the group chats and the latest runs, and the work area on the right.",
+      "The front page has a bigger \"What needs doing?\" box: pick a bot, type the job and send it. Below it: numbers at a glance (bots online, runs today, drafts made, group chats), the team of bots with their skills, and the latest activity.",
+      "Group chats look like Team chat rooms, with each bot's badge, the newest message at the bottom and the box to join in underneath.",
+      "Each run shows the request as a message, what the bot did as a live log (with times) and its answer underneath, with any drafts to check in between.",
+    ],
+  },
+  {
+    version: "0.110.0",
+    date: "2026-11-18",
+    title: "Customer portal: back button on quotes, orders, invoices and proofs",
+    changes: [
+      "When a customer signed in to the portal opens a quote, order, invoice or design proof, a bar at the top takes them back (\"Back to your quotes\", \"…orders\", \"…invoices\" or \"…design work\"), with a link to the portal's Overview.",
+      "Customers who open those links straight from an email without being signed in see the page as before.",
     ],
   },
   {

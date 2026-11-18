@@ -7,6 +7,7 @@ import { loadPeople } from "@/lib/design/jobs";
 import { createClient } from "@/lib/supabase/server";
 import { saveBot } from "../actions";
 import BotForm from "./BotForm";
+import { Pane } from "../parts";
 
 export const metadata: Metadata = { title: "Bots · Control room" };
 
@@ -22,7 +23,7 @@ export default async function BotsPage(props: PageProps<"/ai/control-room/bots">
     loadPeople(supabase),
   ]);
   return (
-    <div className="grid max-w-3xl gap-6">
+    <Pane>
       <Link href="/ai/control-room" className="text-sm font-semibold text-fp-teal-deep hover:underline">
         ← Control room
       </Link>
@@ -54,6 +55,6 @@ export default async function BotsPage(props: PageProps<"/ai/control-room/bots">
         </p>
         <BotForm action={saveBot.bind(null, null)} agents={agents ?? []} submitLabel="Add bot" canQuote={user.can("quotes", "edit")} />
       </Card>
-    </div>
+    </Pane>
   );
 }
