@@ -26,7 +26,14 @@ export default function FootprintAiTabs({
         ]
       : []),
     ...(agents
-      ? [{ href: "/ai", label: "Agents & systems", active: pathname === "/ai" || (pathname.startsWith("/ai/") && !pathname.startsWith("/ai/members")) }]
+      ? [
+          {
+            href: "/ai",
+            label: "Agents & systems",
+            active: pathname === "/ai" || (pathname.startsWith("/ai/") && !pathname.startsWith("/ai/members") && !pathname.startsWith("/ai/control-room")),
+          },
+          { href: "/ai/control-room", label: "Control room", active: pathname.startsWith("/ai/control-room") },
+        ]
       : []),
     ...(transition && transitionFull
       ? [{ href: "/transition/people", label: "Transition invite list", active: pathname.startsWith("/transition/people") }]
