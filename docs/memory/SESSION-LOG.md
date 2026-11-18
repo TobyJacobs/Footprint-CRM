@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 18 November 2026 - Portal assistant
+- Owner asked for a chat bot in the customer portal; chose "their own account" (it can read the customer's own records). Built the Ask a question assistant: 14 database checks, type check, lint, build; live as 0.106.0 (#165). Renumbered twice (other sessions took 0.103.0–0.105.0 and migrations 20261226/27). Mistake: first PR (#163) targeted the old setup/claude-brief-and-memory branch and merged there; redone into main. Xero connect still waiting on the owner fixing the app's Redirect URI.
+
 ## 18 November 2026
 - Online advert booking (owner: request then team confirms; one booking page; availability = space + premium spots): live (0.103.0, #162). /book with live prices from the rate card and availability; requests become draft advertising quotes. After merge: set who booking quotes go to (Magazines → Setup → Online booking), paste the embed code on forgetmenotonline.org in place of the GoHighLevel Request a Space form. Build noted Next.js 16.4.2 has a known security vulnerability (owner to decide on an upgrade). Then: portal Book more adverts live (0.104.0, #164) and Order again live (0.105.0, #166).
 
