@@ -207,7 +207,7 @@ _Earlier snapshot (1 October 2026): Wave 1 — Customers went live for the demo 
 - Official logo files, ideally SVG (optional; the website logo is in use).
 
 ## Key IDs (not secret)
-- Netlify site: `footprintgroupos` → https://footprintgroupos.netlify.app (renamed from `footprinthub` on 6 October 2026; the old address no longer works)
+- Netlify site: `footprintgroupos`. **Live address: https://os.footprintgroup.uk** (owner, 18 November 2026; fixed in next.config.ts as LIVE_SITE, so every emailed/shown link uses it). The old https://footprintgroupos.netlify.app still opens the site. (Renamed from `footprinthub` on 6 October 2026.)
 - Supabase test project ref: `ifspqkcdatruybgzygic` (Frankfurt; the live site uses this one for now)
 - Supabase live project ref: `khjcplhuenureeobvzqo` (London, "FootprintOS - Live"; nothing uses it yet)
 - Entra app (client) ID: `40bb9fdf-798e-4644-a888-b0e2e788f495`

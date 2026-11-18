@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 // don't trust the address a request came in on, because Netlify's skew
 // protection can answer from a release-specific address
 // (<release id>--footprintgroupos.netlify.app), and sign-in or links sent from
-// there wouldn't work on the main address.
+// there wouldn't work on the main address (https://os.footprintgroup.uk).
 export async function siteUrl(): Promise<string> {
   if (process.env.SITE_URL) return process.env.SITE_URL;
   // Running on a computer (not Netlify): use the address in the browser.

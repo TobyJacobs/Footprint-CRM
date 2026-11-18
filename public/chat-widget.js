@@ -1,5 +1,5 @@
 /* FootprintOS website chat bubble. Paste on a website:
-   <script src="https://footprintgroupos.netlify.app/chat-widget.js" data-chat="PUBLIC_ID" async></script> */
+   <script src="https://os.footprintgroup.uk/chat-widget.js" data-chat="PUBLIC_ID" async></script> */
 (function () {
   var s = document.currentScript;
   if (!s) return;

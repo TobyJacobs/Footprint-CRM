@@ -14,6 +14,9 @@ import {
 // and "/c/" (with /chat-widget.js) the website chat. "/api/email-events" is
 // SendGrid's delivery reports (checked against SendGrid's signature), and
 // "/api/control-room" is where outside bots connect (checked against each bot's key).
+const OLD_HOST = "footprintgroupos.netlify.app";
+const NEW_SITE = "https://os.footprintgroup.uk";
+
 const PUBLIC_PATHS = ["/login", "/auth/", "/q/", "/d/", "/p/", "/api/cron/", "/invite/", "/portal", "/read/", "/f/", "/c/", "/book", "/chat-widget.js", "/api/email-events", "/api/control-room"];
 
 // Runs before every page request: keeps the login session fresh and sends
@@ -21,6 +24,15 @@ const PUBLIC_PATHS = ["/login", "/auth/", "/q/", "/d/", "/p/", "/api/cron/", "/i
 // in the pages and in the database; this is only the first line of defence.
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // The old address forwards to the new one (owner, 18 November 2026), so
+  // bookmarks and old links keep working and sign-in always finishes on
+  // os.footprintgroup.uk. Only the plain old address: release-specific
+  // addresses (<release>--footprintgroupos.netlify.app) and previews are left
+  // alone, and so is /api/ (other services' calls work on either address).
+  if (request.headers.get("host")?.toLowerCase() === OLD_HOST && !pathname.startsWith("/api/")) {
+    return NextResponse.redirect(`${NEW_SITE}${pathname}${request.nextUrl.search}`, 308);
+  }
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
   if (!isSupabaseConfigured) {

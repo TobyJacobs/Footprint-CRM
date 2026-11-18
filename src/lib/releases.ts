@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.111.4",
+    date: "2026-11-18",
+    title: "New address: os.footprintgroup.uk",
+    changes: [
+      "FootprintOS's address is now os.footprintgroup.uk. Every link it sends or shows uses it: emails, quote and invoice links, sign-in, the chat and booking embed codes, and Xero.",
+      "The old footprintgroupos.netlify.app address now forwards to os.footprintgroup.uk, so bookmarks and old links still work.",
+    ],
+  },
+  {
     version: "0.111.3",
     date: "2026-11-18",
     title: "Customer portal sign-in: clearer while you wait",

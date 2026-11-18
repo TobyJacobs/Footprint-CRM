@@ -144,7 +144,7 @@ ${(opts.table.foot ?? []).map((r) => `<tr>${r.map((v, i) => cell(v, i, "td", tru
 // block built-in images); the stripe falls back to pink where gradients
 // aren't supported.
 export function emailShell(bodyHtml: string, companyName: string) {
-  const site = process.env.SITE_URL || "https://footprintgroupos.netlify.app";
+  const site = process.env.SITE_URL || "https://os.footprintgroup.uk";
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;background:#f7f7f7;font-family:Montserrat,Arial,sans-serif;color:#000">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f7f7;padding:24px 0"><tr><td align="center">
