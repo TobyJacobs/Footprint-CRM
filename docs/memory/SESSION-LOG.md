@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 16-18 November 2026: Portal sign-in email delay
+- Owner's portal sign-in email took ~5 minutes (SendGrid → iCloud, not FootprintOS). Added "Signing in…"/"Sending…" buttons and a "can take a few minutes" note (0.111.3, #160). Merged at the owner's request.
+
 ## 18 November 2026: Next.js security update
 - Owner approved the Next.js security upgrade: 16.4.2 → 16.4.6 (0.111.1). Build/type check/lint clean, security notice gone, production build smoke-tested locally. Merged and live. Found sign-in broken: site address switched to os.footprintgroup.uk but Supabase redirect URLs didn't include it (fell back to localhost). Fixed with the owner's go-ahead (Supabase Site URL + redirect URL, done in the owner's Chrome); sign-in re-tested live.
 

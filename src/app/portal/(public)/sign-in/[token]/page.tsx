@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import SubmitButton from "@/components/SubmitButton";
 import { primaryButton } from "@/components/ui";
 import { signInWithLink } from "@/app/portal/actions";
 
@@ -13,9 +14,9 @@ export default async function PortalSignInPage(props: PageProps<"/portal/sign-in
       <h1 className="text-xl font-black">Sign in to your customer portal</h1>
       <p className="mt-2 text-sm text-fp-dark/75">Click below to finish signing in.</p>
       <form action={signInWithLink.bind(null, token)} className="mt-6">
-        <button type="submit" className={`${primaryButton} w-full`}>
+        <SubmitButton pendingLabel="Signing in…" className={`${primaryButton} w-full`}>
           Sign in
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );

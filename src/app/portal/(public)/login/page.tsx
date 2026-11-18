@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import SubmitButton from "@/components/SubmitButton";
 import { inputClass, primaryButton } from "@/components/ui";
 import { getPortal } from "@/lib/portal";
 import { requestPortalLink, signInWithCode } from "@/app/portal/actions";
@@ -41,8 +42,11 @@ export default async function PortalLoginPage(props: PageProps<"/portal/login">)
           <div role="status" className="mt-6 rounded-md border border-fp-teal-deep/30 bg-fp-teal/10 px-4 py-3 text-sm text-fp-teal-deep">
             <p className="font-semibold">Check your inbox.</p>
             <p className="mt-1">
-              If that email address is one we have for you, we&apos;ve sent a sign-in link and a 6-digit code. They work once, for 30 minutes. Nothing
-              arrived? Check your junk folder, or contact us.
+              If that email address is one we have for you, we&apos;ve sent a sign-in link and a 6-digit code. They work once, for 30 minutes.
+            </p>
+            <p className="mt-1">
+              The email can take a few minutes to arrive, so please wait before asking for another. Still nothing? Check your junk folder, or
+              contact us.
             </p>
           </div>
           <form action={signInWithCode} className="mt-6 grid gap-3">
@@ -59,9 +63,9 @@ export default async function PortalLoginPage(props: PageProps<"/portal/login">)
                 className={`${inputClass} text-center text-2xl font-bold tracking-[0.4em]`}
               />
             </label>
-            <button type="submit" className={primaryButton}>
+            <SubmitButton pendingLabel="Signing in…" className={primaryButton}>
               Sign in
-            </button>
+            </SubmitButton>
             <Link href="/portal/login" className="text-center text-xs font-semibold text-fp-teal-deep hover:underline">
               Use a different email, or send a new code
             </Link>
@@ -73,9 +77,9 @@ export default async function PortalLoginPage(props: PageProps<"/portal/login">)
             <span className="font-semibold">Your email address</span>
             <input name="email" type="email" required autoComplete="email" className={inputClass} />
           </label>
-          <button type="submit" className={primaryButton}>
+          <SubmitButton pendingLabel="Sending…" className={primaryButton}>
             Email me a sign-in link
-          </button>
+          </SubmitButton>
           <p className="text-xs text-fp-mid">Use the email address we have for you as a contact.</p>
         </form>
       )}

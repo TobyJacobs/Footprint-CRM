@@ -11,6 +11,15 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.111.3",
+    date: "2026-11-18",
+    title: "Customer portal sign-in: clearer while you wait",
+    changes: [
+      "Customer portal: the Sign in and \"Email me a sign-in link\" buttons now say \"Signing in…\" or \"Sending…\" while they work, so a slow moment doesn't look like nothing happened.",
+      "The \"check your inbox\" screen now says the email can take a few minutes to arrive, so customers wait before asking for another.",
+    ],
+  },
+  {
     version: "0.111.2",
     date: "2026-11-18",
     title: "Control room: tidy-ups to the new look",
