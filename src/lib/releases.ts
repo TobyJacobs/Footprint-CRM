@@ -16,7 +16,7 @@ export const releases: Release[] = [
     title: "New address: os.footprintgroup.uk",
     changes: [
       "FootprintOS's address is now os.footprintgroup.uk. Every link it sends or shows uses it: emails, quote and invoice links, sign-in, the chat and booking embed codes, and Xero.",
-      "The old footprintgroupos.netlify.app address still opens FootprintOS for now.",
+      "The old footprintgroupos.netlify.app address now forwards to os.footprintgroup.uk, so bookmarks and old links still work.",
     ],
   },
   {
