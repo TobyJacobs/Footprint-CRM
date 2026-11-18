@@ -11,6 +11,12 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.104.0",
+    date: "2026-11-18",
+    title: "Book more adverts from the portal",
+    changes: ["Customers signed in to their portal can now book more Forget Me Not adverts: Your adverts → Book more adverts opens the booking page with live prices and availability, without typing their details. Like a website booking, it arrives as a draft advertising quote for the team to check and send, and then appears under Quotes in their portal to accept."],
+  },
+  {
     version: "0.103.0",
     date: "2026-11-18",
     title: "Online advert booking",
