@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 18 November 2026
+- Online advert booking (owner: request then team confirms; one booking page; availability = space + premium spots): PR #162 (0.103.0). /book with live prices from the rate card and availability; requests become draft advertising quotes. After merge: set who booking quotes go to (Magazines → Setup → Online booking), paste the embed code on forgetmenotonline.org in place of the GoHighLevel Request a Space form. Build noted Next.js 16.4.2 has a known security vulnerability (owner to decide on an upgrade).
+
 ## 16 November 2026: Live portal test
 - With the owner: test customer + contact on live, welcome email arrived, owner signed in to the portal (as tj holds), every page checked, test customer deleted, Roadmap ticked.
 
