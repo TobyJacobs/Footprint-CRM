@@ -29,9 +29,9 @@ export default function RunDriver({ runId }: { runId: string }) {
 
   if (!working) return null;
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-md border border-fp-amber/40 bg-fp-amber/10 px-4 py-3 text-sm">
-      <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-fp-dark/30 border-t-fp-dark" aria-hidden />
-      <span className="flex-1">The bot is working on it. Keep this page open.</span>
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-fp-amber/40 bg-fp-amber/10 px-4 py-3 text-sm">
+      <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-fp-amber/30 border-t-fp-amber" aria-hidden />
+      <span className="flex-1 font-semibold">On it. Keep this page open while it works.</span>
       <button
         type="button"
         className={secondaryButton}
