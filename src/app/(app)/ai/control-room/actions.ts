@@ -3,8 +3,8 @@
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requirePermission } from "@/lib/auth";
-import { isEngine, isSafeWebhookUrl, isSkill, type ChatLine } from "@/lib/ai/bot-tools";
+import { getCurrentUser, requirePermission } from "@/lib/auth";
+import { isBotKeyName, isEngine, isSafeWebhookUrl, isSkill, type ChatLine } from "@/lib/ai/bot-tools";
 import { chatReply, stepRun, type RunBot, type StepOutcome } from "@/lib/ai/control-room";
 import { loadPeople } from "@/lib/design/jobs";
 import { str } from "@/lib/forms";
@@ -46,7 +46,7 @@ export async function continueRun(runId: string): Promise<StepOutcome> {
   const { data: user } = await supabase.auth.getUser();
   const { data: run } = await supabase
     .from("ai_bot_runs")
-    .select("id, request, conversation, turns, status, requested_by, source, ai_bots(id, name, engine, model, instructions, skills, webhook_url)")
+    .select("id, request, conversation, turns, status, requested_by, source, ai_bots(id, name, engine, model, instructions, skills, webhook_url, key_name)")
     .eq("id", runId)
     .single();
   if (!run || run.requested_by !== user.user?.id || run.source !== "control_room") return { status: "failed", reply: "Only the person who asked can run this" };
@@ -81,6 +81,12 @@ export async function saveBot(botId: string | null, fd: FormData) {
   if (webhook && !isSafeWebhookUrl(webhook)) fail(back, "The web address must start https:// and be a public address");
   const skills = fd.getAll("skills").filter(isSkill);
   const project = str(fd, "ai_project_id");
+  // Its own AI key's name (admins only; the database checks this too).
+  const keyName = str(fd, "key_name")?.toUpperCase() ?? null;
+  if (keyName && !isBotKeyName(engine, keyName)) {
+    fail(back, engine === "outside" ? "Outside bots use their own key, not one in Netlify" : `The key name must start ${engine === "claude" ? "ANTHROPIC_API_KEY_" : "XAI_API_KEY_"} and use only capital letters, numbers and _`);
+  }
+  const user = await getCurrentUser();
   const fields = {
     name,
     engine,
@@ -93,6 +99,12 @@ export async function saveBot(botId: string | null, fd: FormData) {
     active: fd.get("active") === "on",
   };
   const supabase = await createClient();
+  if (user.isAdmin) Object.assign(fields, { key_name: keyName });
+  else if (botId) {
+    // Not an admin: keep the bot's key, unless it no longer fits the engine.
+    const { data: old } = await supabase.from("ai_bots").select("key_name").eq("id", botId).maybeSingle();
+    if (old?.key_name && !isBotKeyName(engine, old.key_name)) Object.assign(fields, { key_name: null });
+  }
   if (botId) {
     const { data, error } = await supabase.from("ai_bots").update(fields).eq("id", botId).select("id");
     if (error) fail(back, error.message);
@@ -160,7 +172,7 @@ export async function botTurn(chatId: string, botId: string): Promise<{ ok: bool
   const supabase = await createClient();
   const [{ data: chat }, { data: members }, { data: messages }, { nameOf }] = await Promise.all([
     supabase.from("ai_chats").select("id, title").eq("id", chatId).maybeSingle(),
-    supabase.from("ai_chat_bots").select("bot_id, ai_bots(id, name, engine, model, instructions, skills, webhook_url, active)").eq("chat_id", chatId),
+    supabase.from("ai_chat_bots").select("bot_id, ai_bots(id, name, engine, model, instructions, skills, webhook_url, key_name, active)").eq("chat_id", chatId),
     supabase.from("ai_chat_messages").select("author_id, bot_id, body, created_at").eq("chat_id", chatId).order("created_at", { ascending: false }).limit(40),
     loadPeople(supabase),
   ]);

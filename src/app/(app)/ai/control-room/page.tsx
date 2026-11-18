@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Badge, Card, Field, Notice, inputClass, primaryButton } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { engineLabel, type BotEngine } from "@/lib/ai/bot-tools";
-import { engineReady } from "@/lib/ai/control-room";
+import { botKeyName, botReady } from "@/lib/ai/control-room";
 import { shortDateTime } from "@/lib/customers/display";
 import { loadPeople } from "@/lib/design/jobs";
 import { createClient } from "@/lib/supabase/server";
@@ -19,7 +19,7 @@ export default async function ControlRoomPage(props: PageProps<"/ai/control-room
   const sp = await props.searchParams;
   const supabase = await createClient();
   const [{ data: bots }, { data: runs }, { nameOf }] = await Promise.all([
-    supabase.from("ai_bots").select("id, name, engine, model, skills, active, description, webhook_url, owner_id").order("name"),
+    supabase.from("ai_bots").select("id, name, engine, model, skills, active, description, webhook_url, owner_id, key_name").order("name"),
     supabase
       .from("ai_bot_runs")
       .select("id, request, status, source, requested_by, created_at, draft_ids, ai_bots(name)")
@@ -33,9 +33,8 @@ export default async function ControlRoomPage(props: PageProps<"/ai/control-room
     .order("updated_at", { ascending: false })
     .limit(15);
   const inHouse = (bots ?? []).filter((b) => b.active && (b.engine === "claude" || b.engine === "grok" || b.webhook_url));
-  const ready = (b: { engine: string; webhook_url: string | null }) =>
-    b.engine === "claude" ? engineReady.claude() : b.engine === "grok" ? engineReady.grok() : !!b.webhook_url;
-  const notReady = [...new Set(inHouse.filter((b) => b.engine !== "outside" && !ready(b)).map((b) => b.engine as "claude" | "grok"))];
+  const ready = (b: { engine: string; webhook_url: string | null; key_name: string | null }) => (b.engine === "outside" ? !!b.webhook_url : botReady(b));
+  const notReady = inHouse.filter((b) => b.engine !== "outside" && !ready(b));
 
   return (
     <div className="grid gap-6">
@@ -63,8 +62,8 @@ export default async function ControlRoomPage(props: PageProps<"/ai/control-room
             </p>
             {notReady.length > 0 && (
               <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                {notReady.map((e) => (e === "claude" ? "Claude" : "Grok")).join(" and ")} isn&apos;t connected yet: an admin needs to add{" "}
-                {notReady.map((e) => (e === "claude" ? "ANTHROPIC_API_KEY" : "XAI_API_KEY")).join(" and ")} in Netlify.
+                Not connected yet (an admin needs to add the key in Netlify):{" "}
+                {notReady.map((b) => `${b.name} (${botKeyName(b)})`).join(", ")}.
               </p>
             )}
             <div>

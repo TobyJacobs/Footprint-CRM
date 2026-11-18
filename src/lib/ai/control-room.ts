@@ -3,17 +3,28 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { longDate } from "@/lib/customers/display";
 import { ukToday } from "@/lib/dates";
-import { MAX_TURNS, botRules, chatRules, chatTranscript, defaultModel, toolsFor, type BotTool, type ChatLine } from "./bot-tools";
+import { MAX_TURNS, botRules, chatRules, chatTranscript, companyKey, defaultModel, isBotKeyName, toolsFor, type BotTool, type ChatLine } from "./bot-tools";
 import { callOutsideBot } from "./outside-bots";
 
 // The AI control room's engines (owner, 18 November 2026): runs an in-house
 // bot one step at a time (one reply from Claude or Grok, then the tools it
 // asked for), so each step is quick and the page shows progress as it goes.
 // The keys live only in Netlify: ANTHROPIC_API_KEY for Claude bots and
-// XAI_API_KEY for Grok bots. Tools are done by the database as the person who
+// XAI_API_KEY for Grok bots, or a bot's own key (botKeyName). Tools are done by the database as the person who
 // asked (ai_bot_tool), which checks what the bot may do and logs each step.
 
-export const engineReady = { claude: () => !!process.env.ANTHROPIC_API_KEY, grok: () => !!process.env.XAI_API_KEY };
+// The name of the key a Claude or Grok bot uses: its own (if an admin chose
+// one) or the company key. Never anything but an AI key.
+export function botKeyName(bot: { engine: string; key_name?: string | null }): string | null {
+  if (bot.engine !== "claude" && bot.engine !== "grok") return null;
+  return bot.key_name && isBotKeyName(bot.engine, bot.key_name) ? bot.key_name : companyKey[bot.engine];
+}
+const botKey = (bot: { engine: string; key_name?: string | null }) => {
+  const name = botKeyName(bot);
+  return name ? process.env[name] || null : null;
+};
+// Is this bot's key in Netlify?
+export const botReady = (bot: { engine: string; key_name?: string | null }) => !!botKey(bot);
 
 export type RunBot = {
   id: string;
@@ -23,6 +34,7 @@ export type RunBot = {
   instructions: string | null;
   skills: string[];
   webhook_url: string | null;
+  key_name?: string | null;
 };
 export type RunRow = { id: string; request: string; conversation: unknown[]; turns: number };
 export type StepOutcome = { status: "running" | "done" | "failed" | "stopped"; reply?: string };
@@ -46,7 +58,7 @@ const takesFallbacks = (model: string) => ["claude-opus-5-5", "claude-opus-5", "
 
 async function claudeStep(supabase: SupabaseClient, run: RunRow, bot: RunBot, system: string, tools: BotTool[]) {
   const model = bot.model?.trim() || defaultModel.claude;
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 50_000, maxRetries: 1 });
+  const client = new Anthropic({ apiKey: botKey(bot) ?? undefined, timeout: 50_000, maxRetries: 1 });
   const messages = (run.conversation.length ? run.conversation : [{ role: "user", content: run.request }]) as Anthropic.Beta.BetaMessageParam[];
   const response = await client.beta.messages.create({
     model,
@@ -93,7 +105,7 @@ async function grokStep(supabase: SupabaseClient, run: RunRow, bot: RunBot, syst
   const messages = (run.conversation.length ? run.conversation : [{ role: "user", content: run.request }]) as GrokMessage[];
   const res = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.XAI_API_KEY}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${botKey(bot)}` },
     body: JSON.stringify({
       model: bot.model?.trim() || process.env.XAI_MODEL || defaultModel.grok,
       temperature: 0.2,
@@ -162,8 +174,8 @@ export async function stepRun(supabase: SupabaseClient, run: RunRow, bot: RunBot
       return finish({ status: "failed", reply: `${bot.name} didn't answer: ${e instanceof Error ? e.message.slice(0, 200) : "unknown problem"}` });
     }
   }
-  if (!engineReady[bot.engine]()) {
-    return finish({ status: "failed", reply: `${bot.engine === "claude" ? "Claude" : "Grok"} isn't connected yet: an admin needs to add its key in Netlify.` });
+  if (!botReady(bot)) {
+    return finish({ status: "failed", reply: `${bot.name}'s key (${botKeyName(bot)}) isn't in Netlify yet: an admin needs to add it.` });
   }
   const tools = toolsFor(bot.skills);
   const system = botRules(bot.name, longDate(ukToday()) ?? ukToday(), bot.instructions);
@@ -197,12 +209,12 @@ export async function chatReply(bot: RunBot, chat: { id: string; title: string }
       messages: recent.map((l) => ({ from: l.from, text: l.body })),
     });
   }
-  if (!engineReady[bot.engine]()) throw new Error(`${bot.engine === "claude" ? "Claude" : "Grok"} isn't connected yet (its key needs adding in Netlify)`);
+  if (!botReady(bot)) throw new Error(`${bot.name}'s key (${botKeyName(bot)}) isn't in Netlify yet`);
   const system = chatRules(bot.name, others, chat.title, longDate(ukToday()) ?? ukToday(), bot.instructions);
   const prompt = `The chat so far:\n\n${chatTranscript(recent)}\n\nWrite ${bot.name}'s next message (just the message, without your name in front).`;
   if (bot.engine === "claude") {
     const model = bot.model?.trim() || defaultModel.claude;
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 50_000, maxRetries: 1 });
+    const client = new Anthropic({ apiKey: botKey(bot) ?? undefined, timeout: 50_000, maxRetries: 1 });
     const response = await client.beta.messages.create({
       model,
       max_tokens: 4000,
@@ -218,7 +230,7 @@ export async function chatReply(bot: RunBot, chat: { id: string; title: string }
   }
   const res = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.XAI_API_KEY}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${botKey(bot)}` },
     body: JSON.stringify({
       model: bot.model?.trim() || process.env.XAI_MODEL || defaultModel.grok,
       temperature: 0.5,

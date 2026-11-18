@@ -17,7 +17,7 @@ export default async function BotsPage(props: PageProps<"/ai/control-room/bots">
   const sp = await props.searchParams;
   const supabase = await createClient();
   const [{ data: bots }, { data: agents }, { nameOf }] = await Promise.all([
-    supabase.from("ai_bots").select("id, name, engine, model, active, owner_id, description").order("name"),
+    supabase.from("ai_bots").select("id, name, engine, model, active, owner_id, description, key_name").order("name"),
     supabase.from("ai_projects").select("id, title").order("title"),
     loadPeople(supabase),
   ]);
@@ -39,6 +39,7 @@ export default async function BotsPage(props: PageProps<"/ai/control-room/bots">
                 </span>
                 <span className="text-xs text-fp-mid">
                   {engineLabel[b.engine as BotEngine]} · {b.owner_id ? (nameOf.get(b.owner_id) ?? "—") : "Footprint"}
+                  {b.engine !== "outside" && (b.key_name ? ` · own key (${b.key_name})` : " · company key")}
                 </span>
                 {!b.active && <Badge>Switched off</Badge>}
               </Link>
