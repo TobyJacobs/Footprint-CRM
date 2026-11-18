@@ -7,6 +7,9 @@ One short entry per session. Newest at the top.
 ## 18 November 2026: Portal back button
 - Owner asked for a back button in the portal when viewing quotes etc. Built 0.110.0: a back bar on quote, order/invoice and proof pages for signed-in portal customers. Merged at the owner's request (#170) and checked live. Raised Next.js security upgrade notice.
 
+## 18 November 2026 - Control room new look
+- Owner asked for the Control room to look badass and like Team chat. Built the new look (0.111.0, #171; renumbered from 0.110.0 after a clash), merged, checked live (laptop, phone, a run page); Roadmap task added as done. Tidy-ups in #173 (0.111.1) waiting to merge. Preview links need a Netlify sign-in, so live checks happen after merging.
+
 ## 18 November 2026 - Connected agents, step 1
 - Owner wants a control room where the 4 members' own agents (Claude, Grok, Magnific…) connect and work together. Proposed 4 steps; built step 1, each bot's own AI key (0.109.0, #169): database checks, type check, lint, build; merged, checked live, Roadmap ticked. Grok error was the xAI team's credit/spending limit (402). Owner: everyone is on the company Claude and Grok accounts; asked for the Control room to look like Team chat.
 
