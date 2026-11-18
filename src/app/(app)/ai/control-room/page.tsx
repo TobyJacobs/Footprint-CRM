@@ -15,11 +15,11 @@ export const metadata: Metadata = { title: "Control room" };
 // The AI control room (owner, 18 November 2026): ask the team's bots to do
 // things, see what each one did, and connect outside bots.
 export default async function ControlRoomPage(props: PageProps<"/ai/control-room">) {
-  const user = await requirePermission("ai", "view");
+  await requirePermission("ai", "view");
   const sp = await props.searchParams;
   const supabase = await createClient();
   const [{ data: bots }, { data: runs }, { nameOf }] = await Promise.all([
-    supabase.from("ai_bots").select("id, name, engine, model, skills, active").order("name"),
+    supabase.from("ai_bots").select("id, name, engine, model, skills, active, description, webhook_url, owner_id").order("name"),
     supabase
       .from("ai_bot_runs")
       .select("id, request, status, source, requested_by, created_at, draft_ids, ai_bots(name)")
@@ -27,9 +27,15 @@ export default async function ControlRoomPage(props: PageProps<"/ai/control-room
       .limit(30),
     loadPeople(supabase),
   ]);
-  const inHouse = (bots ?? []).filter((b) => b.active && (b.engine === "claude" || b.engine === "grok"));
-  const ready = (engine: string) => (engine === "claude" ? engineReady.claude() : engine === "grok" ? engineReady.grok() : true);
-  const notReady = [...new Set(inHouse.filter((b) => !ready(b.engine)).map((b) => b.engine as "claude" | "grok"))];
+  const { data: chats } = await supabase
+    .from("ai_chats")
+    .select("id, title, created_by, updated_at, ai_chat_bots(ai_bots(name))")
+    .order("updated_at", { ascending: false })
+    .limit(15);
+  const inHouse = (bots ?? []).filter((b) => b.active && (b.engine === "claude" || b.engine === "grok" || b.webhook_url));
+  const ready = (b: { engine: string; webhook_url: string | null }) =>
+    b.engine === "claude" ? engineReady.claude() : b.engine === "grok" ? engineReady.grok() : !!b.webhook_url;
+  const notReady = [...new Set(inHouse.filter((b) => b.engine !== "outside" && !ready(b)).map((b) => b.engine as "claude" | "grok"))];
 
   return (
     <div className="grid gap-6">
@@ -37,7 +43,7 @@ export default async function ControlRoomPage(props: PageProps<"/ai/control-room
 
       <Card title="Ask a bot">
         {inHouse.length === 0 ? (
-          <p className="text-sm text-fp-mid">No bots are switched on yet.{user.isAdmin ? " Add one under Bots below." : ""}</p>
+          <p className="text-sm text-fp-mid">No bots are switched on yet. Connect one under Bots below.</p>
         ) : (
           <form action={startRun} className="grid gap-4">
             <Field label="Bot">
@@ -68,6 +74,33 @@ export default async function ControlRoomPage(props: PageProps<"/ai/control-room
         )}
       </Card>
 
+      <Card
+        title="Group chats"
+        action={
+          <Link href="/ai/control-room/chats/new" className="text-sm font-semibold text-fp-teal-deep hover:underline">
+            New group chat →
+          </Link>
+        }
+      >
+        {(chats ?? []).length === 0 ? (
+          <p className="text-sm text-fp-mid">Put two or more bots in a chat, for example an account manager and a design bot, and let them talk it through.</p>
+        ) : (
+          <ul className="divide-y divide-fp-border">
+            {(chats ?? []).map((c) => (
+              <li key={c.id}>
+                <Link href={`/ai/control-room/chats/${c.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3 hover:bg-fp-offwhite">
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">{c.title}</span>
+                  <span className="text-xs text-fp-mid">
+                    {(c.ai_chat_bots as unknown as { ai_bots: { name: string } | null }[]).map((x) => x.ai_bots?.name).filter(Boolean).join(", ")} ·{" "}
+                    {shortDateTime(c.updated_at)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
       <Card title="Recent runs">
         {(runs ?? []).length === 0 ? (
           <p className="text-sm text-fp-mid">No runs yet.</p>
@@ -93,23 +126,33 @@ export default async function ControlRoomPage(props: PageProps<"/ai/control-room
       <Card
         title="Bots"
         action={
-          user.isAdmin ? (
-            <Link href="/ai/control-room/bots" className="text-sm font-semibold text-fp-teal-deep hover:underline">
-              Manage bots →
-            </Link>
-          ) : undefined
+          <Link href="/ai/control-room/bots" className="text-sm font-semibold text-fp-teal-deep hover:underline">
+            Connect or manage bots →
+          </Link>
         }
       >
         <ul className="grid gap-3 sm:grid-cols-2">
           {(bots ?? []).map((b) => (
             <li key={b.id} className="rounded-md border border-fp-border p-4">
-              <p className="font-bold">{b.name}</p>
+              <Link href={`/ai/control-room/bots/${b.id}`} className="font-bold hover:underline">
+                {b.name}
+              </Link>
+              {b.description && <p className="text-sm">{b.description}</p>}
               <p className="text-xs text-fp-mid">
                 {engineLabel[b.engine as BotEngine]}
-                {b.model ? ` · ${b.model}` : ""} · {b.skills.length ? b.skills.join(", ") : "no skills yet"}
+                {b.model ? ` · ${b.model}` : ""} · {b.skills.length ? b.skills.join(", ") : "talks only"} ·{" "}
+                {b.owner_id ? (nameOf.get(b.owner_id) ?? "—") : "Footprint"}
               </p>
               <div className="mt-2 flex gap-2">
-                {!b.active ? <Badge>Switched off</Badge> : ready(b.engine) ? <Badge tone="teal">Ready</Badge> : <Badge tone="amber">Needs its key</Badge>}
+                {!b.active ? (
+                  <Badge>Switched off</Badge>
+                ) : ready(b) ? (
+                  <Badge tone="teal">Ready</Badge>
+                ) : b.engine === "outside" ? (
+                  <Badge>Calls in only</Badge>
+                ) : (
+                  <Badge tone="amber">Needs its key</Badge>
+                )}
               </div>
             </li>
           ))}

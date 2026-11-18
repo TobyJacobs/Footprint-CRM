@@ -16,6 +16,7 @@ export default async function SignedInLayout({ children }: LayoutProps<"/">) {
       userEmail={user.email}
       chatUnread={chatUnread}
       userId={user.id}
+      showControlRoom={user.can("ai", "view")}
     >
       {user.previewRole && (
         <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-fp-amber bg-fp-amber/20 px-6 py-3 text-sm lg:px-10">
