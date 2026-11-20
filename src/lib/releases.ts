@@ -11,6 +11,14 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.111.5",
+    date: "2026-11-20",
+    title: "Security fixes",
+    changes: [
+      "Behind the scenes: updated six supporting software packages with known security problems (including the one used to check data for the AI bots). Nothing looks or works differently.",
+    ],
+  },
+  {
     version: "0.111.4",
     date: "2026-11-18",
     title: "New address: os.footprintgroup.uk",
