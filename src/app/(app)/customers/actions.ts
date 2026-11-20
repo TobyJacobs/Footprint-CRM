@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin, requirePermission } from "@/lib/auth";
 import { bool, dateTime, int, list, num, str } from "@/lib/forms";
 import { accountAreas } from "@/lib/customers/account-managers";
+import { services as customerServices } from "@/lib/customers/options";
 import { sendPortalWelcome } from "@/lib/portal-invite";
 import { createClient } from "@/lib/supabase/server";
 
@@ -578,4 +579,40 @@ export async function saveAccountManagers(customerId: string, fd: FormData) {
   }
   revalidatePath(`/customers/${customerId}`);
   redirect(`/customers/${customerId}?saved=1#glance`);
+}
+
+// Cross-sell (owner, 20 November 2026): mark an opportunity "Not interested"
+// (with an optional reason), undo that, or tick a service they already buy in
+// the Service Stack. Database rules check who may do it.
+export async function setCrossSellInterest(customerId: string, service: string, interested: boolean, fd?: FormData) {
+  const user = await requirePermission("customers", "view");
+  if (!user.can("customers", "edit") && !user.can("quotes", "edit")) fail(`/customers/${customerId}#cross-sell`, "You can't change this.");
+  const back = `/customers/${customerId}#cross-sell`;
+  if (!(customerServices as readonly string[]).includes(service)) fail(back, "Unknown service.");
+  const supabase = await createClient();
+  const { error } = interested
+    ? await supabase.from("customer_cross_sell_dismissals").delete().eq("customer_id", customerId).eq("service", service)
+    : await supabase
+        .from("customer_cross_sell_dismissals")
+        .upsert({ customer_id: customerId, service, reason: (fd && str(fd, "reason")?.slice(0, 300)) || null, created_at: new Date().toISOString() });
+  if (error) fail(back, error.message);
+  revalidatePath(`/customers/${customerId}`);
+  redirect(`/customers/${customerId}?saved=1#cross-sell`);
+}
+
+export async function addToServiceStack(customerId: string, service: string) {
+  await requirePermission("customers", "edit");
+  const back = `/customers/${customerId}#cross-sell`;
+  if (!(customerServices as readonly string[]).includes(service)) fail(back, "Unknown service.");
+  const supabase = await createClient();
+  const { data: c, error: readError } = await supabase.from("customers").select("services").eq("id", customerId).single();
+  if (readError) fail(back, readError.message);
+  const now = (c.services ?? []) as string[];
+  if (!now.includes(service)) {
+    const { error } = await supabase.from("customers").update({ services: [...now, service] }).eq("id", customerId);
+    if (error) fail(back, error.message);
+  }
+  await supabase.from("customer_cross_sell_dismissals").delete().eq("customer_id", customerId).eq("service", service);
+  revalidatePath(`/customers/${customerId}`);
+  redirect(`/customers/${customerId}?saved=1#cross-sell`);
 }

@@ -23,6 +23,8 @@ import CustomerDocsCard, { type CustomerDoc } from "./CustomerDocsCard";
 import EmailStatus from "@/components/EmailStatus";
 import AccountManagers from "./AccountManagers";
 import CustomerGlance from "./CustomerGlance";
+import CrossSellCard from "./CrossSellCard";
+import { loadCrossSell } from "@/lib/customers/cross-sell";
 import { contactDue } from "@/lib/dates";
 
 export async function generateMetadata(props: PageProps<"/customers/[id]">): Promise<Metadata> {
@@ -106,7 +108,9 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
   const [quotes, orders, invoices] = canSeeSales
     ? await Promise.all([docsOf(["quote"]), docsOf(["sales_order"]), docsOf(["invoice", "credit_note"])])
     : [null, null, null];
-  const glance = canSeeSales ? await loadGlance(supabase, id) : null;
+  const [glance, crossSell] = canSeeSales
+    ? await Promise.all([loadGlance(supabase, id), c.erased_at ? null : loadCrossSell(supabase, id, c.services ?? [])])
+    : [null, null];
   const { data: areaManagers } = await supabase.from("customer_account_managers").select("area, profile_id").eq("customer_id", id);
   const byArea = Object.fromEntries((areaManagers ?? []).map((m) => [m.area, m.profile_id]));
 
@@ -214,6 +218,16 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
             managers={<AccountManagers customerId={id} ownerId={c.owner_id} byArea={byArea} staff={staff ?? []} canEdit={canEdit && !c.erased_at} />}
           />
         </div>
+
+        {crossSell && (
+          <div className="mb-6">
+            <CrossSellCard
+              customerId={id}
+              data={crossSell}
+              can={{ quote: user.can("quotes", "edit"), mark: canEdit || user.can("quotes", "edit"), editCustomer: canEdit }}
+            />
+          </div>
+        )}
 
         <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
           <div className="grid content-start gap-6">
