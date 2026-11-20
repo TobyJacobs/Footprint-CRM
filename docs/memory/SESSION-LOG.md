@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 20 November 2026 - Health check and security fixes
+- Health check (read only): type check and lint clean (the lint noise came only from .claude/worktrees copies); every table locked to outsiders (checked live with the public key); live pages load under 3 s; security headers on; certificate valid to 16 February 2027; daily Microsoft 365 sync OK every morning; 36 emails in 30 days, 1 dropped (invalid address, 18 November) and 1 old failure (21 October, before SendGrid); no stuck bot runs; no open PRs; 25 roadmap tasks open (15 in Go-live), no approved requests waiting. Found: the only failed bot run is Grok out of credit (xAI account); Xero not connected. Then fixed 6 package security warnings with npm audit fix (zod high; glob, minimatch, Sentry moderate): 0.111.5 (#175), live and checked.
+
 ## 18 November 2026 - New address os.footprintgroup.uk
 - Owner moved FootprintOS to os.footprintgroup.uk. Fixed the live address in code (next.config.ts LIVE_SITE, email fallback, chat-widget example) and forwarded the old netlify.app address (src/proxy.ts, not /api/). 0.111.4 (#174), renumbered twice because of other sessions' merges. Checked live: old address forwards, new one works, /api/ still answers on the old one.
 
