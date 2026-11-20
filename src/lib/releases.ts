@@ -11,6 +11,17 @@ export type Release = { version: string; date: string; title: string; changes: s
 
 export const releases: Release[] = [
   {
+    version: "0.112.0",
+    date: "2026-11-20",
+    title: "Cross-sell on customer pages",
+    changes: [
+      "Customer pages have a new Cross-sell box (for people who can see sales). It lists Footprint's services and shows which ones the customer already buys, worked out from their Service Stack, orders, invoices, hosting plans and retainers.",
+      "Services they don't buy are shown as opportunities, with buttons to start the right kind of quote or log a call.",
+      "Mark an opportunity \"Not interested\" (with a reason if you like) so it stops being suggested, or \"They already buy this\" to tick it in their Service Stack.",
+      "Services they've bought before but not for over a year are flagged as worth a call to win back.",
+    ],
+  },
+  {
     version: "0.111.5",
     date: "2026-11-20",
     title: "Security fixes",
