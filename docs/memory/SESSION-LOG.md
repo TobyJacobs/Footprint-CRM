@@ -4,6 +4,9 @@ One short entry per session. Newest at the top.
 
 ---
 
+## 20 November 2026 - Cross-sell on customer pages
+- Owner asked for cross-sell on customer cards and chose a service checklist, shown to people who can see sales. Built the Cross-sell box: Service Stack services marked as bought or opportunity, with quote and call buttons, Not interested, They already buy this, and a win-back flag. 0.112.0 (#176), live and checked; roadmap task added to Customers and ticked.
+
 ## 20 November 2026 - Health check and security fixes
 - Health check (read only): type check and lint clean (the lint noise came only from .claude/worktrees copies); every table locked to outsiders (checked live with the public key); live pages load under 3 s; security headers on; certificate valid to 16 February 2027; daily Microsoft 365 sync OK every morning; 36 emails in 30 days, 1 dropped (invalid address, 18 November) and 1 old failure (21 October, before SendGrid); no stuck bot runs; no open PRs; 25 roadmap tasks open (15 in Go-live), no approved requests waiting. Found: the only failed bot run is Grok out of credit (xAI account); Xero not connected. Then fixed 6 package security warnings with npm audit fix (zod high; glob, minimatch, Sentry moderate): 0.111.5 (#175), live and checked.
 
